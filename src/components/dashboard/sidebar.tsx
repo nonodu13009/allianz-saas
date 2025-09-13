@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Home, Users } from 'lucide-react'
+import { Home, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -24,14 +24,22 @@ const getNavigationItems = (userRole: string): NavigationItem[] => {
     }
   ]
 
-  // Ajouter "Équipe" seulement pour les administrateurs
+  // Ajouter des éléments spécifiques pour les administrateurs
   if (userRole === 'administrateur') {
-    baseItems.push({
-      name: 'Équipe',
-      href: '/dashboard/team',
-      icon: Users,
-      description: 'Gestion des autorisations'
-    })
+    baseItems.push(
+      {
+        name: 'Équipe',
+        href: '/dashboard/team',
+        icon: Users,
+        description: 'Gestion des autorisations'
+      },
+      {
+        name: 'Commissions',
+        href: '/dashboard/commissions',
+        icon: TrendingUp,
+        description: 'Suivi des commissions de l\'agence'
+      }
+    )
   }
 
   return baseItems
