@@ -71,30 +71,39 @@ export function CommissionTracker() {
   }
 
   const handleYearChange = (year: number) => {
-    if (year >= 2022 && year <= new Date().getFullYear()) {
+    if (availableYears.some(yearObj => yearObj.year === year)) {
       setCurrentYear(year)
       loadCommissionData(year)
     }
   }
 
   const handlePreviousYear = () => {
-    const prevYear = currentYear - 1
-    if (prevYear >= 2022) {
+    const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
+    if (currentIndex > 0) {
+      const prevYear = availableYears[currentIndex - 1].year
       handleYearChange(prevYear)
     }
   }
 
   const handleNextYear = () => {
-    const nextYear = currentYear + 1
-    if (nextYear <= new Date().getFullYear()) {
+    const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
+    if (currentIndex < availableYears.length - 1) {
+      const nextYear = availableYears[currentIndex + 1].year
       handleYearChange(nextYear)
     }
   }
 
   const handleReset = () => {
-    const currentYear = new Date().getFullYear()
-    setCurrentYear(currentYear)
-    loadCommissionData(currentYear)
+    const systemYear = new Date().getFullYear()
+    // Vérifier si l'année système est disponible, sinon utiliser la dernière année disponible
+    const yearToUse = availableYears.some(yearObj => yearObj.year === systemYear) 
+      ? systemYear 
+      : availableYears[availableYears.length - 1]?.year
+    
+    if (yearToUse) {
+      setCurrentYear(yearToUse)
+      loadCommissionData(yearToUse)
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -107,22 +116,22 @@ export function CommissionTracker() {
   }
 
   const getRowStyle = (row: any) => {
-    let baseStyle = 'transition-all duration-200 hover:shadow-md'
+    let baseStyle = 'transition-all duration-200 border border-gray-200 dark:border-gray-700'
     
     if (row.isCommission) {
-      return `${baseStyle} bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20 border-l-4 border-blue-400`
+      return `${baseStyle} bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-100/20`
     }
     if (row.isTotal) {
-      return `${baseStyle} bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/40 font-bold border-l-4 border-blue-600 shadow-sm`
+      return `${baseStyle} bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 font-bold border-l-4 border-l-blue-600`
     }
     if (row.isCharges) {
-      return `${baseStyle} bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 border-l-4 border-red-400`
+      return `${baseStyle} bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 border-l-4 border-l-red-400`
     }
     if (row.isResult) {
-      return `${baseStyle} bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/40 font-bold border-l-4 border-green-600 shadow-sm`
+      return `${baseStyle} bg-green-50 dark:bg-green-900/10 hover:bg-green-100 dark:hover:bg-green-900/20 font-bold border-l-4 border-l-green-400`
     }
     if (row.isWithdrawal) {
-      return `${baseStyle} bg-gray-50 dark:bg-gray-800/20 hover:bg-gray-100 dark:hover:bg-gray-800/30 border-l-4 border-gray-400 opacity-75`
+      return `${baseStyle} bg-orange-50 dark:bg-orange-900/10 hover:bg-orange-100 dark:hover:bg-orange-900/20 opacity-75`
     }
     
     return baseStyle
@@ -132,20 +141,20 @@ export function CommissionTracker() {
     let baseStyle = 'transition-colors duration-200'
     
     if (row.isCommission) {
-      return `${baseStyle} text-blue-700 dark:text-blue-300 font-medium`
+      return `${baseStyle} text-blue-700 dark:text-blue-300`
     }
     if (row.isTotal) {
       return `${baseStyle} text-blue-800 dark:text-blue-200 font-bold`
     }
     if (row.isCharges) {
-      return `${baseStyle} text-red-700 dark:text-red-300 font-medium`
+      return `${baseStyle} text-red-700 dark:text-red-300`
     }
     if (row.isResult) {
       const isPositive = value >= 0
       return `${baseStyle} ${isPositive ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'} font-bold`
     }
     if (row.isWithdrawal) {
-      return `${baseStyle} text-gray-600 dark:text-gray-400 font-medium italic`
+      return `${baseStyle} text-orange-700 dark:text-orange-300 italic`
     }
     
     return baseStyle
@@ -195,7 +204,8 @@ export function CommissionTracker() {
               variant="outline"
               size="sm"
               onClick={handlePreviousYear}
-              disabled={currentYear <= 2022}
+              disabled={availableYears.findIndex(yearObj => yearObj.year === currentYear) <= 0}
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -207,7 +217,11 @@ export function CommissionTracker() {
                   variant={currentYear === year.year ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleYearChange(year.year)}
-                  className="min-w-[60px]"
+                  className={`min-w-[60px] transition-all duration-200 ${
+                    currentYear === year.year 
+                      ? 'bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-blue-200 shadow-sm border-blue-300 dark:border-blue-600 font-bold' 
+                      : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600'
+                  }`}
                 >
                   {year.year}
                 </Button>
@@ -218,7 +232,8 @@ export function CommissionTracker() {
               variant="outline"
               size="sm"
               onClick={handleNextYear}
-              disabled={currentYear >= new Date().getFullYear()}
+              disabled={availableYears.findIndex(yearObj => yearObj.year === currentYear) >= availableYears.length - 1}
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -228,7 +243,7 @@ export function CommissionTracker() {
             variant="outline"
             size="sm"
             onClick={handleReset}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 transition-all duration-200"
           >
             <RefreshCw className="h-4 w-4" />
             Reset
@@ -237,13 +252,13 @@ export function CommissionTracker() {
 
         {/* Tableau des commissions */}
         {commissionData && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px] font-bold">Catégorie</TableHead>
+                <TableRow className="border-b border-gray-200 dark:border-gray-700">
+                  <TableHead className="w-[200px] font-bold border-r border-gray-200 dark:border-gray-700">Catégorie</TableHead>
                   {MONTHS.map((month) => (
-                    <TableHead key={month} className="text-center min-w-[100px]">
+                    <TableHead key={month} className="text-center min-w-[100px] border-r border-gray-200 dark:border-gray-700">
                       {month}
                     </TableHead>
                   ))}
@@ -253,18 +268,18 @@ export function CommissionTracker() {
               <TableBody>
                 {commissionData.rows.map((row, index) => (
                   <TableRow key={index} className={getRowStyle(row)}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-2">
                         {row.label}
                         {row.isWithdrawal && (
-                          <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full border border-gray-300 dark:border-gray-600">
+                          <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-full border border-orange-300 dark:border-orange-600">
                             Indicatif
                           </span>
                         )}
                       </div>
                     </TableCell>
                     {row.values.map((value, monthIndex) => (
-                      <TableCell key={monthIndex} className={`text-center ${getCellStyle(row, value)}`}>
+                      <TableCell key={monthIndex} className={`text-center border-r border-gray-200 dark:border-gray-700 ${getCellStyle(row, value)}`}>
                         {value > 0 ? formatCurrency(value) : '-'}
                       </TableCell>
                     ))}
