@@ -7,8 +7,6 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       // Les utilisateurs authentifiés peuvent lire tous les users (pour la liste)
       allow read: if request.auth != null;
-      // Les administrateurs peuvent écrire (créer/supprimer) tous les users
-      allow write: if request.auth != null;
     }
     
     // Collection agency_commissions - accès pour les utilisateurs authentifiés

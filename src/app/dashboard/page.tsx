@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/auth-context'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { KPIETPCard } from '@/components/dashboard/kpi-etp-card'
+import { KPIRatioCard } from '@/components/dashboard/kpi-ratio-card'
 
 const getRoleSpecificContent = (role: string) => {
   switch (role) {
@@ -74,10 +75,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* KPI ETP - Carte compacte responsive */}
-          <div className="flex justify-start">
+          {/* KPIs - Cartes compactes responsive */}
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
               <KPIETPCard />
+            </div>
+            <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+              <KPIRatioCard />
             </div>
           </div>
 

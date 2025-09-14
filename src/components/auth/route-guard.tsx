@@ -21,6 +21,9 @@ export function RouteGuard({
   const { isAuthenticated, isActive, role, isLoading } = useUserStatus()
 
   useEffect(() => {
+    // Vérifier que nous sommes côté client
+    if (typeof window === 'undefined') return
+
     // Attendre que le chargement soit terminé
     if (loading || isLoading) return
 

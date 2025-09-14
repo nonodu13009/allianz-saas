@@ -52,7 +52,8 @@ export function useUserStatus() {
     })
 
     // Si l'utilisateur n'est pas actif, rediriger vers la page d'erreur
-    if (!isActive) {
+    // Vérifier que nous sommes côté client avant d'utiliser router
+    if (!isActive && typeof window !== 'undefined') {
       router.push('/account-disabled')
     }
   }, [user, loading, router])

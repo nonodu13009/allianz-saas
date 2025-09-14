@@ -695,6 +695,21 @@ export class CommissionService {
   }
 
   /**
+   * Obtenir les données de commission depuis le dataset local (fallback) - version synchrone
+   */
+  static getLocalCommissionDataSync(year: number): CommissionData | null {
+    const localData = this.getLocalData()
+    const data = localData[year]
+    
+    if (data) {
+      // Utiliser les données locales directement sans recalculer les prélèvements
+      return data
+    }
+    
+    return null
+  }
+
+  /**
    * Calculer automatiquement les totaux et résultats
    */
   static calculateCommissionRows(baseRows: Array<{ label: string; values: number[]; isWithdrawal?: boolean }>, adminUsers: User[] = []): CommissionRow[] {
