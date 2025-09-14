@@ -301,6 +301,8 @@ export function CommissionTracker() {
                     </TableHead>
                   ))}
                   <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">Total</TableHead>
+                  <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">Moyenne</TableHead>
+                  <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">Cumul / an</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -323,6 +325,12 @@ export function CommissionTracker() {
                     ))}
                     <TableCell className={`text-center font-bold text-xs sm:text-sm ${getCellStyle(row, row.total)}`}>
                       {formatCurrency(row.total)}
+                    </TableCell>
+                    <TableCell className={`text-center font-bold text-xs sm:text-sm ${getCellStyle(row, row.total / Math.max(1, row.values.filter(value => value > 0).length))}`}>
+                      {formatCurrency(row.total / Math.max(1, row.values.filter(value => value > 0).length))}
+                    </TableCell>
+                    <TableCell className={`text-center font-bold text-xs sm:text-sm ${getCellStyle(row, (row.total / Math.max(1, row.values.filter(value => value > 0).length)) * 12)}`}>
+                      {formatCurrency((row.total / Math.max(1, row.values.filter(value => value > 0).length)) * 12)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -349,6 +357,12 @@ export function CommissionTracker() {
                     <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-12"></div>
                     </TableHead>
+                    <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-12"></div>
+                    </TableHead>
+                    <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-12"></div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -362,6 +376,12 @@ export function CommissionTracker() {
                           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-16"></div>
                         </TableCell>
                       ))}
+                      <TableCell className="text-center font-bold text-xs sm:text-sm">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-20"></div>
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-xs sm:text-sm">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-20"></div>
+                      </TableCell>
                       <TableCell className="text-center font-bold text-xs sm:text-sm">
                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-20"></div>
                       </TableCell>
