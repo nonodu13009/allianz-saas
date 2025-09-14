@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CommissionService } from '@/lib/commission-service'
 import { CommissionData, CommissionYear, MONTHS } from '@/types/commission'
+import { User } from '@/types/user'
 import { TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { YearManagementModal } from './year-management-modal'
@@ -15,14 +16,10 @@ export function CommissionTracker() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<CommissionYear[]>([])
   const [commissionData, setCommissionData] = useState<CommissionData | null>(null)
+  const [adminUsers, setAdminUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadAvailableYears()
-    loadCommissionData(currentYear)
-  }, [])
-
-  const loadAvailableYears = async () => {
+  const loadAvailableYears = useCallback(async () => {
     console.log('loadAvailableYears appelé')
     try {
       const years = await CommissionService.getAvailableYears()
@@ -40,9 +37,18 @@ export function CommissionTracker() {
       setAvailableYears(fallbackYears)
       console.log('Années fallback définies après erreur:', fallbackYears)
     }
-  }
+  }, [])
 
-  const loadCommissionData = async (year: number) => {
+  const loadAdminUsers = useCallback(async () => {
+    try {
+      const users = await CommissionService.getAdminUsers()
+      setAdminUsers(users)
+    } catch (error) {
+      console.error('Erreur lors du chargement des utilisateurs administrateurs:', error)
+    }
+  }, [])
+
+  const loadCommissionData = useCallback(async (year: number) => {
     setLoading(true)
     try {
       // Essayer d'abord Firestore
@@ -64,32 +70,38 @@ export function CommissionTracker() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const handleYearChange = (year: number) => {
+  useEffect(() => {
+    loadAvailableYears()
+    loadAdminUsers()
+    loadCommissionData(currentYear)
+  }, [loadAvailableYears, loadAdminUsers, loadCommissionData, currentYear])
+
+  const handleYearChange = useCallback((year: number) => {
     if (availableYears.some(yearObj => yearObj.year === year)) {
       setCurrentYear(year)
       loadCommissionData(year)
     }
-  }
+  }, [availableYears, loadCommissionData])
 
-  const handlePreviousYear = () => {
+  const handlePreviousYear = useCallback(() => {
     const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
     if (currentIndex > 0) {
       const prevYear = availableYears[currentIndex - 1].year
       handleYearChange(prevYear)
     }
-  }
+  }, [availableYears, currentYear, handleYearChange])
 
-  const handleNextYear = () => {
+  const handleNextYear = useCallback(() => {
     const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
     if (currentIndex < availableYears.length - 1) {
       const nextYear = availableYears[currentIndex + 1].year
       handleYearChange(nextYear)
     }
-  }
+  }, [availableYears, currentYear, handleYearChange])
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     const systemYear = new Date().getFullYear()
     // Vérifier si l'année système est disponible, sinon utiliser la dernière année disponible
     const yearToUse = availableYears.some(yearObj => yearObj.year === systemYear) 
@@ -100,23 +112,24 @@ export function CommissionTracker() {
       setCurrentYear(yearToUse)
       loadCommissionData(yearToUse)
     }
-  }
+  }, [availableYears, loadCommissionData])
 
-  const handleYearsUpdated = () => {
-    console.log('handleYearsUpdated appelé - rechargement des années')
+  const handleYearsUpdated = useCallback(() => {
+    console.log('handleYearsUpdated appelé - rechargement des années et utilisateurs')
     loadAvailableYears()
-  }
+    loadAdminUsers()
+  }, [loadAvailableYears, loadAdminUsers])
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount)
-  }
+  }, [])
 
-  const getRowStyle = (row: any) => {
+  const getRowStyle = useCallback((row: any) => {
     let baseStyle = 'transition-all duration-200 border border-gray-200 dark:border-gray-700'
     
     if (row.isCommission) {
@@ -136,9 +149,9 @@ export function CommissionTracker() {
     }
     
     return baseStyle
-  }
+  }, [])
 
-  const getCellStyle = (row: any, value: number) => {
+  const getCellStyle = useCallback((row: any, value: number) => {
     let baseStyle = 'transition-colors duration-200'
     
     if (row.isCommission) {
@@ -159,7 +172,22 @@ export function CommissionTracker() {
     }
     
     return baseStyle
-  }
+  }, [])
+
+  // Mémos pour les calculs coûteux
+  const currentYearData = useMemo(() => {
+    return availableYears.find(yearObj => yearObj.year === currentYear)
+  }, [availableYears, currentYear])
+
+  const canNavigatePrevious = useMemo(() => {
+    const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
+    return currentIndex > 0
+  }, [availableYears, currentYear])
+
+  const canNavigateNext = useMemo(() => {
+    const currentIndex = availableYears.findIndex(yearObj => yearObj.year === currentYear)
+    return currentIndex < availableYears.length - 1
+  }, [availableYears, currentYear])
 
   if (loading) {
     return (
@@ -303,9 +331,59 @@ export function CommissionTracker() {
           </div>
         )}
 
-        {!commissionData && (
+        {loading && (
+          <div className="space-y-4">
+            {/* Skeleton pour le tableau */}
+            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-gray-200 dark:border-gray-700">
+                    <TableHead className="w-[120px] sm:w-[150px] md:w-[200px] font-bold border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </TableHead>
+                    {MONTHS.map((month) => (
+                      <TableHead key={month} className="text-center min-w-[60px] sm:min-w-[80px] md:min-w-[100px] border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-8"></div>
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-12"></div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 7 }).map((_, index) => (
+                    <TableRow key={index} className="border-b border-gray-200 dark:border-gray-700">
+                      <TableCell className="font-medium border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                      </TableCell>
+                      {MONTHS.map((_, monthIndex) => (
+                        <TableCell key={monthIndex} className="text-center border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-16"></div>
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold text-xs sm:text-sm">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto w-20"></div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
+        {!commissionData && !loading && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Aucune donnée disponible pour l'année {currentYear}
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-lg font-medium">Aucune donnée disponible</p>
+                <p className="text-sm">pour l'année {currentYear}</p>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

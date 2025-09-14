@@ -7,6 +7,8 @@ export interface CommissionRow {
   isCharges?: boolean
   isResult?: boolean
   isWithdrawal?: boolean
+  userId?: string // ID de l'utilisateur pour les prélèvements
+  userEmail?: string // Email de l'utilisateur pour affichage
 }
 
 export interface CommissionData {

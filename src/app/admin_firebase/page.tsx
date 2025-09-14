@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { AdminService } from '@/lib/admin-service'
 import { CommissionService } from '@/lib/commission-service'
+import { UserService } from '@/lib/user-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { Shield, Users, CheckCircle, XCircle, Loader2, Database, Calendar, Archive, Trash2, AlertTriangle } from 'lucide-react'
+import { Shield, Users, CheckCircle, XCircle, Loader2, Database, Calendar, Archive, Trash2, AlertTriangle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -14,6 +15,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null)
   const [migrationLoading, setMigrationLoading] = useState(false)
+  const [refreshLoading, setRefreshLoading] = useState(false)
 
   const handleCreateAllUsers = async () => {
     setLoading(true)
@@ -45,6 +47,92 @@ export default function AdminPage() {
       toast.error('Erreur lors de la migration des données de commission')
     } finally {
       setMigrationLoading(false)
+    }
+  }
+
+  const handleMigrateWithdrawals = async () => {
+    setRefreshLoading(true)
+    try {
+      console.log('Début de la migration des prélèvements...')
+      await CommissionService.migrateExistingWithdrawals()
+      console.log('Migration des prélèvements terminée avec succès')
+      toast.success('Migration des prélèvements terminée ! Vérifiez la console pour les détails.')
+    } catch (error) {
+      console.error('Erreur lors de la migration des prélèvements:', error)
+      toast.error('Erreur lors de la migration des prélèvements')
+    } finally {
+      setRefreshLoading(false)
+    }
+  }
+
+  const handleRestoreWithdrawals = async () => {
+    setRefreshLoading(true)
+    try {
+      console.log('Début de la restauration des prélèvements...')
+      await CommissionService.restoreWithdrawalsFromLocal()
+      console.log('Restauration des prélèvements terminée avec succès')
+      toast.success('Restauration des prélèvements terminée ! Vérifiez la console pour les détails.')
+    } catch (error) {
+      console.error('Erreur lors de la restauration des prélèvements:', error)
+      toast.error('Erreur lors de la restauration des prélèvements')
+    } finally {
+      setRefreshLoading(false)
+    }
+  }
+
+  const handleUpdateWithdrawalsFromReference = async () => {
+    setRefreshLoading(true)
+    try {
+      console.log('Début de la mise à jour des prélèvements depuis la référence...')
+      await CommissionService.updateWithdrawalsFromReference()
+      console.log('Mise à jour des prélèvements depuis la référence terminée avec succès')
+      toast.success('Mise à jour des prélèvements depuis la référence terminée ! Vérifiez la console pour les détails.')
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour depuis la référence:', error)
+      toast.error('Erreur lors de la mise à jour depuis la référence')
+    } finally {
+      setRefreshLoading(false)
+    }
+  }
+
+  const handleCleanupPierreWithdrawals = async () => {
+    setRefreshLoading(true)
+    try {
+      console.log('Début du nettoyage complet de Pierre Durand...')
+      
+      // D'abord, récupérer l'UID de Pierre Durand depuis Firestore
+      const users = await UserService.getAllUsers()
+      const pierreUser = users.find(user => 
+        user.firstName === 'Pierre' && user.lastName === 'Durand'
+      )
+      
+      if (pierreUser) {
+        console.log(`Pierre Durand trouvé avec l'UID: ${pierreUser.uid}`)
+        
+        // 1. Supprimer les prélèvements des commissions
+        await CommissionService.removeUserWithdrawals(pierreUser.uid, 'Pierre')
+        console.log('✅ Prélèvements supprimés des commissions')
+        
+        // 2. Supprimer de Firebase Auth
+        try {
+          await UserService.deleteUserFromAuthAPI(pierreUser.uid)
+          console.log('✅ Utilisateur supprimé de Firebase Auth')
+        } catch (authError) {
+          console.warn('⚠️ Erreur lors de la suppression de Firebase Auth:', authError)
+          // Continuer même si la suppression Auth échoue
+        }
+        
+        console.log('Nettoyage complet de Pierre terminé avec succès')
+        toast.success('Pierre Durand complètement supprimé ! Vérifiez la console pour les détails.')
+      } else {
+        console.log('Pierre Durand non trouvé dans Firestore')
+        toast.warning('Pierre Durand non trouvé dans Firestore')
+      }
+    } catch (error) {
+      console.error('Erreur lors du nettoyage de Pierre:', error)
+      toast.error('Erreur lors du nettoyage de Pierre')
+    } finally {
+      setRefreshLoading(false)
     }
   }
 
@@ -222,27 +310,107 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Button 
-                  onClick={handleMigrateCommissionData}
-                  disabled={migrationLoading}
-                  className="w-full"
-                  size="lg"
-                  variant="outline"
-                >
-                  {migrationLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Migration en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Database className="h-4 w-4 mr-2" />
-                      Migrer les données de commission
-                    </>
-                  )}
-                </Button>
-              </div>
+           <div className="space-y-3">
+             <Button
+               onClick={handleMigrateCommissionData}
+               disabled={migrationLoading}
+               className="w-full"
+               size="lg"
+               variant="outline"
+             >
+               {migrationLoading ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Migration en cours...
+                 </>
+               ) : (
+                 <>
+                   <Database className="h-4 w-4 mr-2" />
+                   Migrer les données de commission
+                 </>
+               )}
+             </Button>
+             
+             <Button
+               onClick={handleMigrateWithdrawals}
+               disabled={refreshLoading}
+               className="w-full"
+               size="lg"
+               variant="outline"
+             >
+               {refreshLoading ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Migration des prélèvements...
+                 </>
+               ) : (
+                 <>
+                   <RefreshCw className="h-4 w-4 mr-2" />
+                   Migrer les prélèvements existants
+                 </>
+               )}
+             </Button>
+             
+             <Button
+               onClick={handleRestoreWithdrawals}
+               disabled={refreshLoading}
+               className="w-full"
+               size="lg"
+               variant="destructive"
+             >
+               {refreshLoading ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Restauration en cours...
+                 </>
+               ) : (
+                 <>
+                   <Archive className="h-4 w-4 mr-2" />
+                   Restaurer les prélèvements depuis les données locales
+                 </>
+               )}
+             </Button>
+             
+             <Button
+               onClick={handleUpdateWithdrawalsFromReference}
+               disabled={refreshLoading}
+               className="w-full"
+               size="lg"
+               variant="default"
+             >
+               {refreshLoading ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Mise à jour en cours...
+                 </>
+               ) : (
+                 <>
+                   <Database className="h-4 w-4 mr-2" />
+                   Mettre à jour les prélèvements depuis la référence
+                 </>
+               )}
+             </Button>
+             
+             <Button
+               onClick={handleCleanupPierreWithdrawals}
+               disabled={refreshLoading}
+               className="w-full"
+               size="lg"
+               variant="destructive"
+             >
+               {refreshLoading ? (
+                 <>
+                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                   Nettoyage en cours...
+                 </>
+               ) : (
+                 <>
+                   <Trash2 className="h-4 w-4 mr-2" />
+                   Supprimer les prélèvements de Pierre Durand
+                 </>
+               )}
+             </Button>
+           </div>
 
               {/* Avertissement */}
               <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
