@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
-import { User } from '@/types/user'
+import { User, UpdateUserData } from '@/types/user'
 import { UserService } from '@/lib/user-service'
 import { toast } from 'sonner'
 import { UserCheck, UserX } from 'lucide-react'
@@ -19,7 +19,7 @@ export function UserStatusToggle({ user, onStatusChange }: UserStatusToggleProps
   const handleToggle = async (checked: boolean) => {
     try {
       setIsUpdating(true)
-      await UserService.updateUser(user.uid, { isActive: checked })
+      await UserService.updateUser(user.uid, { isActive: checked } as UpdateUserData)
       
       toast.success(
         checked 

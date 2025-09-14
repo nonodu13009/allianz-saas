@@ -144,7 +144,7 @@ export default function AccountDisabledPage() {
                 </Button>
                 
                 <Link href="/" className="flex-1">
-                  <Button variant="default" className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                  <Button variant="outline" className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                     Retour à l'accueil
                   </Button>
                 </Link>

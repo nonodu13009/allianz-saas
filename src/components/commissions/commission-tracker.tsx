@@ -9,6 +9,7 @@ import { CommissionService } from '@/lib/commission-service'
 import { CommissionData, CommissionYear, MONTHS } from '@/types/commission'
 import { TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { YearManagementModal } from './year-management-modal'
 
 export function CommissionTracker() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -22,27 +23,22 @@ export function CommissionTracker() {
   }, [])
 
   const loadAvailableYears = async () => {
+    console.log('loadAvailableYears appelé')
     try {
       const years = await CommissionService.getAvailableYears()
-      if (years.length === 0) {
-        // Fallback sur les années locales
-        setAvailableYears([
-          { year: 2025, available: true },
-          { year: 2024, available: true },
-          { year: 2023, available: true },
-          { year: 2022, available: true }
-        ])
-      } else {
-        setAvailableYears(years)
-      }
+      console.log('Années récupérées (Firebase + locales):', years)
+      setAvailableYears(years)
     } catch (error) {
       console.error('Erreur lors du chargement des années:', error)
-      setAvailableYears([
+      // Fallback sur les années locales en cas d'erreur
+      const fallbackYears = [
         { year: 2025, available: true },
         { year: 2024, available: true },
         { year: 2023, available: true },
         { year: 2022, available: true }
-      ])
+      ]
+      setAvailableYears(fallbackYears)
+      console.log('Années fallback définies après erreur:', fallbackYears)
     }
   }
 
@@ -104,6 +100,11 @@ export function CommissionTracker() {
       setCurrentYear(yearToUse)
       loadCommissionData(yearToUse)
     }
+  }
+
+  const handleYearsUpdated = () => {
+    console.log('handleYearsUpdated appelé - rechargement des années')
+    loadAvailableYears()
   }
 
   const formatCurrency = (amount: number) => {
@@ -198,26 +199,26 @@ export function CommissionTracker() {
       
       <CardContent>
         {/* Navigation des années */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-6 gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePreviousYear}
               disabled={availableYears.findIndex(yearObj => yearObj.year === currentYear) <= 0}
-              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200"
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200 h-8 w-8 p-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
             
-            <div className="flex gap-1">
+            <div className="flex gap-1 overflow-x-auto">
               {availableYears.map((year) => (
                 <Button
                   key={year.year}
                   variant={currentYear === year.year ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleYearChange(year.year)}
-                  className={`min-w-[60px] transition-all duration-200 ${
+                  className={`min-w-[50px] sm:min-w-[60px] transition-all duration-200 text-xs sm:text-sm ${
                     currentYear === year.year 
                       ? 'bg-blue-100 dark:bg-blue-700 text-blue-700 dark:text-blue-200 shadow-sm border-blue-300 dark:border-blue-600 font-bold' 
                       : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600'
@@ -233,21 +234,27 @@ export function CommissionTracker() {
               size="sm"
               onClick={handleNextYear}
               disabled={availableYears.findIndex(yearObj => yearObj.year === currentYear) >= availableYears.length - 1}
-              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200"
+              className="hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-300 dark:border-gray-600 transition-all duration-200 h-8 w-8 p-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 transition-all duration-200"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Reset
-          </Button>
+          <div className="flex items-center gap-2">
+            <YearManagementModal 
+              availableYears={availableYears}
+              onYearsUpdated={handleYearsUpdated}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="flex items-center gap-1 sm:gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 transition-all duration-200 text-xs sm:text-sm"
+            >
+              <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Reset</span>
+            </Button>
+          </div>
         </div>
 
         {/* Tableau des commissions */}
@@ -256,34 +263,37 @@ export function CommissionTracker() {
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-gray-200 dark:border-gray-700">
-                  <TableHead className="w-[200px] font-bold border-r border-gray-200 dark:border-gray-700">Catégorie</TableHead>
+                  <TableHead className="w-[120px] sm:w-[150px] md:w-[200px] font-bold border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                    Catégorie
+                  </TableHead>
                   {MONTHS.map((month) => (
-                    <TableHead key={month} className="text-center min-w-[100px] border-r border-gray-200 dark:border-gray-700">
-                      {month}
+                    <TableHead key={month} className="text-center min-w-[60px] sm:min-w-[80px] md:min-w-[100px] border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                      <span className="hidden sm:inline">{month}</span>
+                      <span className="sm:hidden">{month.substring(0, 3)}</span>
                     </TableHead>
                   ))}
-                  <TableHead className="text-center font-bold min-w-[120px]">Total</TableHead>
+                  <TableHead className="text-center font-bold min-w-[80px] sm:min-w-[100px] md:min-w-[120px] text-xs sm:text-sm">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {commissionData.rows.map((row, index) => (
                   <TableRow key={index} className={getRowStyle(row)}>
-                    <TableCell className="font-medium border-r border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        {row.label}
+                    <TableCell className="font-medium border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                        <span className="truncate">{row.label}</span>
                         {row.isWithdrawal && (
-                          <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-full border border-orange-300 dark:border-orange-600">
+                          <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border border-orange-300 dark:border-orange-600 whitespace-nowrap">
                             Indicatif
                           </span>
                         )}
                       </div>
                     </TableCell>
                     {row.values.map((value, monthIndex) => (
-                      <TableCell key={monthIndex} className={`text-center border-r border-gray-200 dark:border-gray-700 ${getCellStyle(row, value)}`}>
+                      <TableCell key={monthIndex} className={`text-center border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm ${getCellStyle(row, value)}`}>
                         {value > 0 ? formatCurrency(value) : '-'}
                       </TableCell>
                     ))}
-                    <TableCell className={`text-center font-bold ${getCellStyle(row, row.total)}`}>
+                    <TableCell className={`text-center font-bold text-xs sm:text-sm ${getCellStyle(row, row.total)}`}>
                       {formatCurrency(row.total)}
                     </TableCell>
                   </TableRow>

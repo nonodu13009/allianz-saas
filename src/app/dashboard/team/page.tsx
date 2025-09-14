@@ -308,7 +308,7 @@ export default function TeamPage() {
                           <div>
                             <div className="font-medium">{user.firstName} {user.lastName}</div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {user.company || 'Allianz Nogaro'}
+                              Allianz Nogaro
                             </div>
                           </div>
                         </div>
@@ -689,7 +689,8 @@ export default function TeamPage() {
               </Button>
               <Button 
                 type="button"
-                variant="destructive"
+                variant="outline"
+                className="bg-red-500 hover:bg-red-600 text-white border-red-500"
                 onClick={confirmDeleteUser}
                 disabled={formLoading}
               >

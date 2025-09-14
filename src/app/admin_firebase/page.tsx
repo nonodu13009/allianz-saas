@@ -2,15 +2,18 @@
 
 import { useState } from 'react'
 import { AdminService } from '@/lib/admin-service'
+import { CommissionService } from '@/lib/commission-service'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { Shield, Users, CheckCircle, XCircle, Loader2, Database } from 'lucide-react'
+import { Shield, Users, CheckCircle, XCircle, Loader2, Database, Calendar, Archive, Trash2, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: number; errors: string[] } | null>(null)
+  const [migrationLoading, setMigrationLoading] = useState(false)
 
   const handleCreateAllUsers = async () => {
     setLoading(true)
@@ -27,6 +30,21 @@ export default function AdminPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleMigrateCommissionData = async () => {
+    setMigrationLoading(true)
+    try {
+      console.log('Début de la migration des données de commission...')
+      await CommissionService.migrateLocalDataToFirebase()
+      console.log('Migration terminée avec succès')
+      toast.success('Migration des données de commission terminée ! Vérifiez la console pour les détails.')
+    } catch (error) {
+      console.error('Erreur lors de la migration:', error)
+      toast.error('Erreur lors de la migration des données de commission')
+    } finally {
+      setMigrationLoading(false)
     }
   }
 
@@ -170,6 +188,76 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Gestion des années de commission */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Gestion des années de commission
+              </CardTitle>
+              <CardDescription>
+                Migrer les données locales (2022-2025) vers Firebase pour les commissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <h4 className="font-medium mb-2">Années à migrer :</h4>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• 2022 - Données de commission</li>
+                    <li>• 2023 - Données de commission</li>
+                    <li>• 2024 - Données de commission</li>
+                    <li>• 2025 - Données de commission</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Comportement :</h4>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Année n'existe pas → Créer</li>
+                    <li>• Année vide → Mettre à jour</li>
+                    <li>• Année avec données → Ignorer</li>
+                    <li>• Préservation des données existantes</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button 
+                  onClick={handleMigrateCommissionData}
+                  disabled={migrationLoading}
+                  className="w-full"
+                  size="lg"
+                  variant="outline"
+                >
+                  {migrationLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Migration en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="h-4 w-4 mr-2" />
+                      Migrer les données de commission
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Avertissement */}
+              <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                  <p className="font-medium mb-1">Attention :</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• Les années existantes avec des données seront préservées</li>
+                    <li>• Seules les années vides ou inexistantes seront mises à jour</li>
+                    <li>• Vérifiez la console pour suivre le processus de migration</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Liste des utilisateurs */}
           <Card>

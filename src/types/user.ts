@@ -27,6 +27,18 @@ export interface CreateUserData {
   genre: 'Homme' | 'Femme'
 }
 
+export interface UpdateUserData {
+  firstName?: string
+  lastName?: string
+  email?: string
+  password?: string
+  role?: 'administrateur' | 'cdc_commercial' | 'cdc_sante_coll' | 'cdc_sante_ind' | 'cdc_sinistre'
+  roleFront?: string
+  etp?: number
+  genre?: 'Homme' | 'Femme'
+  isActive?: boolean
+}
+
 export interface AuthUser {
   uid: string
   email: string | null

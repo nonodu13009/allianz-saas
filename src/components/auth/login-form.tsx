@@ -41,17 +41,17 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-white shadow-xl border-0 rounded-2xl relative overflow-hidden">
-      <CardHeader className="text-center py-8 px-8">
-        <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
+    <Card className="w-full max-w-sm sm:max-w-md mx-auto bg-white shadow-xl border-0 rounded-2xl relative overflow-hidden">
+      <CardHeader className="text-center py-4 sm:py-6 px-4 sm:px-6">
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
           Connexion
         </CardTitle>
-        <CardDescription className="text-gray-600 text-sm">
+        <CardDescription className="text-gray-600 text-xs sm:text-sm">
           Accédez à votre espace Allianz SaaS
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-8 pb-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               <AlertCircle className="h-4 w-4" />
@@ -60,7 +60,7 @@ export function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="text-xs sm:text-sm font-medium text-gray-700">
               Email
             </label>
             <div className="relative">
@@ -70,7 +70,7 @@ export function LoginForm() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 text-gray-700"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 text-gray-700 text-sm sm:text-base"
                 placeholder="votre@email.com"
                 required
               />
@@ -78,7 +78,7 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="text-xs sm:text-sm font-medium text-gray-700">
               Mot de passe
             </label>
             <div className="relative">
@@ -88,7 +88,7 @@ export function LoginForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 text-gray-700"
+                className="w-full pl-10 pr-10 py-2.5 sm:py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 text-gray-700 text-sm sm:text-base"
                 placeholder="••••••••"
                 required
               />
@@ -104,7 +104,7 @@ export function LoginForm() {
 
           <Button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 sm:py-3 rounded-lg transition-colors text-sm sm:text-base"
             disabled={loading}
           >
             {loading ? 'Connexion...' : 'Se connecter'}
