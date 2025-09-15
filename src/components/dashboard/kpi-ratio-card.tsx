@@ -28,48 +28,97 @@ export function KPIRatioCard() {
 
   const loadRatioData = async () => {
     try {
-      // Récupérer l'ETP total
+      // Récupérer l'ETP total depuis la collection Users
       const users = await UserService.getAllUsers()
       const activeUsers = users.filter(user => user.isActive)
       const totalETP = activeUsers.reduce((sum, user) => sum + (user.etp || 1), 0)
 
-      // Récupérer les données de commission pour l'année actuelle
+      // Récupérer le cumul annuel des commissions pour l'année actuelle
       const currentYear = new Date().getFullYear()
-      let commissionData = await CommissionService.getCommissionData(currentYear)
+      let totalCommissions = await getTotalCommissionsForYear(currentYear)
       
-      if (!commissionData) {
-        // Si pas de données Firestore, essayer les données locales
-        commissionData = CommissionService.getLocalCommissionDataSync(currentYear)
-      }
-      
-      if (!commissionData) {
-        // Si pas de données pour l'année actuelle, essayer l'année précédente
+      // Si pas de données pour l'année actuelle, essayer l'année précédente
+      if (totalCommissions === null || totalCommissions === 0) {
         const previousYear = currentYear - 1
-        let previousData = await CommissionService.getCommissionData(previousYear)
+        totalCommissions = await getTotalCommissionsForYear(previousYear)
         
-        if (!previousData) {
-          // Essayer les données locales pour l'année précédente
-          previousData = CommissionService.getLocalCommissionDataSync(previousYear)
-        }
-        
-        if (previousData) {
-          calculateRatio(previousData, totalETP, previousYear, false)
-        } else {
+        if (totalCommissions !== null && totalCommissions > 0) {
+          // Utiliser les données de l'année précédente
+          const ratio = totalCommissions / totalETP
+          const isExtrapolated = true
+          const extrapolatedCommissions = totalCommissions
+          
+          // Déterminer le type de commentaire selon les seuils
+          let commentType: 'success' | 'warning' | 'error' | 'info' = 'info'
+          let statusComment = ""
+
+          if (ratio < 80000) {
+            commentType = 'error'
+            statusComment = "Performance insuffisante - < 80k€"
+          } else if (ratio >= 80000 && ratio < 100000) {
+            commentType = 'success'
+            statusComment = "Performance équilibrée - 80k€ à 100k€"
+          } else {
+            commentType = 'warning'
+            statusComment = "Très rentable mais nécessite plus de moyens humains pour maintenir la qualité"
+          }
+          
           setRatioData({
-            ratio: 0,
-            isExtrapolated: false,
-            year: currentYear,
-            totalCommissions: 0,
+            ratio,
+            isExtrapolated,
+            year: previousYear,
+            totalCommissions,
+            extrapolatedCommissions,
             etp: totalETP,
-            comment: "Aucune donnée de commission disponible",
-            commentType: 'info'
+            comment: `Données de référence de ${previousYear} (année ${currentYear} vide) • ${statusComment}`,
+            commentType
           })
+          return
         }
-        return
       }
 
-      // Calculer le ratio
-      calculateRatio(commissionData, totalETP, currentYear, true)
+      // Calculer le ratio avec les données de l'année actuelle
+      if (totalCommissions !== null && totalCommissions > 0) {
+        const ratio = totalCommissions / totalETP
+        const isExtrapolated = false
+        
+        // Déterminer le type de commentaire selon les seuils
+        let commentType: 'success' | 'warning' | 'error' | 'info' = 'info'
+        let statusComment = ""
+
+        if (ratio < 80000) {
+          commentType = 'error'
+          statusComment = "Performance insuffisante - < 80k€"
+        } else if (ratio >= 80000 && ratio < 100000) {
+          commentType = 'success'
+          statusComment = "Performance équilibrée - 80k€ à 100k€"
+        } else {
+          commentType = 'warning'
+          statusComment = "Très rentable mais nécessite plus de moyens humains pour maintenir la qualité"
+        }
+        
+        setRatioData({
+          ratio,
+          isExtrapolated,
+          year: currentYear,
+          totalCommissions,
+          extrapolatedCommissions: totalCommissions,
+          etp: totalETP,
+          comment: `Données complètes pour ${currentYear} • ${statusComment}`,
+          commentType
+        })
+      } else {
+        setRatioData({
+          ratio: 0,
+          isExtrapolated: false,
+          year: currentYear,
+          totalCommissions: 0,
+          extrapolatedCommissions: 0,
+          etp: totalETP,
+          comment: "Aucune donnée de commission disponible",
+          commentType: 'info'
+        })
+      }
       
     } catch (error) {
       console.error('Erreur lors du chargement des données de ratio:', error)
@@ -78,6 +127,7 @@ export function KPIRatioCard() {
         isExtrapolated: false,
         year: new Date().getFullYear(),
         totalCommissions: 0,
+        extrapolatedCommissions: 0,
         etp: 0,
         comment: "Erreur lors du chargement des données",
         commentType: 'error'
@@ -87,118 +137,45 @@ export function KPIRatioCard() {
     }
   }
 
-  const calculateRatio = (commissionData: any, etp: number, year: number, isCurrentYear: boolean) => {
-    // Trouver la ligne "Total commissions"
-    const totalCommissionsRow = commissionData.rows.find((row: any) => row.isTotal)
-    
-    if (!totalCommissionsRow) {
-      setRatioData({
-        ratio: 0,
-        isExtrapolated: false,
-        year,
-        totalCommissions: 0,
-        etp,
-        comment: "Données de commission incomplètes",
-        commentType: 'error'
-      })
-      return
-    }
-
-    const totalCommissions = totalCommissionsRow.total
-    let ratio = 0
-    let isExtrapolated = false
-    let extrapolatedCommissions = totalCommissions
-    let comment = ""
-
-    if (isCurrentYear) {
-      // Année en cours - vérifier si elle est complète
-      const currentMonth = new Date().getMonth() // 0-11
-      const monthsWithData = totalCommissionsRow.values.filter((value: number) => value > 0).length
-      const hasDataForCurrentMonth = totalCommissionsRow.values[currentMonth] > 0
+  /**
+   * Récupère le cumul annuel des commissions pour une année donnée
+   * Utilise la nouvelle source de vérité : la colonne "Cumul / an" de la ligne "Total commissions"
+   */
+  const getTotalCommissionsForYear = async (year: number): Promise<number | null> => {
+    try {
+      // Récupérer les données de commission pour l'année
+      let commissionData = await CommissionService.getCommissionData(year)
       
-      // Si on a des données pour le mois actuel ou le mois précédent, et qu'on n'est pas en décembre
-      if ((hasDataForCurrentMonth || monthsWithData > 0) && currentMonth < 11) {
-        // Année incomplète - calculer l'extrapolation
-        if (monthsWithData > 0) {
-          const averageMonthly = totalCommissions / monthsWithData
-          extrapolatedCommissions = averageMonthly * 12
-          ratio = extrapolatedCommissions / etp
-          isExtrapolated = true
-          
-          // Trouver le dernier mois avec des données
-          const lastMonthWithData = totalCommissionsRow.values.lastIndexOf(
-            totalCommissionsRow.values.filter((value: number) => value > 0).pop() || 0
-          )
-          const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                             'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-          const lastMonthName = monthNames[lastMonthWithData]
-          
-          comment = `Extrapolation basée sur ${monthsWithData} mois de données (jusqu'à ${lastMonthName})`
-        } else {
-          // Pas de données du tout - essayer de basculer sur l'année précédente
-          const previousYear = year - 1
-          const previousYearData = CommissionService.getLocalCommissionDataSync(previousYear)
-          
-          if (previousYearData) {
-            // Utiliser les données de l'année précédente pour l'extrapolation
-            const previousTotalCommissions = previousYearData.commissions.find(row => row.month === 'Total')?.total || 0
-            const previousETP = previousYearData.etp || 1
-            
-            // Calculer l'extrapolation basée sur l'année précédente
-            const averageMonthly = previousTotalCommissions / 12
-            extrapolatedCommissions = averageMonthly * 12
-            ratio = extrapolatedCommissions / etp
-            isExtrapolated = true
-            
-            comment = `Extrapolation basée sur les données de ${previousYear} (aucune donnée pour ${year})`
-          } else {
-            // Pas de données du tout
-            ratio = 0
-            extrapolatedCommissions = 0
-            isExtrapolated = false
-            comment = `Aucune donnée disponible pour ${year}`
-          }
-        }
-      } else {
-        // Année complète ou décembre
-        ratio = totalCommissions / etp
-        extrapolatedCommissions = totalCommissions
-        isExtrapolated = false
-        comment = `Données complètes pour ${year}`
+      if (!commissionData) {
+        // Si pas de données Firestore, essayer les données locales
+        commissionData = CommissionService.getLocalCommissionDataSync(year)
       }
-    } else {
-      // Année précédente - données complètes
-      ratio = totalCommissions / etp
-      extrapolatedCommissions = totalCommissions
-      isExtrapolated = false
-      comment = `Données complètes pour ${year}`
+      
+      if (!commissionData || !commissionData.rows) {
+        return null
+      }
+
+      // Trouver la ligne "Total commissions" qui est la nouvelle source de vérité
+      const totalCommissionsRow = commissionData.rows.find((row: any) => row.isTotal)
+      
+      if (!totalCommissionsRow) {
+        return null
+      }
+
+      // Utiliser le cumul annuel (colonne "Cumul / an") au lieu du total mensuel
+      // Le cumul annuel est calculé comme : (total / mois_avec_données) * 12
+      const monthsWithData = totalCommissionsRow.values.filter((value: number) => value > 0).length
+      const cumulativeYear = (totalCommissionsRow.total / Math.max(1, monthsWithData)) * 12
+      
+      if (cumulativeYear === undefined || cumulativeYear === null || isNaN(cumulativeYear)) {
+        return null
+      }
+
+      return cumulativeYear
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des commissions pour ${year}:`, error)
+      return null
     }
-
-    // Déterminer le type de commentaire selon les seuils
-    let commentType: 'success' | 'warning' | 'error' | 'info' = 'info'
-    let statusComment = ""
-
-    if (ratio < 80000) {
-      commentType = 'error'
-      statusComment = "Performance insuffisante - < 80k€"
-    } else if (ratio >= 80000 && ratio < 100000) {
-      commentType = 'success'
-      statusComment = "Performance équilibrée - 80k€ à 100k€"
-    } else {
-      commentType = 'warning'
-      statusComment = "Très rentable mais nécessite plus de moyens humains pour maintenir la qualité"
-    }
-
-    setRatioData({
-      ratio,
-      isExtrapolated,
-      year,
-      totalCommissions,
-      extrapolatedCommissions,
-      etp,
-      comment: `${comment} • ${statusComment}`,
-      commentType
-    })
   }
 
   const formatCurrency = (amount: number) => {
