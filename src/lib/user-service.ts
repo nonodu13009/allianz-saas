@@ -3,12 +3,14 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   collection, 
   query, 
   where, 
   getDocs,
   serverTimestamp 
 } from 'firebase/firestore'
+import { deleteUser as deleteAuthUser } from 'firebase/auth'
 import { db } from './firebase'
 import { User, CreateUserData } from '@/types/user'
 
@@ -156,5 +158,62 @@ export class UserService {
       isActive: false,
       updatedAt: serverTimestamp()
     })
+  }
+
+  /**
+   * Supprimer définitivement un utilisateur (Firestore + Auth)
+   */
+  static async deleteUserPermanently(uid: string): Promise<void> {
+    try {
+      // Supprimer de Firestore
+      const userRef = doc(db, USERS_COLLECTION, uid)
+      await deleteDoc(userRef)
+      
+      // Note: La suppression de Firebase Auth doit être faite côté client
+      // car elle nécessite l'authentification de l'utilisateur actuel
+      console.log(`✅ Utilisateur ${uid} supprimé de Firestore`)
+    } catch (error) {
+      console.error('Erreur lors de la suppression définitive:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Supprimer un utilisateur de Firebase Auth (nécessite l'utilisateur Auth)
+   */
+  static async deleteUserFromAuth(authUser: any): Promise<void> {
+    try {
+      await deleteAuthUser(authUser)
+      console.log(`✅ Utilisateur ${authUser.uid} supprimé de Firebase Auth`)
+    } catch (error) {
+      console.error('Erreur lors de la suppression de Firebase Auth:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Supprimer un utilisateur de Firebase Auth via API (Admin SDK)
+   */
+  static async deleteUserFromAuthAPI(uid: string): Promise<void> {
+    try {
+      const response = await fetch('/api/admin/delete-user-auth', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uid }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur lors de la suppression de Firebase Auth')
+      }
+
+      const result = await response.json()
+      console.log(`✅ ${result.message}`)
+    } catch (error) {
+      console.error('Erreur lors de la suppression de Firebase Auth via API:', error)
+      throw error
+    }
   }
 }

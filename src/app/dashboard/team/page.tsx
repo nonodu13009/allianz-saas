@@ -39,6 +39,8 @@ import {
 } from 'lucide-react'
 import { User } from '@/types/user'
 import { UserService } from '@/lib/user-service'
+import { AdminService } from '@/lib/admin-service'
+import { CommissionService } from '@/lib/commission-service'
 import { UserStatusToggle } from '@/components/admin/user-status-toggle'
 import { toast } from 'sonner'
 
@@ -113,6 +115,23 @@ export default function TeamPage() {
     setIsCreateDialogOpen(true)
   }
 
+  const handleRoleChange = (role: User['role']) => {
+    // Remplir automatiquement le roleFront selon le rôle
+    const roleFrontMap: Record<User['role'], string> = {
+      'administrateur': 'Agent Général',
+      'cdc_commercial': 'CDC Commercial',
+      'cdc_sante_coll': 'CDC Santé Collective',
+      'cdc_sante_ind': 'CDC Santé Individuel',
+      'cdc_sinistre': 'CDC Sinistre'
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      role,
+      roleFront: roleFrontMap[role] || ''
+    }))
+  }
+
   const handleEditUser = (user: User) => {
     setSelectedUser(user)
     setFormData({
@@ -140,7 +159,16 @@ export default function TeamPage() {
     
     try {
       setFormLoading(true)
-      await UserService.deleteUser(userToDelete.uid)
+      
+      // Supprimer définitivement de Firestore
+      await UserService.deleteUserPermanently(userToDelete.uid)
+      
+      // Supprimer les prélèvements des commissions si c'est un administrateur
+      if (userToDelete.role === 'administrateur') {
+        await CommissionService.removeUserWithdrawals(userToDelete.uid, userToDelete.firstName)
+        console.log(`Prélèvements de ${userToDelete.firstName} supprimés des commissions`)
+      }
+      
       toast.success('Utilisateur supprimé avec succès')
       loadUsers()
       setIsDeleteDialogOpen(false)
@@ -157,8 +185,35 @@ export default function TeamPage() {
     e.preventDefault()
     try {
       setFormLoading(true)
-      // Ici vous devrez implémenter la création d'utilisateur
-      // await UserService.createUser(formData)
+      
+      // Validation
+      if (!formData.email.endsWith('@allianz-nogaro.fr')) {
+        toast.error('L\'email doit se terminer par @allianz-nogaro.fr')
+        return
+      }
+      
+      if (!formData.password) {
+        toast.error('Le mot de passe est obligatoire')
+        return
+      }
+      
+      if (!formData.role) {
+        toast.error('Le rôle est obligatoire')
+        return
+      }
+      
+      // Créer l'utilisateur avec AdminService
+      await AdminService.createUser({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        roleFront: formData.roleFront,
+        etp: formData.etp,
+        genre: formData.genre
+      })
+      
       toast.success('Utilisateur créé avec succès')
       loadUsers()
       setIsCreateDialogOpen(false)
@@ -308,7 +363,7 @@ export default function TeamPage() {
                           <div>
                             <div className="font-medium">{user.firstName} {user.lastName}</div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {user.company || 'Allianz Nogaro'}
+                              Allianz Nogaro
                             </div>
                           </div>
                         </div>
@@ -442,7 +497,7 @@ export default function TeamPage() {
                          <label className="text-sm font-medium">Rôle <span className="text-red-500">*</span></label>
                          <select
                            value={formData.role}
-                           onChange={(e) => setFormData({...formData, role: e.target.value as User['role']})}
+                           onChange={(e) => handleRoleChange(e.target.value as User['role'])}
                            className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background"
                            required
                          >
@@ -576,7 +631,7 @@ export default function TeamPage() {
                          <label className="text-sm font-medium">Rôle <span className="text-red-500">*</span></label>
                          <select
                            value={formData.role}
-                           onChange={(e) => setFormData({...formData, role: e.target.value as User['role']})}
+                           onChange={(e) => handleRoleChange(e.target.value as User['role'])}
                            className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background"
                            required
                          >
@@ -689,7 +744,8 @@ export default function TeamPage() {
               </Button>
               <Button 
                 type="button"
-                variant="destructive"
+                variant="outline"
+                className="bg-red-500 hover:bg-red-600 text-white border-red-500"
                 onClick={confirmDeleteUser}
                 disabled={formLoading}
               >

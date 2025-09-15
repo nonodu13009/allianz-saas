@@ -13,14 +13,14 @@ export function UserProfile() {
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    company: user?.company || '',
-    position: user?.position || '',
-    department: user?.department || '',
+    company: 'Allianz Nogaro',
+    position: user?.roleFront || '',
+    department: user?.role || '',
     address: {
-      street: user?.address?.street || '',
-      city: user?.address?.city || '',
-      postalCode: user?.address?.postalCode || '',
-      country: user?.address?.country || ''
+      street: '',
+      city: 'Marseille',
+      postalCode: '13000',
+      country: 'France'
     }
   })
 
@@ -61,14 +61,14 @@ export function UserProfile() {
     setFormData({
       firstName: user.firstName,
       lastName: user.lastName,
-      company: user.company || '',
-      position: user.position || '',
-      department: user.department || '',
+      company: 'Allianz Nogaro',
+      position: user.roleFront || '',
+      department: user.role || '',
       address: {
-        street: user.address?.street || '',
-        city: user.address?.city || '',
-        postalCode: user.address?.postalCode || '',
-        country: user.address?.country || ''
+        street: '',
+        city: 'Marseille',
+        postalCode: '13000',
+        country: 'France'
       }
     })
     setIsEditing(false)
@@ -180,7 +180,7 @@ export function UserProfile() {
                   placeholder="Nom de l'entreprise"
                 />
               ) : (
-                <p className="text-body mt-1">{user.company || 'Non renseigné'}</p>
+                <p className="text-body mt-1">Allianz Nogaro</p>
               )}
             </div>
 
@@ -195,7 +195,7 @@ export function UserProfile() {
                   placeholder="Titre du poste"
                 />
               ) : (
-                <p className="text-body mt-1">{user.position || 'Non renseigné'}</p>
+                <p className="text-body mt-1">{user.roleFront || 'Non renseigné'}</p>
               )}
             </div>
 
@@ -210,7 +210,7 @@ export function UserProfile() {
                   placeholder="Département"
                 />
               ) : (
-                <p className="text-body mt-1">{user.department || 'Non renseigné'}</p>
+                <p className="text-body mt-1">{user.role || 'Non renseigné'}</p>
               )}
             </div>
           </CardContent>

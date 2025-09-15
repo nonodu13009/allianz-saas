@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Home, Users } from 'lucide-react'
+import { Home, Users, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -24,14 +24,22 @@ const getNavigationItems = (userRole: string): NavigationItem[] => {
     }
   ]
 
-  // Ajouter "Équipe" seulement pour les administrateurs
+  // Ajouter des éléments spécifiques pour les administrateurs
   if (userRole === 'administrateur') {
-    baseItems.push({
-      name: 'Équipe',
-      href: '/dashboard/team',
-      icon: Users,
-      description: 'Gestion des autorisations'
-    })
+    baseItems.push(
+      {
+        name: 'Équipe',
+        href: '/dashboard/team',
+        icon: Users,
+        description: 'Gestion des autorisations'
+      },
+      {
+        name: 'Commissions',
+        href: '/dashboard/commissions',
+        icon: TrendingUp,
+        description: 'Suivi des commissions de l\'agence'
+      }
+    )
   }
 
   return baseItems
@@ -46,9 +54,9 @@ export function DashboardSidebar() {
   const navigationItems = getNavigationItems(user.role)
 
   return (
-    <div className="w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-[calc(100vh-6rem)] flex flex-col">
+    <div className="w-full lg:w-72 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-auto lg:h-[calc(100vh-6rem)] flex flex-col">
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-2 sm:p-4 space-y-1 sm:space-y-2">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href
           const Icon = item.icon
@@ -58,21 +66,21 @@ export function DashboardSidebar() {
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
-                  "w-full justify-start h-auto min-h-12 px-4 py-3 text-left transition-all duration-200",
+                  "w-full justify-start h-auto min-h-10 sm:min-h-12 px-2 sm:px-4 py-2 sm:py-3 text-left transition-all duration-200",
                   isActive
                     ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
                 )}
               >
                 <Icon className={cn(
-                  "h-5 w-5 mr-3 flex-shrink-0 transition-colors",
+                  "h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0 transition-colors",
                   isActive ? "text-white" : "text-gray-500 dark:text-gray-400"
                 )} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{item.name}</div>
+                  <div className="font-medium truncate text-sm sm:text-base">{item.name}</div>
                   {item.description && (
                     <div className={cn(
-                      "text-xs mt-1 leading-tight break-words",
+                      "text-xs mt-1 leading-tight break-words hidden sm:block",
                       isActive ? "text-white/80" : "text-gray-500 dark:text-gray-400"
                     )}>
                       {item.description}
@@ -80,7 +88,7 @@ export function DashboardSidebar() {
                   )}
                 </div>
                 {isActive && (
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse flex-shrink-0 ml-2" />
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse flex-shrink-0 ml-1 sm:ml-2" />
                 )}
               </Button>
             </Link>

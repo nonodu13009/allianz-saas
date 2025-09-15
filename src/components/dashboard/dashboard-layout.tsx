@@ -17,12 +17,12 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
         <DashboardHeader />
         
         {/* Contenu principal avec sidebar */}
-        <div className="flex h-[calc(100vh-6rem)]">
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-6rem)]">
           {/* Sidebar */}
           <DashboardSidebar />
           
           {/* Page content */}
-          <main className="flex-1 p-6 overflow-y-auto">
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
             {children}
           </main>
         </div>

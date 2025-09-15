@@ -59,24 +59,26 @@ export default function Home() {
 
       {/* Contenu principal centré */}
       <main className="relative z-10 min-h-[calc(100vh-80px)] flex items-center justify-center">
-        <div className="text-center text-white max-w-4xl mx-auto px-4">
-          {/* Logo Allianz très grand avec animation */}
-          <div className="mb-8">
-            <Image
-              src="/allianz.svg"
-              alt="Allianz"
-              width={200}
-              height={200}
-              className={`mx-auto drop-shadow-2xl transition-all duration-1000 ${
-                isLoaded 
-                  ? 'animate-pulse hover:scale-110 hover:rotate-3' 
-                  : 'opacity-0 scale-50'
-              }`}
-            />
+        <div className="text-center text-white max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Logo Allianz avec animation */}
+          <div className="mb-4 sm:mb-6 flex justify-center">
+            <div className={`transition-all duration-1000 ${
+              isLoaded 
+                ? 'animate-pulse hover:scale-105 hover:rotate-2' 
+                : 'opacity-0 scale-50'
+            }`}>
+              <Image
+                src="/allianz.svg"
+                alt="Allianz"
+                width={200}
+                height={200}
+                className="drop-shadow-2xl max-w-[80px] sm:max-w-[100px] md:max-w-[120px] lg:max-w-[150px] xl:max-w-[200px] w-auto h-auto"
+              />
+            </div>
           </div>
 
           {/* Titres avec animation de typing */}
-          <h1 className={`text-6xl md:text-7xl font-poppins font-bold mb-6 drop-shadow-2xl transition-all duration-1000 ${
+          <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-poppins font-bold mb-3 sm:mb-4 drop-shadow-2xl transition-all duration-1000 leading-tight ${
             showText 
               ? 'opacity-100 translate-y-0' 
               : 'opacity-0 translate-y-8'
@@ -85,7 +87,7 @@ export default function Home() {
             <span className="inline-block animate-bounce">Marseille</span>
           </h1>
           
-          <h2 className={`text-2xl md:text-3xl font-poppins font-medium mb-6 drop-shadow-xl transition-all duration-1000 delay-500 ${
+          <h2 className={`text-base sm:text-lg md:text-xl lg:text-2xl font-poppins font-medium mb-4 sm:mb-6 drop-shadow-xl transition-all duration-1000 delay-500 ${
             showText 
               ? 'opacity-100 translate-y-0' 
               : 'opacity-0 translate-y-8'
@@ -102,9 +104,9 @@ export default function Home() {
             <Link href="/login">
               <Button 
                 size="lg" 
-                className="bg-white text-black hover:bg-white/90 text-lg px-8 py-4 h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 animate-pulse hover:animate-none hover:scale-105 hover:shadow-white/50 hover:shadow-2xl"
+                className="bg-white text-black hover:bg-white/90 text-sm sm:text-base px-5 sm:px-6 py-2.5 sm:py-3 h-auto shadow-2xl hover:shadow-3xl transition-all duration-300 animate-pulse hover:animate-none hover:scale-105 hover:shadow-white/50 hover:shadow-2xl w-full sm:w-auto"
               >
-                <LogIn className="h-5 w-5 mr-2" />
+                <LogIn className="h-4 w-4 mr-2" />
                 Se Connecter
               </Button>
             </Link>

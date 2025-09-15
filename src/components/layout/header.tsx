@@ -74,7 +74,13 @@ export function Header({
           alt="Allianz"
           width={getLogoSize().width}
           height={getLogoSize().height}
-          className="dark:invert"
+          className={`dark:invert ${
+            logoSize === 'medium' 
+              ? 'max-w-[60px] sm:max-w-[80px] md:max-w-[100px] lg:max-w-[120px] xl:max-w-[128px] w-auto h-auto'
+              : logoSize === 'large'
+              ? 'max-w-[120px] sm:max-w-[160px] md:max-w-[200px] lg:max-w-[240px] w-auto h-auto'
+              : 'max-w-[30px] sm:max-w-[40px] w-auto h-auto'
+          }`}
         />
       </div>
 

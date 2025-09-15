@@ -31,31 +31,33 @@ export default function LoginPage() {
       </div>
 
       {/* Contenu principal centré - même style que homepage */}
-      <main className="relative z-10 min-h-[calc(100vh-80px)] flex items-center justify-center">
-        <div className="text-center text-white max-w-4xl mx-auto px-4">
+      <main className="relative z-10 min-h-[calc(100vh-64px)] flex items-center justify-center py-4 sm:py-8">
+        <div className="text-center text-white max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           {/* Logo Allianz très grand avec animation - même style que homepage */}
-          <div className="mb-8">
-            <Image
-              src="/allianz.svg"
-              alt="Allianz"
-              width={200}
-              height={200}
-              className="mx-auto drop-shadow-2xl animate-pulse hover:scale-110 hover:rotate-3 transition-all duration-1000"
-            />
+          <div className="mb-6 sm:mb-8 flex justify-center">
+            <div className="animate-pulse hover:scale-110 hover:rotate-3 transition-all duration-1000">
+              <Image
+                src="/allianz.svg"
+                alt="Allianz"
+                width={200}
+                height={200}
+                className="drop-shadow-2xl max-w-[80px] sm:max-w-[100px] md:max-w-[120px] lg:max-w-[150px] xl:max-w-[200px] w-auto h-auto"
+              />
+            </div>
           </div>
 
           {/* Titres avec animation - même style que homepage */}
-          <h1 className="text-6xl md:text-7xl font-poppins font-bold mb-6 drop-shadow-2xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-poppins font-bold mb-4 sm:mb-6 drop-shadow-2xl leading-tight">
             <span className="inline-block animate-pulse">Allianz</span>{' '}
             <span className="inline-block animate-bounce">Marseille</span>
           </h1>
           
-          <h2 className="text-2xl md:text-3xl font-poppins font-medium mb-6 drop-shadow-xl">
+          <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-poppins font-medium mb-6 sm:mb-8 drop-shadow-xl">
             Saas de pilotage réservé
           </h2>
 
           {/* Login Form */}
-          <div className="max-w-md mx-auto">
+          <div className="max-w-sm sm:max-w-md mx-auto mb-8 sm:mb-12">
             <LoginForm />
           </div>
 

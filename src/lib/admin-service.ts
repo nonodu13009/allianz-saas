@@ -56,6 +56,10 @@ export class AdminService {
       )
 
       console.log(`✅ Utilisateur créé: ${userData.firstName} ${userData.lastName}`)
+      console.log(`📧 Email: ${userData.email}`)
+      console.log(`🔑 UID: ${firebaseUser.uid}`)
+      console.log(`👤 Rôle: ${userData.role}`)
+      console.log(`🎭 Rôle Front: ${userData.roleFront}`)
     } catch (error) {
       console.error(`❌ Erreur création ${userData.firstName} ${userData.lastName}:`, error)
       throw error

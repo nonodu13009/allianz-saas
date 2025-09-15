@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // RÈGLES TRÈS LARGES POUR LE DÉVELOPPEMENT
+    // ⚠️ ATTENTION: Ces règles permettent un accès complet à toutes les données
+    // Ne pas utiliser en production sans authentification appropriée
+    
+    // Accès total sans authentification (pour éviter les erreurs de logout)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
