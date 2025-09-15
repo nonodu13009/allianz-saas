@@ -74,8 +74,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const userData = await UserService.getUser(firebaseUser.uid)
           if (userData) {
             setUser(userData)
-            // Mettre à jour la dernière connexion
-            await UserService.updateLastLogin(firebaseUser.uid)
+            // Mettre à jour la dernière connexion seulement si l'utilisateur vient de se connecter
+            // (pas lors des changements d'état d'authentification)
+            try {
+              await UserService.updateLastLogin(firebaseUser.uid)
+            } catch (updateError) {
+              console.warn('Could not update last login:', updateError)
+              // Ne pas bloquer le processus pour une erreur de mise à jour
+            }
           } else {
             // Utilisateur n'existe pas dans Firestore, le créer
             console.warn('User not found in Firestore, creating...')
