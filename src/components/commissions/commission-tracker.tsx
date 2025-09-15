@@ -11,6 +11,7 @@ import { User } from '@/types/user'
 import { TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { YearManagementModal } from './year-management-modal'
+import { CommissionEditModal } from './commission-edit-modal'
 
 export function CommissionTracker() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
@@ -18,6 +19,10 @@ export function CommissionTracker() {
   const [commissionData, setCommissionData] = useState<CommissionData | null>(null)
   const [adminUsers, setAdminUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // États pour la modale d'édition
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editMonthIndex, setEditMonthIndex] = useState(0)
 
   const loadAvailableYears = useCallback(async () => {
     console.log('loadAvailableYears appelé')
@@ -100,6 +105,22 @@ export function CommissionTracker() {
       handleYearChange(nextYear)
     }
   }, [availableYears, currentYear, handleYearChange])
+
+  // Fonction pour ouvrir la modale d'édition
+  const handleCellClick = useCallback((monthIndex: number) => {
+    setEditMonthIndex(monthIndex)
+    setEditModalOpen(true)
+  }, [])
+
+  // Fonction pour fermer la modale
+  const handleCloseModal = useCallback(() => {
+    setEditModalOpen(false)
+  }, [])
+
+  // Fonction pour recharger les données après modification
+  const handleDataUpdated = useCallback(() => {
+    loadCommissionData(currentYear)
+  }, [loadCommissionData, currentYear])
 
   const handleReset = useCallback(() => {
     const systemYear = new Date().getFullYear()
@@ -319,8 +340,14 @@ export function CommissionTracker() {
                       </div>
                     </TableCell>
                     {row.values.map((value, monthIndex) => (
-                      <TableCell key={monthIndex} className={`text-center border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm ${getCellStyle(row, value)}`}>
-                        {value > 0 ? formatCurrency(value) : '-'}
+                      <TableCell 
+                        key={monthIndex} 
+                        className={`text-center border-r border-gray-200 dark:border-gray-700 text-xs sm:text-sm cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors ${getCellStyle(row, value)}`}
+                        onClick={() => handleCellClick(monthIndex)}
+                      >
+                        <div className="flex items-center justify-center min-h-[32px] px-2 py-1">
+                          {value > 0 ? formatCurrency(value) : '-'}
+                        </div>
                       </TableCell>
                     ))}
                     <TableCell className={`text-center font-bold text-xs sm:text-sm ${getCellStyle(row, row.total)}`}>
@@ -407,6 +434,15 @@ export function CommissionTracker() {
           </div>
         )}
       </CardContent>
+
+      {/* Modale d'édition */}
+      <CommissionEditModal
+        isOpen={editModalOpen}
+        onClose={handleCloseModal}
+        commissionData={commissionData}
+        monthIndex={editMonthIndex}
+        onDataUpdated={handleDataUpdated}
+      />
     </Card>
   )
 }
