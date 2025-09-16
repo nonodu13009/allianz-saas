@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuth } from 'firebase-admin/auth'
 import { initializeApp, getApps, cert } from 'firebase-admin/app'
-import adminConfig from '../../../../firebase-admin-config.json'
+import adminConfig from '../../../../../firebase-admin-config.json'
 
 // Initialiser Firebase Admin SDK
 if (!getApps().length) {
