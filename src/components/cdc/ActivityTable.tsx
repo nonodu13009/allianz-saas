@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Activity, ActivityType, ProductType, CDCFilter } from '@/types/cdc'
 import { formatDateShort, formatEuroInt, getMonthName, filterActivities } from '@/lib/cdc'
+import { ActivityViewModal } from './ActivityViewModal'
+import { ActivityEditModal } from './ActivityEditModal'
+import { ActivityDeleteModal } from './ActivityDeleteModal'
 import { 
   ChevronUp, 
   ChevronDown, 
@@ -49,6 +52,12 @@ export function ActivityTable({
 }: ActivityTableProps) {
   const [sortField, setSortField] = useState<SortField>('dateSaisie')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  
+  // États pour les modales
+  const [viewModalOpen, setViewModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
   // Parsing de l'année et du mois
   const [year, month] = yearMonth.split('-').map(Number)
@@ -100,6 +109,39 @@ export function ActivityTable({
       setSortField(field)
       setSortDirection('asc')
     }
+  }
+
+  // Fonctions de gestion des modales
+  const handleViewActivity = (activity: Activity) => {
+    setSelectedActivity(activity)
+    setViewModalOpen(true)
+  }
+
+  const handleEditActivity = (activity: Activity) => {
+    setSelectedActivity(activity)
+    setEditModalOpen(true)
+  }
+
+  const handleDeleteActivity = (activity: Activity) => {
+    setSelectedActivity(activity)
+    setDeleteModalOpen(true)
+  }
+
+  const handleCloseModals = () => {
+    setViewModalOpen(false)
+    setEditModalOpen(false)
+    setDeleteModalOpen(false)
+    setSelectedActivity(null)
+  }
+
+  const handleSaveEdit = async (id: string, updates: Partial<Activity>) => {
+    await onEdit(id, updates)
+    handleCloseModals()
+  }
+
+  const handleConfirmDelete = async (id: string) => {
+    await onDelete(id)
+    handleCloseModals()
   }
 
   const getSortIcon = (field: SortField) => {
@@ -373,34 +415,35 @@ export function ActivityTable({
                     {/* Actions */}
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        {onView && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onView(activity)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewActivity(activity)}
+                          className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+                          title="Visualiser"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         
-                        {onEdit && !isLocked && (
+                        {!isLocked && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onEdit(activity)}
-                            className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+                            onClick={() => handleEditActivity(activity)}
+                            className="h-8 w-8 p-0 hover:bg-orange-100 dark:hover:bg-orange-900"
+                            title="Modifier"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
                         
-                        {onDelete && !isLocked && (
+                        {!isLocked && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onDelete(activity)}
+                            onClick={() => handleDeleteActivity(activity)}
                             className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900"
+                            title="Supprimer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -423,6 +466,31 @@ export function ActivityTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Modales */}
+      <ActivityViewModal
+        isOpen={viewModalOpen}
+        onClose={handleCloseModals}
+        activity={selectedActivity}
+      />
+
+      <ActivityEditModal
+        isOpen={editModalOpen}
+        onClose={handleCloseModals}
+        onSave={handleSaveEdit}
+        activity={selectedActivity}
+        loading={loading}
+        isLocked={isLocked}
+      />
+
+      <ActivityDeleteModal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseModals}
+        onConfirm={handleConfirmDelete}
+        activity={selectedActivity}
+        loading={loading}
+        isLocked={isLocked}
+      />
     </div>
   )
 }

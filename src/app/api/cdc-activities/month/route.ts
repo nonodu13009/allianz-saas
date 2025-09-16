@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         activityData.primeAnnuelle = undefined
       } else {
         activityData.primeAnnuelle = parseInt(body.primeAnnuelle) || 0
-        activityData.versementLibre = undefined
+        activityData.versementLibre = null
       }
       
       // Calcul automatique de la commission potentielle
@@ -145,13 +145,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Validation de l'activité
-    const validationErrors = validateActivity(activityData)
-    if (validationErrors.length > 0) {
+    const validation = validateActivity(activityData)
+    if (!validation.isValid) {
       return NextResponse.json(
         { 
           success: false, 
           error: 'Erreurs de validation',
-          validationErrors: validationErrors.map(error => ({
+          validationErrors: validation.errors.map(error => ({
             field: 'general',
             message: error,
             code: 'VALIDATION_ERROR'

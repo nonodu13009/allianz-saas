@@ -234,9 +234,19 @@ export function formatDateShort(date: string | Date | undefined | null): string 
     return 'Date non définie'
   }
   
-  const dateObj = typeof date === 'string' ? new Date(date) : date
+  // Conversion sécurisée en Date
+  let dateObj: Date
+  if (typeof date === 'string') {
+    dateObj = new Date(date)
+  } else if (date instanceof Date) {
+    dateObj = date
+  } else {
+    // Si ce n'est ni string ni Date, essayer de convertir
+    dateObj = new Date(date as any)
+  }
   
-  if (isNaN(dateObj.getTime())) {
+  // Vérification que l'objet Date est valide
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
     return 'Date invalide'
   }
   
@@ -318,7 +328,10 @@ export function getCurrentMonth(): { year: number; month: number } {
  * @param activity - Activité à valider
  * @returns Liste des erreurs de validation
  */
-export function validateActivity(activity: Partial<Activity>): string[] {
+export function validateActivity(activity: Partial<Activity>): {
+  isValid: boolean
+  errors: string[]
+} {
   const errors: string[] = []
   
   // Validation du nom client
@@ -352,7 +365,10 @@ export function validateActivity(activity: Partial<Activity>): string[] {
     }
   }
   
-  return errors
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
 }
 
 /**

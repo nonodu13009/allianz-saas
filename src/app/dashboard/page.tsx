@@ -15,6 +15,7 @@ import { CDCFilters } from '@/components/cdc/CDCFilters'
 import { CDCLockComponent } from '@/components/cdc/CDCLock'
 import { ActivityType, Activity, CDCFilter, CDCLock, ProductType } from '@/types/cdc'
 import { CDCLockService } from '@/lib/cdc-lock-service'
+import { cdcService } from '@/lib/cdc-service'
 
 const getRoleSpecificContent = (role: string) => {
   switch (role) {
@@ -55,126 +56,34 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   
   // États pour le tableau des activités
-  const [activities, setActivities] = useState<Activity[]>([])
   const [currentYearMonth, setCurrentYearMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`
   })
 
-  // Données de test pour démonstration - 15 activités mock
+  // État local simple pour les activités
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(false)
+  const [activitiesError, setActivitiesError] = useState<string | null>(null)
+
+  // Chargement des activités au montage et changement de mois
   useEffect(() => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const currentMonth = now.getMonth()
-    
-    // Helper pour créer les métadonnées de date
-    const createDateMetadata = (day: number) => {
-      const date = new Date(currentYear, currentMonth, day).toISOString()
-      return {
-        dateSaisie: date,
-        createdAt: date,
-        updatedAt: date
-      }
+    loadActivities()
+  }, [currentYearMonth])
+
+  const loadActivities = async () => {
+    setActivitiesLoading(true)
+    setActivitiesError(null)
+    try {
+      const loadedActivities = await cdcService.getActivities(currentYearMonth)
+      setActivities(loadedActivities)
+    } catch (error) {
+      console.error('Erreur chargement activités:', error)
+      setActivitiesError('Erreur lors du chargement des activités')
+    } finally {
+      setActivitiesLoading(false)
     }
-    
-    // Données de test simplifiées pour corriger l'erreur
-    const testActivities: Activity[] = [
-      // AN - AUTO/MOTO (10€ de commission)
-      {
-        id: 'mock-1',
-        type: ActivityType.AN,
-        clientName: 'DUPONT JEAN',
-        productType: ProductType.AUTO_MOTO,
-        contractNumber: 'AUTO-2024-001',
-        dateEffet: '2024-01-15',
-        primeAnnuelle: 1200,
-        commissionPotentielle: 10,
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(1)
-      },
-      {
-        id: 'mock-2',
-        type: ActivityType.AN,
-        clientName: 'MARTIN MARIE',
-        productType: ProductType.AUTO_MOTO,
-        contractNumber: 'AUTO-2024-002',
-        dateEffet: '2024-02-20',
-        primeAnnuelle: 850,
-        commissionPotentielle: 10,
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(2)
-      },
-      {
-        id: 'mock-3',
-        type: ActivityType.AN,
-        clientName: 'BERNARD PIERRE',
-        productType: ProductType.IARD_PART_DIVERS,
-        contractNumber: 'IARD-2024-001',
-        dateEffet: '2024-03-10',
-        primeAnnuelle: 450,
-        commissionPotentielle: 20,
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(3)
-      },
-      {
-        id: 'mock-4',
-        type: ActivityType.AN,
-        clientName: 'DUBOIS CLAIRE',
-        productType: ProductType.PJ,
-        contractNumber: 'PJ-2024-001',
-        dateEffet: '2024-04-05',
-        primeAnnuelle: 320,
-        commissionPotentielle: 30,
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(4)
-      },
-      {
-        id: 'mock-5',
-        type: ActivityType.AN,
-        clientName: 'ROUSSEAU MICHEL',
-        productType: ProductType.SANTE_PREV,
-        contractNumber: 'SANTE-2024-001',
-        dateEffet: '2024-05-12',
-        primeAnnuelle: 680,
-        commissionPotentielle: 50,
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(5)
-      },
-      // Process - M+3
-      {
-        id: 'mock-6',
-        type: ActivityType.M3,
-        clientName: 'LEROY FRANÇOIS',
-        comment: 'Prise de contact suite à souscription - Suivi M+3',
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(6)
-      },
-      {
-        id: 'mock-7',
-        type: ActivityType.M3,
-        clientName: 'PETIT LAURENT',
-        comment: 'Relance client pour renouvellement',
-        userId: user?.uid || 'test-user',
-        yearMonth: currentYearMonth,
-        isLocked: false,
-        ...createDateMetadata(7)
-      }
-    ]
-    
-    setActivities(testActivities)
-  }, [user, currentYearMonth])
+  }
   const [isMonthLocked, setIsMonthLocked] = useState(false)
   const [selectedDay, setSelectedDay] = useState<number | undefined>()
   const [currentFilter, setCurrentFilter] = useState<CDCFilter>({
@@ -285,45 +194,61 @@ export default function DashboardPage() {
       // Créer l'activité avec les données complètes
       const newActivity = {
         ...activityData,
-        id: `activity_${Date.now()}`,
         userId: user?.uid || 'unknown',
         yearMonth: currentYearMonth,
         isLocked: false // Par défaut, le mois est ouvert
       }
       
-      // TODO: Appel API pour sauvegarder l'activité
-      console.log('Sauvegarde de l\'activité:', newActivity)
+      console.log('🔄 Tentative de sauvegarde:', newActivity)
       
-      // Simulation d'un délai
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Sauvegarder via le service unifié
+      const savedActivity = await cdcService.saveActivity(newActivity)
       
-      // Ajouter l'activité à la liste locale pour mise à jour immédiate
-      setActivities(prev => [...prev, newActivity])
+      console.log('✅ Activité sauvegardée avec succès:', savedActivity)
+      
+      // Mettre à jour l'état local
+      setActivities(prev => [savedActivity, ...prev])
       
       // Fermer les modales
       setModalANOpen(false)
       setModalProcessOpen(false)
       setSelectedProcessType(null)
       
-      // Afficher un message de succès
-      console.log('Activité ajoutée avec succès au tableau et à la timeline')
+      console.log('✅ Activité sauvegardée avec succès dans Firebase')
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error)
-      // TODO: Afficher un message d'erreur
+      console.error('❌ Erreur lors de la sauvegarde:', error)
+      console.error('❌ Détails de l\'erreur:', {
+        message: error instanceof Error ? error.message : 'Erreur inconnue',
+        stack: error instanceof Error ? error.stack : undefined,
+        activityData
+      })
+      setActivitiesError(`Erreur lors de la sauvegarde: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     } finally {
       setLoading(false)
     }
   }
 
   // Gestionnaires pour le tableau des activités
-  const handleEditActivity = (activity: Activity) => {
-    console.log('Édition de l\'activité:', activity)
-    // TODO: Ouvrir la modale d'édition
+  const handleEditActivity = async (id: string, updates: Partial<Activity>) => {
+    try {
+      const updatedActivity = await cdcService.updateActivity(id, updates)
+      setActivities(prev => prev.map(a => a.id === id ? updatedActivity : a))
+      console.log('✅ Activité mise à jour avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à jour:', error)
+      setActivitiesError('Erreur lors de la mise à jour de l\'activité')
+    }
   }
 
-  const handleDeleteActivity = (activity: Activity) => {
-    console.log('Suppression de l\'activité:', activity)
-    // TODO: Confirmer et supprimer l'activité
+  const handleDeleteActivity = async (id: string) => {
+    try {
+      await cdcService.deleteActivity(id)
+      setActivities(prev => prev.filter(a => a.id !== id))
+      console.log('✅ Activité supprimée avec succès')
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error)
+      setActivitiesError('Erreur lors de la suppression de l\'activité')
+    }
   }
 
   const handleViewActivity = (activity: Activity) => {
@@ -493,7 +418,25 @@ export default function DashboardPage() {
                   isLocked={isMonthLocked}
                   disabled={loading}
                 />
+                
               </div>
+
+
+          {/* Affichage des erreurs d'activités */}
+          {activitiesError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 text-red-600">⚠️</div>
+                <span className="text-sm text-red-700 dark:text-red-300">{activitiesError}</span>
+                <button
+                  onClick={loadActivities}
+                  className="ml-auto text-sm text-red-600 hover:text-red-800 underline"
+                >
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Tableau des activités */}
           <ActivityTable
@@ -504,7 +447,7 @@ export default function DashboardPage() {
             onEdit={handleEditActivity}
             onDelete={handleDeleteActivity}
             onView={handleViewActivity}
-            loading={loading}
+            loading={activitiesLoading}
           />
         </div>
 

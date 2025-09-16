@@ -70,7 +70,7 @@ export function ModalAN({ isOpen, onClose, onSave, loading = false, isLocked = f
         const commission = calculateCommission(
           formData.productType as ProductType,
           formData.primeAnnuelle ? parseInt(formData.primeAnnuelle) : undefined,
-          formData.versementLibre ? parseInt(formData.versementLibre) : undefined
+          formData.versementLibre ? parseInt(formData.versementLibre) : null
         )
         setCommissionPotentielle(commission)
         setIsCalculating(false)
@@ -126,8 +126,9 @@ export function ModalAN({ isOpen, onClose, onSave, loading = false, isLocked = f
       productType: formData.productType,
       contractNumber: formData.contractNumber,
       dateEffet: formData.dateEffet,
+      dateSaisie: new Date().toISOString(), // Date de saisie automatique
       primeAnnuelle: formData.productType !== ProductType.PU_VL ? parseInt(formData.primeAnnuelle) : undefined,
-      versementLibre: formData.productType === ProductType.PU_VL ? parseInt(formData.versementLibre) : undefined,
+      versementLibre: formData.productType === ProductType.PU_VL ? parseInt(formData.versementLibre) : null,
       commissionPotentielle,
       comment: ''
     }

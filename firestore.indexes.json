@@ -27,6 +27,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "cdcActivities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "yearMonth",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dateSaisie",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

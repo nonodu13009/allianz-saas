@@ -85,14 +85,14 @@ export async function PATCH(
     
     // Validation des données mises à jour
     const updatedActivity = { ...existingActivity, ...updateData }
-    const validationErrors = validateActivity(updatedActivity)
+    const validation = validateActivity(updatedActivity)
     
-    if (validationErrors.length > 0) {
+    if (!validation.isValid) {
       return NextResponse.json(
         { 
           success: false, 
           error: 'Erreurs de validation',
-          validationErrors: validationErrors.map(error => ({
+          validationErrors: validation.errors.map(error => ({
             field: 'general',
             message: error,
             code: 'VALIDATION_ERROR'
