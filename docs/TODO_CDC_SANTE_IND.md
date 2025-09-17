@@ -158,7 +158,10 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
 ### ✅ ÉTAPE 6 : Persistance et Cache
 **Objectif** : Optimiser les performances
 - [ ] Implémenter cache local avec sync Firebase
-- [ ] Collection Firestore : `sante_ind_activities`
+- [ ] **Collections Firestore** : `sante_ind_activities`, `sante_ind_locks`
+- [ ] **Scripts Firebase** : Création et gestion des collections
+- [ ] **Migration des données** : Scripts de migration depuis local
+- [ ] **Backup/Restore** : Scripts de sauvegarde des données
 - [ ] Gérer la synchronisation en temps réel
 - [ ] Implémenter gestion des conflits
 - [ ] Optimiser les requêtes Firestore avec indexes
@@ -189,13 +192,138 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
 - [ ] Optimisation du bundle
 - [ ] Validation : Lighthouse score > 90
 
-### ✅ ÉTAPE 10 : Déploiement
+### ✅ ÉTAPE 10 : Scripts Firebase
+**Objectif** : Automatiser la gestion des données
+- [ ] Créer `scripts/firebase/create-collections.js`
+- [ ] Créer `scripts/firebase/setup-indexes.js`
+- [ ] Créer `scripts/firebase/setup-rules.js`
+- [ ] Créer `scripts/firebase/migrate-from-local.js`
+- [ ] Créer `scripts/firebase/backup-collections.js`
+- [ ] Créer `scripts/firebase/restore-collections.js`
+- [ ] Ajouter commandes NPM dans `package.json`
+- [ ] Validation : Scripts fonctionnels et testés
+
+### ✅ ÉTAPE 11 : Déploiement
 **Objectif** : Mettre en production
 - [ ] Configuration Firebase (indexes, rules)
 - [ ] Tests de charge
 - [ ] Déploiement staging
 - [ ] Déploiement production
 - [ ] Validation : Module fonctionnel en production
+
+---
+
+## 🔥 Scripts Firebase et Collections
+
+### 📊 **Collections Firestore**
+```typescript
+// Collection: sante_ind_activities
+interface SanteIndActivity {
+  id: string
+  userId: string
+  yearMonth: string // "2025-09"
+  dateSaisie: string // ISO date
+  natureActe: ActeType
+  nomClient: string
+  numeroContrat: string
+  dateEffet: string // ISO date
+  ca: number // Entier en euros
+  caPondere: number // Calculé automatiquement
+  compagnie?: Compagnie // Si "Affaire nouvelle"
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+// Collection: sante_ind_locks
+interface SanteIndLock {
+  id: string
+  userId: string
+  yearMonth: string // "2025-09"
+  isLocked: boolean
+  lockedBy: string // Admin user ID
+  lockedAt: Timestamp
+  reason?: string
+}
+```
+
+### 🔧 **Scripts de gestion des données**
+
+#### **Scripts de création**
+- `scripts/firebase/create-collections.js` : Créer les collections avec structure
+- `scripts/firebase/setup-indexes.js` : Créer les indexes Firestore
+- `scripts/firebase/setup-rules.js` : Déployer les règles de sécurité
+
+#### **Scripts de migration**
+- `scripts/firebase/migrate-from-local.js` : Migration depuis données locales
+- `scripts/firebase/validate-data.js` : Validation de l'intégrité des données
+
+#### **Scripts de maintenance**
+- `scripts/firebase/backup-collections.js` : Sauvegarde des collections
+- `scripts/firebase/restore-collections.js` : Restauration depuis backup
+- `scripts/firebase/cleanup-old-data.js` : Nettoyage des données anciennes
+
+### 📋 **Commandes NPM**
+```json
+{
+  "scripts": {
+    "firebase:setup": "node scripts/firebase/create-collections.js",
+    "firebase:migrate": "node scripts/firebase/migrate-from-local.js",
+    "firebase:backup": "node scripts/firebase/backup-collections.js",
+    "firebase:restore": "node scripts/firebase/restore-collections.js",
+    "firebase:cleanup": "node scripts/firebase/cleanup-old-data.js"
+  }
+}
+```
+
+### 🔒 **Règles de sécurité Firestore**
+```javascript
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Collection sante_ind_activities
+    match /sante_ind_activities/{activityId} {
+      allow read, write: if request.auth != null 
+        && getUserRole(request.auth.uid) in ['cdc_sante_ind', 'sante', 'sante_ind']
+        && resource.data.userId == request.auth.uid;
+    }
+    
+    // Collection sante_ind_locks
+    match /sante_ind_locks/{lockId} {
+      allow read: if request.auth != null 
+        && getUserRole(request.auth.uid) in ['cdc_sante_ind', 'sante', 'sante_ind'];
+      allow write: if request.auth != null 
+        && getUserRole(request.auth.uid) == 'administrateur';
+    }
+  }
+}
+```
+
+### 📈 **Indexes Firestore**
+```json
+// firestore.indexes.json
+{
+  "indexes": [
+    {
+      "collectionGroup": "sante_ind_activities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "yearMonth", "order": "DESCENDING" },
+        { "fieldPath": "dateSaisie", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sante_ind_locks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "yearMonth", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}
+```
 
 ---
 
