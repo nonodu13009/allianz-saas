@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Home, Users, TrendingUp } from 'lucide-react'
+import { Home, Users, TrendingUp, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -40,6 +40,16 @@ const getNavigationItems = (userRole: string): NavigationItem[] => {
         description: 'Suivi des commissions de l\'agence'
       }
     )
+  }
+
+  // Ajouter CDC Santé Individuelle pour les utilisateurs autorisés
+  if (userRole === 'cdc_sante_ind' || userRole === 'administrateur') {
+    baseItems.push({
+      name: 'CDC Santé Individuelle',
+      href: '/dashboard/sante-individuelle',
+      icon: Heart,
+      description: 'Gestion des contrats de santé individuelle'
+    })
   }
 
   return baseItems

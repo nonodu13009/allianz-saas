@@ -20,14 +20,14 @@ import {
   KPIMensuel,
   ProductionStats,
   LockStatus,
-  ACTE_TYPE_LABELS
+  ACTE_TYPE_LABELS,
+  MINIMUM_REVISIONS_REQUIRED
 } from '../../types/sante-ind'
 
 import {
   santeIndService,
   formatEuroInt,
-  formatPercentage,
-  MINIMUM_REVISIONS_REQUIRED
+  formatPercentage
 } from '../../lib/sante-ind-service'
 
 // ============================================================================
