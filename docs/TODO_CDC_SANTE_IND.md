@@ -203,10 +203,20 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
 - [ ] Ajouter commandes NPM dans `package.json`
 - [ ] Validation : Scripts fonctionnels et testés
 
-### ✅ ÉTAPE 11 : Déploiement
+### ✅ ÉTAPE 11 : Fonctionnalités avancées
+**Objectif** : Ajouter les fonctionnalités de production
+- [ ] **Export et reporting** : Excel/PDF des données mensuelles
+- [ ] **Mode offline** : Cache local et synchronisation
+- [ ] **Accessibilité** : WCAG compliance et navigation clavier
+- [ ] **Performance** : Lazy loading, memoization, error boundaries
+- [ ] **Monitoring** : Logs structurés, health checks, analytics
+- [ ] **Validation stricte** : Arrondis, dates, critère qualitatif détaillé
+- [ ] Validation : Fonctionnalités de production complètes
+
+### ✅ ÉTAPE 12 : Déploiement
 **Objectif** : Mettre en production
 - [ ] Configuration Firebase (indexes, rules)
-- [ ] Tests de charge
+- [ ] Tests de charge et sécurité
 - [ ] Déploiement staging
 - [ ] Déploiement production
 - [ ] Validation : Module fonctionnel en production
@@ -324,6 +334,70 @@ service cloud.firestore {
   ]
 }
 ```
+
+---
+
+## ⚠️ Points supplémentaires à intégrer
+
+### 🔧 **Validation et arrondis**
+- [ ] **Validation stricte** : CA en entiers € uniquement (pas de décimales)
+- [ ] **Arrondi des montants** : Fonction `roundToEuro()` pour CA pondéré
+- [ ] **Validation côté UI** : Masque de saisie pour les montants
+- [ ] **Validation côté serveur** : Double vérification des données
+
+### 📅 **Gestion des dates**
+- [ ] **Format des dates** : ISO strings pour Firebase, format français pour UI
+- [ ] **Date picker design** : Composant personnalisé (pas le sélecteur natif)
+- [ ] **Validation des dates** : Date d'effet >= Date de saisie
+- [ ] **Zones horaires** : Gestion UTC/local
+
+### 🎯 **Critère qualitatif détaillé**
+- [ ] **Impact sur commission** : Définir si bloquant ou bonus
+- [ ] **Indicateur visuel** : Alerte si < 4 révisions
+- [ ] **Calcul de bonus** : Si applicable, calculer le bonus
+- [ ] **Historique des révisions** : Suivi mensuel
+
+### 🔐 **Sécurité et autorisation**
+- [ ] **Route guards** : Vérification côté client et serveur
+- [ ] **Audit trail** : Log des modifications (qui, quand, quoi)
+- [ ] **Session management** : Gestion des sessions utilisateur
+- [ ] **Rate limiting** : Protection contre les abus
+
+### 📊 **Export et reporting**
+- [ ] **Export Excel** : Données mensuelles exportables
+- [ ] **Export PDF** : Rapport de production mensuel
+- [ ] **Historique des exports** : Log des exports effectués
+- [ ] **Templates de rapport** : Formats prédéfinis
+
+### 🔄 **Synchronisation et offline**
+- [ ] **Mode offline** : Cache local pour fonctionnement sans connexion
+- [ ] **Sync automatique** : Synchronisation en arrière-plan
+- [ ] **Résolution de conflits** : Gestion des conflits de données
+- [ ] **Indicateur de sync** : État de synchronisation visible
+
+### 📱 **Accessibilité et UX**
+- [ ] **WCAG compliance** : Accessibilité pour utilisateurs handicapés
+- [ ] **Raccourcis clavier** : Navigation au clavier
+- [ ] **Tooltips et aide** : Aide contextuelle
+- [ ] **Loading states** : États de chargement appropriés
+
+### 🚀 **Performance et monitoring**
+- [ ] **Lazy loading** : Chargement différé des composants
+- [ ] **Memoization** : Optimisation des calculs coûteux
+- [ ] **Error boundaries** : Gestion des erreurs React
+- [ ] **Analytics** : Suivi d'utilisation et performance
+
+### 🔧 **Maintenance et DevOps**
+- [ ] **Logs structurés** : Logging avec niveaux et contexte
+- [ ] **Health checks** : Vérification de santé de l'application
+- [ ] **Monitoring** : Alertes et métriques de performance
+- [ ] **Rollback strategy** : Stratégie de retour en arrière
+
+### 📋 **Tests supplémentaires**
+- [ ] **Tests de charge** : Performance sous charge
+- [ ] **Tests de sécurité** : Tests de pénétration
+- [ ] **Tests d'accessibilité** : Validation WCAG
+- [ ] **Tests de régression** : Suite de tests automatisés
 
 ---
 
