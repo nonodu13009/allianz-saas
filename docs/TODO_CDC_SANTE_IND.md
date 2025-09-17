@@ -544,5 +544,195 @@ service cloud.firestore {
 
 ---
 
+---
+
+## 📊 Architecture technique détaillée
+
+### 🏗️ **Structure des dossiers**
+```
+src/
+├── types/
+│   └── sante-ind.ts              # Types TypeScript
+├── lib/
+│   ├── sante-ind-service.ts      # Logique métier
+│   ├── sante-ind-persistence.ts  # Persistance Firebase
+│   └── sante-ind-utils.ts        # Utilitaires
+├── components/
+│   └── sante-ind/
+│       ├── ModalActe.tsx         # Modale générique
+│       ├── ProductionTable.tsx   # Tableau de production
+│       ├── KPIsMensuels.tsx      # KPIs mensuels
+│       ├── NavigationMensuelle.tsx # Navigation mois
+│       └── LockIndicator.tsx     # Indicateur verrou
+├── app/
+│   └── api/
+│       └── sante-ind-activities/ # API routes
+└── hooks/
+    └── use-sante-ind-activities.ts # Hook personnalisé
+```
+
+### 🔧 **Dépendances techniques**
+- **React 18** : Hooks, Context, Suspense
+- **Next.js 15** : App Router, API Routes, Server Components
+- **TypeScript 5** : Strict mode, interfaces, enums
+- **Firebase 10** : Firestore, Authentication, Admin SDK
+- **Tailwind CSS** : Styling, responsive design
+- **Jest + RTL** : Tests unitaires et d'intégration
+
+### 📱 **Responsive Design**
+- **Mobile First** : Interface adaptée mobile
+- **Breakpoints** : sm (640px), md (768px), lg (1024px), xl (1280px)
+- **Touch Friendly** : Boutons et zones tactiles optimisées
+- **Accessibility** : WCAG 2.1 AA compliance
+
+### 🔐 **Sécurité**
+- **Authentification** : Firebase Auth avec tokens
+- **Autorisation** : Rôles et permissions granulaires
+- **Validation** : Côté client et serveur
+- **Sanitization** : Protection XSS et injection
+- **HTTPS** : Communication chiffrée
+
+---
+
+## 📋 Cas d'usage et scénarios de test
+
+### 🎭 **Cas d'usage principaux**
+
+#### **UC1 - Saisie d'une affaire nouvelle**
+1. Utilisateur CDC Santé Individuelle se connecte
+2. Navigue vers le module Santé Individuelle
+3. Clique sur "Affaire nouvelle"
+4. Saisit les informations (client, contrat, CA, compagnie)
+5. Valide la saisie
+6. Vérifie que l'activité apparaît dans le tableau
+
+#### **UC2 - Calcul des commissions**
+1. Utilisateur saisit plusieurs activités dans le mois
+2. Navigue entre différents types d'actes
+3. Vérifie le calcul automatique du CA pondéré
+4. Consulte les KPIs mensuels
+5. Vérifie l'application du bon taux de commission
+
+#### **UC3 - Navigation mensuelle**
+1. Utilisateur consulte le mois courant
+2. Navigue vers le mois précédent
+3. Consulte l'historique des activités
+4. Revient au mois courant
+5. Saisit une nouvelle activité
+
+#### **UC4 - Verrouillage mensuel**
+1. Administrateur accède au dashboard admin
+2. Verrouille le mois de septembre pour un CDC
+3. CDC tente de modifier une activité de septembre
+4. Vérifie que les modifications sont bloquées
+5. Consulte l'indicateur de verrouillage
+
+### 🧪 **Scénarios de test**
+
+#### **Tests fonctionnels**
+- [ ] Saisie des 5 types d'actes commerciaux
+- [ ] Calcul correct du CA pondéré selon la grille
+- [ ] Application des seuils de commission progressifs
+- [ ] Navigation mensuelle fluide
+- [ ] Verrouillage/déverrouillage des mois
+- [ ] Export des données en Excel/PDF
+
+#### **Tests de validation**
+- [ ] Validation des champs obligatoires
+- [ ] Capitalisation intelligente des noms
+- [ ] Validation des montants (entiers €)
+- [ ] Validation des dates (cohérence)
+- [ ] Gestion des erreurs utilisateur
+
+#### **Tests de sécurité**
+- [ ] Accès refusé pour rôles non autorisés
+- [ ] Validation côté serveur des données
+- [ ] Protection contre les injections
+- [ ] Audit trail des modifications
+
+#### **Tests de performance**
+- [ ] Chargement rapide du tableau (< 2s)
+- [ ] Calculs optimisés des KPIs
+- [ ] Synchronisation Firebase efficace
+- [ ] Interface responsive sur mobile
+
+### 🐛 **Gestion des erreurs**
+- **Erreurs réseau** : Retry automatique, mode offline
+- **Erreurs validation** : Messages clairs, conservation des saisies
+- **Erreurs Firebase** : Fallback gracieux, logs détaillés
+- **Erreurs utilisateur** : Guidance et aide contextuelle
+
+---
+
+## 🗺️ Roadmap et phases de déploiement
+
+### 📅 **Phase 1 - MVP (4-6 semaines)**
+**ÉTAPES 1-6** : Fonctionnalités de base
+- Types et interfaces TypeScript
+- Services et logique métier
+- Composants UI de base
+- API Routes Firebase
+- Intégration dashboard
+- Persistance et cache
+
+**Livrables** :
+- Module fonctionnel pour saisie d'activités
+- Calculs de CA pondéré et commissions
+- Navigation mensuelle
+- Interface utilisateur complète
+
+### 📅 **Phase 2 - Tests et validation (2-3 semaines)**
+**ÉTAPES 7-8** : Qualité et documentation
+- Tests unitaires et d'intégration
+- Documentation technique et utilisateur
+- Validation des calculs métier
+- Correction des bugs
+
+**Livrables** :
+- Couverture de tests > 80%
+- Documentation complète
+- Module testé et validé
+
+### 📅 **Phase 3 - Production (3-4 semaines)**
+**ÉTAPES 9-12** : Déploiement et fonctionnalités avancées
+- Scripts Firebase et maintenance
+- Fonctionnalités avancées (export, offline, accessibilité)
+- Dashboard admin avec verrouillage
+- Déploiement en production
+
+**Livrables** :
+- Module en production
+- Interface admin complète
+- Scripts de maintenance
+- Monitoring et analytics
+
+### 🎯 **Critères de succès par phase**
+
+#### **Phase 1 - MVP**
+- [ ] Tous les types d'actes fonctionnels
+- [ ] Calculs corrects des commissions
+- [ ] Interface utilisateur responsive
+- [ ] Persistance Firebase opérationnelle
+
+#### **Phase 2 - Tests**
+- [ ] Couverture de tests > 80%
+- [ ] Documentation à jour
+- [ ] Performance < 2s de chargement
+- [ ] Sécurité validée
+
+#### **Phase 3 - Production**
+- [ ] Module déployé et stable
+- [ ] Interface admin fonctionnelle
+- [ ] Scripts de maintenance testés
+- [ ] Monitoring en place
+
+### 📊 **Métriques de suivi**
+- **Performance** : Temps de chargement, temps de réponse API
+- **Qualité** : Couverture de tests, bugs détectés
+- **Utilisation** : Nombre d'activités saisies, utilisateurs actifs
+- **Satisfaction** : Feedback utilisateurs, temps de formation
+
+---
+
 ## 🎯 Prochaine étape
 **ÉTAPE 1** : Créer les types et interfaces TypeScript dans `src/types/sante-ind.ts`
