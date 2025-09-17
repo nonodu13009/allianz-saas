@@ -111,9 +111,19 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
   - Désactivation des actions si verrouillé
   - Indicateur visuel de l'état (vert/rouge)
 
-### 🔒 Système de verrouillage mensuel
-- **Administrateur** : Verrouille/déverrouille un mois pour un CDC
-- **Effet CDC** : Si le mois M est verrouillé, toutes les modifications sont désactivées
+### 🔒 Système de verrouillage mensuel (2 phases)
+
+**Phase 1 - Interface utilisateur (ÉTAPES 1-5)** :
+- **Indicateur visuel** : Icône cadenas vert (ouvert) / rouge (bloqué)
+- **Désactivation des actions** : Boutons CRUD grisés si verrouillé
+- **Messages informatifs** : "Mois verrouillé par l'administrateur"
+- **Lecture seule** : Affichage des données sans modification possible
+
+**Phase 2 - Dashboard Admin (ÉTAPE 11)** :
+- **Interface admin** : Identique au module CDC Commercial
+- **Contrôles de verrouillage** : Boutons verrouiller/déverrouiller par mois
+- **Gestion multi-utilisateurs** : Verrouillage par CDC spécifique
+- **Audit trail** : Qui a verrouillé, quand, pourquoi
 - **Contexte paie** : Commissions déterminent une partie du salaire
 - **Objectif** : Éviter incohérences et litiges employeur/employé
 
@@ -221,15 +231,19 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
 - [ ] Ajouter commandes NPM dans `package.json`
 - [ ] Validation : Scripts fonctionnels et testés
 
-### ✅ ÉTAPE 11 : Fonctionnalités avancées
-**Objectif** : Ajouter les fonctionnalités de production
+### ✅ ÉTAPE 11 : Fonctionnalités avancées et Dashboard Admin
+**Objectif** : Ajouter les fonctionnalités de production et interface admin
 - [ ] **Export et reporting** : Excel/PDF des données mensuelles
 - [ ] **Mode offline** : Cache local et synchronisation
 - [ ] **Accessibilité** : WCAG compliance et navigation clavier
 - [ ] **Performance** : Lazy loading, memoization, error boundaries
 - [ ] **Monitoring** : Logs structurés, health checks, analytics
 - [ ] **Validation stricte** : Arrondis, dates, critère qualitatif détaillé
-- [ ] Validation : Fonctionnalités de production complètes
+- [ ] **Dashboard Admin - Verrouillage** : Interface identique au CDC Commercial
+  - [ ] Contrôles verrouiller/déverrouiller par mois et utilisateur
+  - [ ] Audit trail des verrouillages
+  - [ ] Gestion multi-utilisateurs CDC Santé Individuelle
+- [ ] Validation : Fonctionnalités de production et admin complètes
 
 ### ✅ ÉTAPE 12 : Déploiement
 **Objectif** : Mettre en production
