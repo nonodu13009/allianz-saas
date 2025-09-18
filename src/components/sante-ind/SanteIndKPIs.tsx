@@ -191,33 +191,35 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
               {/* Effet de fond animé */}
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                  <IconComponent className={`h-4 w-4 text-${kpi.color}-600`} />
-                  {kpi.title}
-                </CardTitle>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {/* Valeur principale - Alignement parfait */}
-                  <div className="h-16 flex items-end justify-start">
-                    <span className={`text-3xl font-bold ${kpi.textColor} leading-none`}>
-                      {kpi.value}
+              {/* Structure en grille pour alignement parfait */}
+              <div className="grid grid-rows-[auto_1fr_auto] h-full p-6">
+                {/* Titre - Hauteur fixe */}
+                <div className="h-8 flex items-center">
+                  <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                    <IconComponent className={`h-4 w-4 text-${kpi.color}-600`} />
+                    {kpi.title}
+                  </CardTitle>
+                </div>
+                
+                {/* Valeur principale - Zone flexible pour alignement */}
+                <div className="flex items-end justify-start">
+                  <span className={`text-3xl font-bold ${kpi.textColor} leading-none`}>
+                    {kpi.value}
+                  </span>
+                  {kpi.suffix && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400 ml-2 mb-1">
+                      {kpi.suffix}
                     </span>
-                    {kpi.suffix && (
-                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2 mb-1">
-                        {kpi.suffix}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Description */}
+                  )}
+                </div>
+                
+                {/* Description - Hauteur fixe */}
+                <div className="h-6 flex items-start">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {kpi.description}
                   </p>
                 </div>
-              </CardContent>
+              </div>
             </Card>
           )
         })}
