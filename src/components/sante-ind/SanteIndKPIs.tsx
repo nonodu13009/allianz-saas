@@ -3,11 +3,9 @@
 
 "use client"
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { SanteIndActivity, SanteIndKPI, SanteIndActeType, SanteIndFilter } from '@/types/sante-ind'
 import { calculateKPIs, formatEuroInt, formatPercentage, filterActivities } from '@/lib/sante-ind'
 import { CommissionProgressChart } from './CommissionProgressChart'
@@ -19,9 +17,7 @@ import {
   BarChart3,
   PieChart,
   CheckCircle,
-  AlertCircle,
-  Info,
-  X
+  AlertCircle
 } from 'lucide-react'
 
 interface SanteIndKPIsProps {
@@ -33,11 +29,6 @@ interface SanteIndKPIsProps {
 }
 
 export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = false }: SanteIndKPIsProps) {
-  // États pour les modales d'information
-  const [ponderationModalOpen, setPonderationModalOpen] = useState(false)
-  const [commissionModalOpen, setCommissionModalOpen] = useState(false)
-  
-  console.log('🔄 SanteIndKPIs render - États modales:', { ponderationModalOpen, commissionModalOpen })
 
   // Calcul des KPIs si non fournis
   const calculatedKPIs = useMemo(() => {
@@ -119,11 +110,7 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       textColor: 'text-emerald-700 dark:text-emerald-300',
       description: 'CA pondéré selon grille',
       suffix: '',
-      hasInfo: true,
-      infoAction: () => {
-        console.log('🔄 Ouverture modale pondération')
-        setPonderationModalOpen(true)
-      }
+      hasInfo: false
     },
     
     // Commission estimée
@@ -151,11 +138,7 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       textColor: calculatedKPIs.commissionEstimee > 0 ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300',
       description: 'Commission finale',
       suffix: '',
-      hasInfo: true,
-      infoAction: () => {
-        console.log('🔄 Ouverture modale commission')
-        setCommissionModalOpen(true)
-      }
+      hasInfo: false
     }
   ]
 
@@ -194,37 +177,21 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IconComponent className={`h-4 w-4 text-${kpi.color}-600`} />
-                    {kpi.title}
-                  </div>
-                  {kpi.hasInfo && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        console.log('🔄 Bouton info cliqué pour:', kpi.title)
-                        kpi.infoAction?.()
-                      }}
-                      className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-full transition-colors cursor-pointer border border-transparent hover:border-blue-200"
-                      title="Informations"
-                    >
-                      <Info className="h-3 w-3 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" />
-                    </button>
-                  )}
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                  <IconComponent className={`h-4 w-4 text-${kpi.color}-600`} />
+                  {kpi.title}
                 </CardTitle>
               </CardHeader>
               
               <CardContent className="pt-0">
                 <div className="space-y-2">
-                  {/* Valeur principale - Alignement horizontal fixe */}
-                  <div className="h-12 flex items-end">
-                    <span className={`text-2xl font-bold ${kpi.textColor}`}>
+                  {/* Valeur principale - Alignement parfait */}
+                  <div className="h-16 flex items-end justify-start">
+                    <span className={`text-3xl font-bold ${kpi.textColor} leading-none`}>
                       {kpi.value}
                     </span>
                     {kpi.suffix && (
-                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2 mb-1">
                         {kpi.suffix}
                       </span>
                     )}
@@ -246,158 +213,6 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
         currentCA={calculatedKPIs.productionPondere}
         currentMonth={monthName}
       />
-
-      {/* Modale d'information - Règles de pondération */}
-      <Dialog open={ponderationModalOpen} onOpenChange={(open) => {
-        console.log('🔄 Modale pondération:', open)
-        setPonderationModalOpen(open)
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-emerald-600" />
-              Règles de Pondération
-            </DialogTitle>
-            <DialogDescription>
-              Grille de pondération appliquée au chiffre d'affaires brut
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4">
-              <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-3">
-                📊 Grille de Pondération
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">Affaire Nouvelle</span>
-                  <Badge className="bg-emerald-100 text-emerald-800">100%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">Révision</span>
-                  <Badge className="bg-blue-100 text-blue-800">75%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">Adhésion Groupe</span>
-                  <Badge className="bg-purple-100 text-purple-800">50%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">Courtage → Allianz</span>
-                  <Badge className="bg-orange-100 text-orange-800">100%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">Allianz → Courtage</span>
-                  <Badge className="bg-red-100 text-red-800">100%</Badge>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                💡 Calcul de la Production Pondérée
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Production Pondérée = CA Brut × Taux de Pondération</strong>
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                Exemple : Une révision de 10,000€ = 10,000€ × 75% = 7,500€ de production pondérée
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button onClick={() => setPonderationModalOpen(false)}>
-              <X className="h-4 w-4 mr-2" />
-              Fermer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modale d'information - Règles de commission */}
-      <Dialog open={commissionModalOpen} onOpenChange={(open) => {
-        console.log('🔄 Modale commission:', open)
-        setCommissionModalOpen(open)
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Percent className="h-5 w-5 text-purple-600" />
-              Règles de Commission
-            </DialogTitle>
-            <DialogDescription>
-              Calcul des commissions basé sur la production pondérée et le critère qualitatif
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-              <h3 className="font-semibold text-purple-800 dark:text-purple-200 mb-3">
-                📈 Seuils de Commission
-              </h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">&lt; 10,000€</span>
-                  <Badge className="bg-gray-100 text-gray-800">0%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">10,000€ - 13,999€</span>
-                  <Badge className="bg-blue-100 text-blue-800">2%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">14,000€ - 17,999€</span>
-                  <Badge className="bg-green-100 text-green-800">3%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">18,000€ - 21,999€</span>
-                  <Badge className="bg-orange-100 text-orange-800">4%</Badge>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-white dark:bg-gray-800 rounded border">
-                  <span className="font-medium">≥ 22,000€</span>
-                  <Badge className="bg-purple-100 text-purple-800">6%</Badge>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-              <h3 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                ⚖️ Critère Qualitatif
-              </h3>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
-                <strong>Minimum 4 révisions par mois</strong>
-              </p>
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${
-                  calculatedKPIs.critereQualitatifAtteint ? 'bg-green-500' : 'bg-yellow-500'
-                }`} />
-                <span className="text-sm">
-                  {calculatedKPIs.nombreRevisions} / 4 révisions
-                  {calculatedKPIs.critereQualitatifAtteint ? ' ✅ Atteint' : ' ⏳ En cours'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                💰 Calcul de la Commission Réelle
-              </h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Commission Réelle = Taux de Commission × Production Pondérée</strong>
-              </p>
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                Le critère qualitatif doit être atteint pour valider la commission
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button onClick={() => setCommissionModalOpen(false)}>
-              <X className="h-4 w-4 mr-2" />
-              Fermer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
