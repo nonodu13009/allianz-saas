@@ -225,6 +225,7 @@ export default function DashboardPage() {
 
   const handleSanteIndTimelineMonthChange = (year: number, month: number) => {
     const newYearMonth = `${year}-${month.toString().padStart(2, '0')}`
+    console.log('🔄 Changement de mois Santé Individuelle:', newYearMonth)
     setCurrentYearMonth(newYearMonth)
   }
 
@@ -418,8 +419,8 @@ export default function DashboardPage() {
           {/* Timeline Santé Individuelle */}
           <SanteIndTimeline
             activities={santeIndActivities}
-            year={santeIndNavigation.currentYear}
-            month={santeIndNavigation.currentMonth}
+            year={currentYear}
+            month={currentMonth}
             filter={santeIndFilters}
             onDayClick={handleSanteIndTimelineDayClick}
             onMonthChange={handleSanteIndTimelineMonthChange}

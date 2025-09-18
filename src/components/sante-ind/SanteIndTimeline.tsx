@@ -82,6 +82,8 @@ export function SanteIndTimeline({
     )
   }
 
+  console.log('🔄 SanteIndTimeline render:', { year, month, showNavigation: true, onMonthChange: !!onMonthChange })
+
   return (
     <div className="space-y-4">
       {/* Timeline principale */}

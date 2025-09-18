@@ -123,6 +123,8 @@ export function MonthTimeline({
     year: 'numeric' 
   })
 
+  console.log('🔄 MonthTimeline render:', { year, month, showNavigation, onMonthChange: !!onMonthChange })
+
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 w-full ${className}`}>
       {/* En-tête avec navigation */}
