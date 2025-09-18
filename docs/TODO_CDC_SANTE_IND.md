@@ -132,84 +132,131 @@ Implémenter le module CDC Santé Individuelle en réutilisant le code factoris�
 
 ## 🚀 Plan d'implémentation (10 étapes détaillées)
 
-### ✅ ÉTAPE 1 : Types et Interfaces TypeScript
+### ✅ ÉTAPE 1 : Types et Interfaces TypeScript ✅ TERMINÉE
 **Objectif** : Définir la structure de données complète
-- [ ] Créer `src/types/sante-ind.ts`
-- [ ] Types principaux : `SanteIndActivity`, `ActeType`, `Compagnie`
-- [ ] Types calculs : `CA_PONDERE_RATES`, `COMMISSION_THRESHOLDS`
-- [ ] Types KPIs : `KPIMensuel`, `ProductionStats`
-- [ ] Types verrouillage : `MoisLock`, `LockStatus`
-- [ ] Réutiliser les types communs du CDC Commercial
-- [ ] Validation : Types compilent sans erreur
+- [x] Créer `src/types/sante-ind.ts`
+- [x] Types principaux : `SanteIndActivity`, `SanteIndActeType`, `SanteIndCompagnie`
+- [x] Types calculs : `SanteIndKPI`, `SanteIndFilter`, `SanteIndLock`
+- [x] Types KPIs : `SanteIndKPI` avec production brute/pondérée, commissions estimées/réelles
+- [x] Types verrouillage : `SanteIndLock` avec statut et métadonnées
+- [x] Réutiliser les types communs du CDC Commercial
+- [x] Validation : Types compilent sans erreur
 
-### ✅ ÉTAPE 2 : Services et Logique métier
+### ✅ ÉTAPE 2 : Services et Logique métier ✅ TERMINÉE
 **Objectif** : Centraliser toute la logique métier
-- [ ] Créer `src/lib/sante-ind-service.ts`
-- [ ] **Calcul CA pondéré** : Fonction `calculateCAPondere(acteType, ca)`
-- [ ] **Calcul commissions** : Fonction `calculateCommission(caPondereTotal)`
-- [ ] **Grille de pondération** : Constantes `PONDERATION_RATES`
-- [ ] **Seuils de commission** : Constantes `COMMISSION_THRESHOLDS`
-- [ ] **Critère qualitatif** : Fonction `checkMinimumRevisions(activities)`
-- [ ] **Capitalisation noms** : Fonction `capitalizeClientName(name)`
-- [ ] **Validation données** : Fonction `validateSanteIndActivity(activity)`
-- [ ] Réutiliser les fonctions communes du CDC Commercial
-- [ ] Validation : Tests unitaires passent
+- [x] Créer `src/lib/sante-ind-service.ts`
+- [x] **Calcul CA pondéré** : Fonction `calculateCAPondere(acteType, ca)` avec grille de pondération
+- [x] **Calcul commissions** : Fonction `calculateCommission(caPondereTotal)` avec seuils progressifs
+- [x] **Grille de pondération** : Constantes `PONDERATION_RATES` (100%, 75%, 50%, 100%, 100%)
+- [x] **Seuils de commission** : Constantes `COMMISSION_THRESHOLDS` (0%, 2%, 4%, 6%)
+- [x] **Critère qualitatif** : Fonction `checkMinimumRevisions(activities)` (minimum 4 révisions)
+- [x] **Capitalisation noms** : Fonction `capitalizeClientName(name)` (normalisation automatique)
+- [x] **Validation données** : Fonction `validateSanteIndActivity(activity)` (validation complète)
+- [x] **Calcul KPIs** : Fonction `calculateKPIs(activities)` (tous les KPIs mensuels)
+- [x] **Filtrage activités** : Fonction `filterActivities(activities, filter)` (par type, compagnie, etc.)
+- [x] Réutiliser les fonctions communes du CDC Commercial
+- [x] Validation : Tests unitaires passent
 
-### ✅ ÉTAPE 3 : Composants UI
+### ✅ ÉTAPE 3 : Composants UI ✅ TERMINÉE
 **Objectif** : Créer l'interface utilisateur avec design identique au CDC Commercial
-- [ ] **Design identique** : Reprendre toutes les spécificités du CDC Commercial
-- [ ] **Système de cartes** : Même layout et structure que CDC Commercial
-- [ ] **KPIs** : Cartes avec même design (production brute/pondérée, taux commission, etc.)
-- [ ] **CRUD complet** : Boutons, modales, tableaux avec même style
-- [ ] **Cadenas vert** : Indicateur visuel identique (Phase 1 - affichage seulement)
-- [ ] Créer `src/components/sante-ind/ModalActe.tsx` (modale générique pour 5 types)
-- [ ] Créer `src/components/sante-ind/ProductionTable.tsx` (tableau avec design CDC Commercial)
-- [ ] Créer `src/components/sante-ind/KPIsMensuels.tsx` (cartes avec même style)
-- [ ] Créer `src/components/sante-ind/NavigationMensuelle.tsx` (timeline identique)
-- [ ] Créer `src/components/sante-ind/LockIndicator.tsx` (cadenas vert identique)
-- [ ] **Réutiliser** : Tous les composants UI existants (Button, Card, Dialog, etc.)
-- [ ] Validation : Interface identique au CDC Commercial mais logique Santé Individuelle
+- [x] **Design identique** : Reprendre toutes les spécificités du CDC Commercial
+- [x] **Système de cartes** : Même layout et structure que CDC Commercial
+- [x] **KPIs** : Cartes avec même design (production brute/pondérée, commissions estimées/réelles, révisions)
+- [x] **CRUD complet** : Boutons, modales, tableaux avec même style
+- [x] **Cadenas vert** : Indicateur visuel identique (Phase 1 - affichage seulement)
+- [x] Créer `src/components/sante-ind/SanteIndModal.tsx` (modale générique pour 5 types)
+- [x] Créer `src/components/sante-ind/SanteIndTable.tsx` (tableau avec design CDC Commercial)
+- [x] Créer `src/components/sante-ind/SanteIndKPIs.tsx` (cartes avec même style + modales au survol)
+- [x] Créer `src/components/sante-ind/SanteIndTimeline.tsx` (timeline identique)
+- [x] Créer `src/components/sante-ind/CommissionProgressChart.tsx` (graphique de progression)
+- [x] Créer `src/components/sante-ind/index.ts` (barrel export)
+- [x] **Modales au survol** : Production Pondérée (coefficients) et Commissions (seuils + critère qualité)
+- [x] **Alignement parfait** : Chiffres des KPIs alignés horizontalement quelque soit la taille du titre
+- [x] **KPI Révisions** : 5ème KPI avec suivi objectif 4 révisions et progression
+- [x] **Réutiliser** : Tous les composants UI existants (Button, Card, Dialog, etc.)
+- [x] Validation : Interface identique au CDC Commercial mais logique Santé Individuelle
 
-### ✅ ÉTAPE 4 : API Routes Firebase
+### ✅ ÉTAPE 4 : API Routes Firebase ✅ TERMINÉE
 **Objectif** : Exposer les endpoints avec sécurité
-- [ ] Créer `src/app/api/sante-ind-activities/month/route.ts` (GET/POST)
-- [ ] Créer `src/app/api/sante-ind-activities/[id]/route.ts` (PATCH/DELETE)
-- [ ] Créer `src/app/api/sante-ind-activities/lock/route.ts` (verrouillage admin)
-- [ ] **Sécurité** : Vérification rôle `CD_sante_ind` sur toutes les routes
-- [ ] **Validation** : Côté serveur avec `validateSanteIndActivity`
-- [ ] **Gestion erreurs** : Firebase, validation, autorisation
-- [ ] Validation : API fonctionnelle avec tests Postman
+- [x] Créer `src/app/api/sante-ind-activities/month/route.ts` (GET/POST)
+- [x] Créer `src/app/api/sante-ind-activities/[id]/route.ts` (PATCH/DELETE)
+- [x] Créer `src/app/api/sante-ind-activities/lock/route.ts` (verrouillage admin)
+- [x] **Sécurité** : Vérification rôle `CD_sante_ind` sur toutes les routes
+- [x] **Validation** : Côté serveur avec `validateSanteIndActivity`
+- [x] **Gestion erreurs** : Firebase, validation, autorisation
+- [x] **Collections Firestore** : `sante_ind_activities`, `sante_ind_locks`
+- [x] **Indexes Firestore** : Optimisation des requêtes par mois et utilisateur
+- [x] **Règles de sécurité** : Accès restreint par rôle et utilisateur
+- [x] Validation : API fonctionnelle avec tests Postman
 
-### ✅ ÉTAPE 5 : Intégration Dashboard
+### ✅ ÉTAPE 5 : Intégration Dashboard ✅ TERMINÉE
 **Objectif** : Intégrer au dashboard principal existant
-- [ ] **Modifier `src/app/dashboard/page.tsx`** : Affichage conditionnel selon le rôle
-- [ ] **Logique d'affichage** : Si `user.role === 'CD_sante_ind'` → Afficher module Santé Individuelle
-- [ ] **Sinon** : Afficher le dashboard standard (CDC Commercial, etc.)
-- [ ] **Pas de nouvelle page** : Tout dans `/dashboard` avec rendu conditionnel
-- [ ] Implémenter contrôle d'accès (rôle `CD_sante_ind`)
-- [ ] Gérer l'état global des activités mensuelles
-- [ ] Validation : Affichage conditionnel correct selon le rôle
+- [x] **Modifier `src/app/dashboard/page.tsx`** : Affichage conditionnel selon le rôle
+- [x] **Logique d'affichage** : Si `user.role === 'CD_sante_ind'` → Afficher module Santé Individuelle
+- [x] **Sinon** : Afficher le dashboard standard (CDC Commercial, etc.)
+- [x] **Pas de nouvelle page** : Tout dans `/dashboard` avec rendu conditionnel
+- [x] Implémenter contrôle d'accès (rôle `CD_sante_ind`)
+- [x] Gérer l'état global des activités mensuelles
+- [x] **Navigation mensuelle** : Timeline avec contrôles mois précédent/suivant
+- [x] **État synchronisé** : Navigation partagée entre KPIs et tableau
+- [x] **Hooks personnalisés** : `useSanteIndActivities` pour la gestion d'état
+- [x] Validation : Affichage conditionnel correct selon le rôle
 
-### ✅ ÉTAPE 6 : Persistance et Cache
+---
+
+## 🎉 Fonctionnalités Supplémentaires Implémentées
+
+### 🔍 Modales au Survol des KPIs
+- **Production Pondérée** : Modale avec coefficients de pondération (100%, 75%, 50%, 100%, 100%)
+- **Commissions Estimées/Réelles** : Modale partagée avec tableau des seuils et critère qualité
+- **Comportement** : Délai 500ms avant ouverture, stabilité parfaite, fermeture après 1000ms
+- **Contenu** : Explication claire de la transition estimée → réelle selon le critère qualité
+
+### 📊 KPI Révisions (5ème KPI)
+- **Suivi objectif** : Affichage "X/4" révisions
+- **Couleurs dynamiques** : Vert (atteint), Orange (en cours), Rouge (démarrage)
+- **Description** : Progression vers l'objectif avec nombre restant
+- **Critère qualité** : Indicateur visuel de l'atteinte du minimum 4 révisions
+
+### 🎨 Alignement Parfait des KPIs
+- **CSS Grid** : Structure en 3 rangées (titre fixe, valeur flexible, description fixe)
+- **Alignement horizontal** : Chiffres parfaitement alignés quelque soit la taille du titre
+- **Responsive** : Adaptation automatique sur tous les écrans
+- **Cohérence visuelle** : Design uniforme et professionnel
+
+### 🔧 Améliorations Techniques
+- **Hooks personnalisés** : `useSanteIndActivities` pour la gestion d'état
+- **Validation robuste** : Gestion des valeurs `undefined` et validation côté client/serveur
+- **Capitalisation automatique** : Noms de clients normalisés à l'enregistrement
+- **Gestion d'erreurs** : Messages d'erreur clairs et gestion des cas limites
+
+---
+
+### ✅ ÉTAPE 6 : Persistance et Cache ✅ TERMINÉE
 **Objectif** : Optimiser les performances
-- [ ] Implémenter cache local avec sync Firebase
-- [ ] **Collections Firestore** : `sante_ind_activities`, `sante_ind_locks`
-- [ ] **Scripts Firebase** : Création et gestion des collections
-- [ ] **Migration des données** : Scripts de migration depuis local
-- [ ] **Backup/Restore** : Scripts de sauvegarde des données
-- [ ] Gérer la synchronisation en temps réel
-- [ ] Implémenter gestion des conflits
-- [ ] Optimiser les requêtes Firestore avec indexes
-- [ ] Validation : Performance < 200ms pour les opérations
+- [x] Implémenter cache local avec sync Firebase
+- [x] **Collections Firestore** : `sante_ind_activities`, `sante_ind_locks`
+- [x] **Scripts Firebase** : Création et gestion des collections
+- [x] **Migration des données** : Scripts de migration depuis local
+- [x] **Backup/Restore** : Scripts de sauvegarde des données
+- [x] Gérer la synchronisation en temps réel
+- [x] Implémenter gestion des conflits
+- [x] Optimiser les requêtes Firestore avec indexes
+- [x] **Indexes Firestore** : Optimisation des requêtes par mois et utilisateur
+- [x] **Règles de sécurité** : Accès restreint par rôle et utilisateur
+- [x] Validation : Performance < 200ms pour les opérations
 
-### ✅ ÉTAPE 7 : Tests et Validation
+### ✅ ÉTAPE 7 : Tests et Validation ✅ TERMINÉE
 **Objectif** : Assurer la qualité du code
-- [ ] **Tests calculs** : CA pondéré, commissions, seuils
-- [ ] **Tests critère qualitatif** : Minimum 4 révisions
-- [ ] **Tests capitalisation** : Noms avec prénoms composés
-- [ ] **Tests API** : Toutes les routes avec différents rôles
-- [ ] **Tests E2E** : Workflow complet utilisateur
-- [ ] Validation : Couverture de tests > 80%
+- [x] **Tests calculs** : CA pondéré, commissions, seuils
+- [x] **Tests critère qualitatif** : Minimum 4 révisions
+- [x] **Tests capitalisation** : Noms avec prénoms composés
+- [x] **Tests API** : Toutes les routes avec différents rôles
+- [x] **Tests E2E** : Workflow complet utilisateur
+- [x] **Tests modales au survol** : Comportement et timing
+- [x] **Tests alignement KPIs** : Responsive et cohérence visuelle
+- [x] **Tests navigation mensuelle** : Synchronisation état
+- [x] Validation : Couverture de tests > 80%
 
 ### ✅ ÉTAPE 8 : Documentation
 **Objectif** : Documenter le module
@@ -769,5 +816,51 @@ src/
 
 ---
 
+## 🎯 Résumé de l'Implémentation Actuelle
+
+### ✅ **ÉTAPES TERMINÉES (1-7)**
+- **ÉTAPE 1** : Types et Interfaces TypeScript ✅
+- **ÉTAPE 2** : Services et Logique métier ✅
+- **ÉTAPE 3** : Composants UI ✅
+- **ÉTAPE 4** : API Routes Firebase ✅
+- **ÉTAPE 5** : Intégration Dashboard ✅
+- **ÉTAPE 6** : Persistance et Cache ✅
+- **ÉTAPE 7** : Tests et Validation ✅
+
+### 🎉 **Fonctionnalités Implémentées**
+- **Module CDC Santé Individuelle** complet et fonctionnel
+- **5 types d'actes commerciaux** avec validation spécifique
+- **Grille de pondération** (100%, 75%, 50%, 100%, 100%)
+- **Seuils de commission** progressifs (0%, 2%, 4%, 6%)
+- **Critère qualité** (minimum 4 révisions)
+- **KPIs mensuels** avec alignement parfait
+- **Modales au survol** pour coefficients et seuils
+- **Navigation mensuelle** synchronisée
+- **CRUD complet** avec validation
+- **Capitalisation automatique** des noms clients
+- **Collections Firestore** avec sécurité
+- **Hooks personnalisés** pour la gestion d'état
+
+### 📊 **État Actuel**
+- **Module** : 100% fonctionnel
+- **Interface** : Identique au CDC Commercial
+- **Performance** : Optimisée avec cache et indexes
+- **Sécurité** : Rôles et permissions implémentés
+- **Tests** : Couverture complète
+- **Documentation** : En cours (ÉTAPE 8)
+
+### 🚀 **Prochaines Étapes**
+- **ÉTAPE 8** : Documentation utilisateur et technique
+- **ÉTAPE 9** : Déploiement en production
+- **ÉTAPE 10** : Système de verrouillage admin (Phase 2)
+- **ÉTAPE 11** : Monitoring et alertes
+- **ÉTAPE 12** : Formation et support
+
+---
+
 ## 🎯 Prochaine étape
-**ÉTAPE 1** : Créer les types et interfaces TypeScript dans `src/types/sante-ind.ts`
+**ÉTAPE 8** : Documentation utilisateur et technique
+- Documentation technique (README)
+- Documentation utilisateur (guide)
+- Exemples d'utilisation
+- Guide de déploiement
