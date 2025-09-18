@@ -3,9 +3,10 @@
 
 "use client"
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { SanteIndActivity, SanteIndKPI, SanteIndActeType, SanteIndFilter } from '@/types/sante-ind'
 import { calculateKPIs, formatEuroInt, formatPercentage, filterActivities } from '@/lib/sante-ind'
 import { CommissionProgressChart } from './CommissionProgressChart'
@@ -30,6 +31,8 @@ interface SanteIndKPIsProps {
 }
 
 export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = false }: SanteIndKPIsProps) {
+  // État pour la modale de pondération
+  const [ponderationModalOpen, setPonderationModalOpen] = useState(false)
 
   // Calcul des KPIs si non fournis
   const calculatedKPIs = useMemo(() => {
@@ -111,7 +114,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       textColor: 'text-emerald-700 dark:text-emerald-300',
       description: 'CA pondéré selon grille',
       suffix: '',
-      hasInfo: false
+      hasInfo: false,
+      showModal: true
     },
     
     // Commission estimée
@@ -187,7 +191,12 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
           const IconComponent = kpi.icon
           
           return (
-            <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-300">
+            <Card 
+              key={index} 
+              className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-300"
+              onMouseEnter={() => kpi.showModal && setPonderationModalOpen(true)}
+              onMouseLeave={() => kpi.showModal && setPonderationModalOpen(false)}
+            >
               {/* Effet de fond animé */}
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
@@ -230,6 +239,52 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
         currentCA={calculatedKPIs.productionPondere}
         currentMonth={monthName}
       />
+
+      {/* Modale de pondération au survol */}
+      <Dialog open={ponderationModalOpen} onOpenChange={setPonderationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-emerald-600" />
+              Coefficients de Pondération
+            </DialogTitle>
+            <DialogDescription>
+              Grille de pondération appliquée au chiffre d'affaires brut
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded border">
+                <span className="font-medium text-sm">Affaire Nouvelle</span>
+                <Badge className="bg-emerald-100 text-emerald-800 text-xs">100%</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded border">
+                <span className="font-medium text-sm">Révision</span>
+                <Badge className="bg-blue-100 text-blue-800 text-xs">75%</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded border">
+                <span className="font-medium text-sm">Adhésion Groupe</span>
+                <Badge className="bg-purple-100 text-purple-800 text-xs">50%</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded border">
+                <span className="font-medium text-sm">Courtage → Allianz</span>
+                <Badge className="bg-orange-100 text-orange-800 text-xs">100%</Badge>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-red-50 dark:bg-red-900/20 rounded border">
+                <span className="font-medium text-sm">Allianz → Courtage</span>
+                <Badge className="bg-red-100 text-red-800 text-xs">100%</Badge>
+              </div>
+            </div>
+            
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 mt-4">
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                <strong>Production Pondérée = CA Brut × Coefficient</strong>
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
