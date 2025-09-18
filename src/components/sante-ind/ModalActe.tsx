@@ -129,15 +129,19 @@ export function ModalActe({
     const capitalizedName = capitalizeClientName(formData.clientName)
 
     // Préparation des données
-    const activityData = {
+    const activityData: Record<string, unknown> = {
       type: acteType,
       clientName: capitalizedName,
       contractNumber: formData.contractNumber,
       dateEffet: formData.dateEffet,
       dateSaisie: new Date().toISOString(), // Date de saisie automatique
       ca: parseInt(formData.ca),
-      caPondere,
-      compagnie: acteType === SanteIndActeType.AFFAIRE_NOUVELLE ? formData.compagnie : undefined
+      caPondere
+    }
+
+    // Ajouter la compagnie seulement pour les Affaires Nouvelles
+    if (acteType === SanteIndActeType.AFFAIRE_NOUVELLE && formData.compagnie) {
+      activityData.compagnie = formData.compagnie
     }
 
     onSave(activityData)
