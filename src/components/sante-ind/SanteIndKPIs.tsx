@@ -36,6 +36,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
   // États pour les modales d'information
   const [ponderationModalOpen, setPonderationModalOpen] = useState(false)
   const [commissionModalOpen, setCommissionModalOpen] = useState(false)
+  
+  console.log('🔄 SanteIndKPIs render - États modales:', { ponderationModalOpen, commissionModalOpen })
 
   // Calcul des KPIs si non fournis
   const calculatedKPIs = useMemo(() => {
@@ -202,12 +204,13 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
+                        console.log('🔄 Bouton info cliqué pour:', kpi.title)
                         kpi.infoAction?.()
                       }}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-full transition-colors cursor-pointer border border-transparent hover:border-blue-200"
                       title="Informations"
                     >
-                      <Info className="h-3 w-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                      <Info className="h-3 w-3 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300" />
                     </button>
                   )}
                 </CardTitle>
@@ -245,7 +248,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       />
 
       {/* Modale d'information - Règles de pondération */}
-      <Dialog open={ponderationModalOpen} onOpenChange={setPonderationModalOpen}>
+      <Dialog open={ponderationModalOpen} onOpenChange={(open) => {
+        console.log('🔄 Modale pondération:', open)
+        setPonderationModalOpen(open)
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -309,7 +315,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       </Dialog>
 
       {/* Modale d'information - Règles de commission */}
-      <Dialog open={commissionModalOpen} onOpenChange={setCommissionModalOpen}>
+      <Dialog open={commissionModalOpen} onOpenChange={(open) => {
+        console.log('🔄 Modale commission:', open)
+        setCommissionModalOpen(open)
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
