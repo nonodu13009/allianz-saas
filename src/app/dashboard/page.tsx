@@ -135,16 +135,6 @@ export default function DashboardPage() {
         // TEMPORAIRE : Déverrouiller le mois pour le développement
         // TODO : Restaurer le système de verrouillage après développement
         setIsMonthLocked(false)
-        setLockData({
-          id: `temp_unlock_${user.uid}_${currentYearMonth}`,
-          userId: user.uid,
-          yearMonth: currentYearMonth,
-          isLocked: false,
-          lockedBy: null,
-          lockedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        })
         
         // Code original commenté :
         // const { lock, isLocked } = await CDCLockService.getLockStatus(user.uid, currentYearMonth)
@@ -557,10 +547,8 @@ export default function DashboardPage() {
               {/* <CDCLockComponent
                 yearMonth={currentYearMonth}
                 isLocked={isMonthLocked}
-                lockedBy={lockData?.lockedBy}
-                lockedAt={lockData?.lockedAt}
                 onLockToggle={handleLockToggle}
-                loading={lockLoading}
+                loading={false}
               /> */}
 
               {/* Zone CDC Commercial - Boutons de saisie */}
