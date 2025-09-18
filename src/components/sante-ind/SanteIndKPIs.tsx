@@ -31,9 +31,11 @@ interface SanteIndKPIsProps {
 }
 
 export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = false }: SanteIndKPIsProps) {
-  // État pour la modale de pondération
+  // État pour les modales
   const [ponderationModalOpen, setPonderationModalOpen] = useState(false)
+  const [commissionModalOpen, setCommissionModalOpen] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [commissionHoverTimeout, setCommissionHoverTimeout] = useState<NodeJS.Timeout | null>(null)
 
   // Fonctions de gestion du survol avec délai
   const handleMouseEnter = () => {
@@ -53,6 +55,25 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
     }
     // Pas de timeout automatique - la modale reste ouverte
     // Elle ne se fermera que si on survole la modale puis qu'on la quitte
+  }
+
+  // Fonctions de gestion du survol pour la modale des commissions
+  const handleCommissionMouseEnter = () => {
+    if (commissionHoverTimeout) {
+      clearTimeout(commissionHoverTimeout)
+    }
+    const timeout = setTimeout(() => {
+      setCommissionModalOpen(true)
+    }, 500) // Délai de 500ms avant d'ouvrir
+    setCommissionHoverTimeout(timeout)
+  }
+
+  const handleCommissionMouseLeave = () => {
+    if (commissionHoverTimeout) {
+      clearTimeout(commissionHoverTimeout)
+      setCommissionHoverTimeout(null)
+    }
+    // Pas de timeout automatique - la modale reste ouverte
   }
 
   // Calcul des KPIs si non fournis
@@ -164,7 +185,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       textColor: calculatedKPIs.commissionEstimee > 0 ? 'text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300',
       description: 'Commission finale',
       suffix: '',
-      hasInfo: false
+      hasInfo: false,
+      showModal: true
     },
 
     // Suivi des révisions
@@ -215,8 +237,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
             <Card 
               key={index} 
               className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-300"
-              onMouseEnter={kpi.showModal ? handleMouseEnter : undefined}
-              onMouseLeave={kpi.showModal ? handleMouseLeave : undefined}
+              onMouseEnter={kpi.showModal ? (kpi.title === 'Production Pondérée' ? handleMouseEnter : handleCommissionMouseEnter) : undefined}
+              onMouseLeave={kpi.showModal ? (kpi.title === 'Production Pondérée' ? handleMouseLeave : handleCommissionMouseLeave) : undefined}
             >
               {/* Effet de fond animé */}
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
@@ -316,6 +338,80 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 mt-4">
               <p className="text-xs text-emerald-700 dark:text-emerald-300">
                 <strong>Production Pondérée = CA Brut × Coefficient</strong>
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modale des commissions au survol */}
+      <Dialog open={commissionModalOpen} onOpenChange={setCommissionModalOpen}>
+        <DialogContent 
+          className="max-w-lg"
+          onMouseEnter={() => {
+            if (commissionHoverTimeout) {
+              clearTimeout(commissionHoverTimeout)
+              setCommissionHoverTimeout(null)
+            }
+          }}
+          onMouseLeave={() => {
+            // Délai plus long pour permettre de revenir sur la carte
+            const timeout = setTimeout(() => {
+              setCommissionModalOpen(false)
+            }, 1000) // 1 seconde pour permettre de revenir
+            setCommissionHoverTimeout(timeout)
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Percent className="h-5 w-5 text-purple-600" />
+              Tableau des Commissions Réelles
+            </DialogTitle>
+            <DialogDescription>
+              Grille de commission basée sur le CA pondéré et le critère qualité
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Tableau des seuils */}
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Seuils de CA Pondéré</h4>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded border">
+                  <span className="font-medium text-sm">0€ - 10 000€</span>
+                  <Badge className="bg-blue-100 text-blue-800 text-xs">0%</Badge>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-900/20 rounded border">
+                  <span className="font-medium text-sm">10 000€ - 25 000€</span>
+                  <Badge className="bg-green-100 text-green-800 text-xs">2%</Badge>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border">
+                  <span className="font-medium text-sm">25 000€ - 50 000€</span>
+                  <Badge className="bg-yellow-100 text-yellow-800 text-xs">4%</Badge>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded border">
+                  <span className="font-medium text-sm">50 000€+</span>
+                  <Badge className="bg-purple-100 text-purple-800 text-xs">6%</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Critère qualité */}
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+              <h4 className="font-medium text-sm text-orange-700 dark:text-orange-300 mb-2">Critère Qualité</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-orange-600 dark:text-orange-400">Minimum 4 révisions</span>
+                <Badge className="bg-orange-100 text-orange-800 text-xs">Obligatoire</Badge>
+              </div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                Sans ce critère, la commission reste à 0%
+              </p>
+            </div>
+
+            {/* Formule */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+              <p className="text-xs text-purple-700 dark:text-purple-300">
+                <strong>Commission Réelle = CA Pondéré × Taux × Critère Qualité</strong>
               </p>
             </div>
           </div>
