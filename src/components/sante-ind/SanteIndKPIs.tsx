@@ -33,6 +33,29 @@ interface SanteIndKPIsProps {
 export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = false }: SanteIndKPIsProps) {
   // État pour la modale de pondération
   const [ponderationModalOpen, setPonderationModalOpen] = useState(false)
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
+
+  // Fonctions de gestion du survol avec délai
+  const handleMouseEnter = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+    }
+    const timeout = setTimeout(() => {
+      setPonderationModalOpen(true)
+    }, 500) // Délai de 500ms avant d'ouvrir
+    setHoverTimeout(timeout)
+  }
+
+  const handleMouseLeave = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout)
+      setHoverTimeout(null)
+    }
+    const timeout = setTimeout(() => {
+      setPonderationModalOpen(false)
+    }, 300) // Délai de 300ms avant de fermer
+    setHoverTimeout(timeout)
+  }
 
   // Calcul des KPIs si non fournis
   const calculatedKPIs = useMemo(() => {
@@ -194,8 +217,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
             <Card 
               key={index} 
               className="relative overflow-hidden group hover:shadow-lg transition-shadow duration-300"
-              onMouseEnter={() => kpi.showModal && setPonderationModalOpen(true)}
-              onMouseLeave={() => kpi.showModal && setPonderationModalOpen(false)}
+              onMouseEnter={kpi.showModal ? handleMouseEnter : undefined}
+              onMouseLeave={kpi.showModal ? handleMouseLeave : undefined}
             >
               {/* Effet de fond animé */}
               <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
@@ -242,7 +265,21 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
 
       {/* Modale de pondération au survol */}
       <Dialog open={ponderationModalOpen} onOpenChange={setPonderationModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent 
+          className="max-w-md"
+          onMouseEnter={() => {
+            if (hoverTimeout) {
+              clearTimeout(hoverTimeout)
+              setHoverTimeout(null)
+            }
+          }}
+          onMouseLeave={() => {
+            const timeout = setTimeout(() => {
+              setPonderationModalOpen(false)
+            }, 200)
+            setHoverTimeout(timeout)
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Target className="h-5 w-5 text-emerald-600" />
