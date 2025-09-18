@@ -118,7 +118,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       description: 'CA pondéré selon grille',
       suffix: '',
       hasInfo: true,
-      infoAction: () => setPonderationModalOpen(true)
+      infoAction: () => {
+        console.log('🔄 Ouverture modale pondération')
+        setPonderationModalOpen(true)
+      }
     },
     
     // Commission estimée
@@ -147,7 +150,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       description: 'Commission finale',
       suffix: '',
       hasInfo: true,
-      infoAction: () => setCommissionModalOpen(true)
+      infoAction: () => {
+        console.log('🔄 Ouverture modale commission')
+        setCommissionModalOpen(true)
+      }
     }
   ]
 
@@ -193,7 +199,11 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
                   </div>
                   {kpi.hasInfo && (
                     <button
-                      onClick={kpi.infoAction}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        kpi.infoAction?.()
+                      }}
                       className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                       title="Informations"
                     >
@@ -203,15 +213,15 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
                 </CardTitle>
               </CardHeader>
               
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="space-y-2">
-                  {/* Valeur principale */}
-                  <div className="flex items-baseline gap-2">
+                  {/* Valeur principale - Alignement horizontal fixe */}
+                  <div className="h-12 flex items-end">
                     <span className={`text-2xl font-bold ${kpi.textColor}`}>
                       {kpi.value}
                     </span>
                     {kpi.suffix && (
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
                         {kpi.suffix}
                       </span>
                     )}
