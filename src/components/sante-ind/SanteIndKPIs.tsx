@@ -51,10 +51,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       clearTimeout(hoverTimeout)
       setHoverTimeout(null)
     }
-    const timeout = setTimeout(() => {
-      setPonderationModalOpen(false)
-    }, 300) // Délai de 300ms avant de fermer
-    setHoverTimeout(timeout)
+    // Pas de timeout automatique - la modale reste ouverte
+    // Elle ne se fermera que si on survole la modale puis qu'on la quitte
   }
 
   // Calcul des KPIs si non fournis
@@ -274,9 +272,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
             }
           }}
           onMouseLeave={() => {
+            // Délai plus long pour permettre de revenir sur la carte
             const timeout = setTimeout(() => {
               setPonderationModalOpen(false)
-            }, 200)
+            }, 1000) // 1 seconde pour permettre de revenir
             setHoverTimeout(timeout)
           }}
         >
