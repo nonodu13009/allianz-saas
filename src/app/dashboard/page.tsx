@@ -176,7 +176,17 @@ export default function DashboardPage() {
   const handleSaveSanteIndActivity = async (activityData: Record<string, unknown>) => {
     setSanteIndLoading(true)
     try {
-      const savedActivity = await saveSanteIndActivity(activityData)
+      // Ajouter les champs obligatoires
+      const completeActivityData = {
+        ...activityData,
+        userId: user?.uid || 'unknown',
+        yearMonth: currentYearMonth,
+        isLocked: false // Par défaut, le mois est ouvert
+      }
+      
+      console.log('🔄 Tentative de sauvegarde Santé Individuelle:', completeActivityData)
+      
+      const savedActivity = await saveSanteIndActivity(completeActivityData)
       console.log('✅ Activité Santé Individuelle sauvegardée:', savedActivity)
       setModalActeOpen(false)
       setSelectedActeType(null)
