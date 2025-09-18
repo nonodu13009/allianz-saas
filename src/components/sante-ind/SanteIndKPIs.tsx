@@ -17,7 +17,8 @@ import {
   BarChart3,
   PieChart,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react'
 
 interface SanteIndKPIsProps {
@@ -139,6 +140,20 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       description: 'Commission finale',
       suffix: '',
       hasInfo: false
+    },
+
+    // Suivi des révisions
+    {
+      title: 'Révisions',
+      value: `${calculatedKPIs.nombreRevisions}/4`,
+      icon: FileText,
+      color: calculatedKPIs.critereQualitatifAtteint ? 'green' : calculatedKPIs.nombreRevisions >= 2 ? 'orange' : 'red',
+      gradient: calculatedKPIs.critereQualitatifAtteint ? 'from-green-500 to-emerald-600' : calculatedKPIs.nombreRevisions >= 2 ? 'from-orange-500 to-yellow-600' : 'from-red-500 to-pink-600',
+      bgColor: calculatedKPIs.critereQualitatifAtteint ? 'bg-green-50 dark:bg-green-900/20' : calculatedKPIs.nombreRevisions >= 2 ? 'bg-orange-50 dark:bg-orange-900/20' : 'bg-red-50 dark:bg-red-900/20',
+      textColor: calculatedKPIs.critereQualitatifAtteint ? 'text-green-700 dark:text-green-300' : calculatedKPIs.nombreRevisions >= 2 ? 'text-orange-700 dark:text-orange-300' : 'text-red-700 dark:text-red-300',
+      description: calculatedKPIs.critereQualitatifAtteint ? 'Objectif atteint ✅' : calculatedKPIs.nombreRevisions >= 2 ? `En cours (${4 - calculatedKPIs.nombreRevisions} restantes)` : `Démarrage (${4 - calculatedKPIs.nombreRevisions} à faire)`,
+      suffix: '',
+      hasInfo: false
     }
   ]
 
@@ -167,7 +182,7 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       </div>
 
       {/* Grille des KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpiCards.map((kpi, index) => {
           const IconComponent = kpi.icon
           
