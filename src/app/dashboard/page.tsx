@@ -12,10 +12,17 @@ import { ActivityTable } from '@/components/cdc/ActivityTable'
 import { CDCKPIs } from '@/components/cdc/CDCKPIs'
 import { CDCTimeline } from '@/components/cdc/CDCTimeline'
 import { CDCFilters } from '@/components/cdc/CDCFilters'
-import { CDCLockComponent } from '@/components/cdc/CDCLock'
-import { ActivityType, Activity, CDCFilter, CDCLock, ProductType } from '@/types/cdc'
-import { CDCLockService } from '@/lib/cdc-lock-service'
+import { ActivityType, Activity, CDCFilter } from '@/types/cdc'
 import { cdcService } from '@/lib/cdc-service'
+import { 
+  ModalActe, 
+  SanteIndButtons, 
+  SanteIndKPIs, 
+  SanteIndTable, 
+  SanteIndTimeline 
+} from '@/components/sante-ind'
+import { useSanteIndActivities } from '@/hooks/use-sante-ind-activities'
+import { SanteIndActeType } from '@/types/sante-ind'
 
 const getRoleSpecificContent = (role: string) => {
   switch (role) {
@@ -55,6 +62,11 @@ export default function DashboardPage() {
   const [selectedProcessType, setSelectedProcessType] = useState<ActivityType | null>(null)
   const [loading, setLoading] = useState(false)
   
+  // États pour les modales Santé Individuelle
+  const [modalActeOpen, setModalActeOpen] = useState(false)
+  const [selectedActeType, setSelectedActeType] = useState<SanteIndActeType | null>(null)
+  const [santeIndLoading, setSanteIndLoading] = useState(false)
+  
   // États pour le tableau des activités
   const [currentYearMonth, setCurrentYearMonth] = useState(() => {
     const now = new Date()
@@ -65,6 +77,28 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(false)
   const [activitiesError, setActivitiesError] = useState<string | null>(null)
+  
+  // Hook Santé Individuelle
+  const {
+    activities: santeIndActivities,
+    kpis: santeIndKPIs,
+    loading: santeIndActivitiesLoading,
+    error: santeIndError,
+    saveActivity: saveSanteIndActivity,
+    updateActivity: updateSanteIndActivity,
+    deleteActivity: deleteSanteIndActivity,
+    refreshActivities: refreshSanteIndActivities,
+    navigation: santeIndNavigation,
+    filters: santeIndFilters,
+    setFilters: setSanteIndFilters,
+    filteredActivities: filteredSanteIndActivities,
+    isMonthLocked: isSanteIndMonthLocked
+  } = useSanteIndActivities({
+    yearMonth: currentYearMonth,
+    userId: user?.uid || '',
+    autoRefresh: true,
+    refreshInterval: 30000
+  })
 
   // Chargement des activités au montage et changement de mois
   useEffect(() => {
@@ -91,10 +125,6 @@ export default function DashboardPage() {
     product: undefined,
     day: undefined
   })
-  
-  // États pour le verrouillage
-  const [lockData, setLockData] = useState<CDCLock | null>(null)
-  const [lockLoading, setLockLoading] = useState(false)
 
   // Charger le statut de verrouillage au montage du composant
   useEffect(() => {
@@ -147,48 +177,60 @@ export default function DashboardPage() {
     }
   }
 
-  // Gestionnaire pour le verrouillage/déverrouillage
-  const handleLockToggle = async (locked: boolean) => {
-    if (!user || !user.uid) {
-      console.error('Utilisateur non authentifié')
-      return
-    }
-
-    // TEMPORAIRE : Désactiver le système de verrouillage pour le développement
-    // TODO : Restaurer le système de verrouillage après développement
-    console.log(`Tentative de verrouillage/déverrouillage désactivée temporairement: ${locked}`)
-    return
-    
-    // Code original commenté :
-    // setLockLoading(true)
-    // try {
-    //   console.log('Tentative de verrouillage:', {
-    //     userId: user.uid,
-    //     yearMonth: currentYearMonth,
-    //     locked,
-    //     lockedBy: user.firstName + ' ' + user.lastName
-    //   })
-
-    //   const result = await CDCLockService.toggleLock(
-    //     user.uid,
-    //     currentYearMonth,
-    //     locked,
-    //     user.firstName + ' ' + user.lastName
-    //   )
-    //   
-    //   console.log('Résultat du verrouillage:', result)
-    //   setLockData(result.lock)
-    //   setIsMonthLocked(result.lock.isLocked)
-    // } catch (error) {
-    //   console.error('Erreur lors du changement de verrouillage:', error)
-    //   throw error
-    // } finally {
-    //   setLockLoading(false)
-    // }
+  // Gestionnaires pour Santé Individuelle
+  const handleSanteIndButtonClick = (type: SanteIndActeType) => {
+    setSelectedActeType(type)
+    setModalActeOpen(true)
   }
 
+  const handleSaveSanteIndActivity = async (activityData: Record<string, unknown>) => {
+    setSanteIndLoading(true)
+    try {
+      const savedActivity = await saveSanteIndActivity(activityData)
+      console.log('✅ Activité Santé Individuelle sauvegardée:', savedActivity)
+      setModalActeOpen(false)
+      setSelectedActeType(null)
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde Santé Individuelle:', error)
+    } finally {
+      setSanteIndLoading(false)
+    }
+  }
+
+  const handleEditSanteIndActivity = async (activity: Record<string, unknown>) => {
+    try {
+      await updateSanteIndActivity(activity.id, activity)
+      console.log('✅ Activité Santé Individuelle mise à jour')
+    } catch (error) {
+      console.error('❌ Erreur mise à jour Santé Individuelle:', error)
+    }
+  }
+
+  const handleDeleteSanteIndActivity = async (activity: Record<string, unknown>) => {
+    try {
+      await deleteSanteIndActivity(activity.id)
+      console.log('✅ Activité Santé Individuelle supprimée')
+    } catch (error) {
+      console.error('❌ Erreur suppression Santé Individuelle:', error)
+    }
+  }
+
+  const handleViewSanteIndActivity = (activity: Record<string, unknown>) => {
+    console.log('Visualisation activité Santé Individuelle:', activity)
+  }
+
+  const handleSanteIndTimelineDayClick = (day: number | undefined) => {
+    setSanteIndFilters(prev => ({ ...prev, day }))
+  }
+
+  const handleSanteIndTimelineMonthChange = (year: number, month: number) => {
+    const newYearMonth = `${year}-${month.toString().padStart(2, '0')}`
+    setCurrentYearMonth(newYearMonth)
+  }
+
+
   // Gestionnaire pour la sauvegarde des activités
-  const handleSaveActivity = async (activityData: any) => {
+  const handleSaveActivity = async (activityData: Record<string, unknown>) => {
     setLoading(true)
     try {
       // Créer l'activité avec les données complètes
@@ -334,6 +376,116 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  // Dashboard spécial pour les CDC Santé Individuelle
+  if (user.role === 'cdc_sante_ind') {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
+          {/* Message de bienvenue - Pleine largeur */}
+          <div className="bg-gradient-to-r from-emerald-500 via-green-600 to-teal-600 rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-2xl relative overflow-hidden">
+            {/* Effets de fond animés */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-4 -right-4 w-16 sm:w-24 lg:w-32 h-16 sm:h-24 lg:h-32 bg-white/10 rounded-full animate-pulse"></div>
+              <div className="absolute -bottom-4 -left-4 w-12 sm:w-16 lg:w-24 h-12 sm:h-16 lg:h-24 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-1/2 right-1/3 w-8 sm:w-12 lg:w-16 h-8 sm:h-12 lg:h-16 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
+            </div>
+            
+            <div className="relative z-10 text-center">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-4 animate-fade-in">
+                Bonjour, {user.firstName} ! 👋
+              </h1>
+              <p className="text-emerald-100 text-base sm:text-lg md:text-xl lg:text-2xl mb-4 sm:mb-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                {roleContent.description}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs sm:text-sm font-medium">Connecté en tant que {user.roleFront || user.role}</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                  <div className="w-2 h-2 sm:w-3 sm:h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs sm:text-sm font-medium">Espace CDC Santé Individuelle</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline Santé Individuelle */}
+          <SanteIndTimeline
+            activities={santeIndActivities}
+            year={santeIndNavigation.currentYear}
+            month={santeIndNavigation.currentMonth}
+            filter={santeIndFilters}
+            onDayClick={handleSanteIndTimelineDayClick}
+            onMonthChange={handleSanteIndTimelineMonthChange}
+            loading={santeIndActivitiesLoading}
+          />
+
+          {/* KPIs Santé Individuelle */}
+          <SanteIndKPIs
+            activities={santeIndActivities}
+            yearMonth={currentYearMonth}
+            filter={santeIndFilters}
+            kpis={santeIndKPIs}
+            loading={santeIndActivitiesLoading}
+          />
+
+          {/* Zone Santé Individuelle - Boutons de saisie */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+            <SanteIndButtons
+              onButtonClick={handleSanteIndButtonClick}
+              isLocked={isSanteIndMonthLocked}
+              disabled={santeIndLoading}
+            />
+          </div>
+
+          {/* Affichage des erreurs */}
+          {santeIndError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 text-red-600">⚠️</div>
+                <span className="text-sm text-red-700 dark:text-red-300">{santeIndError}</span>
+                <button
+                  onClick={refreshSanteIndActivities}
+                  className="ml-auto text-sm text-red-600 hover:text-red-800 underline"
+                >
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tableau des activités Santé Individuelle */}
+          <SanteIndTable
+            activities={filteredSanteIndActivities}
+            yearMonth={currentYearMonth}
+            filter={santeIndFilters}
+            isLocked={isSanteIndMonthLocked}
+            onEdit={handleEditSanteIndActivity}
+            onDelete={handleDeleteSanteIndActivity}
+            onView={handleViewSanteIndActivity}
+            loading={santeIndActivitiesLoading}
+          />
+
+          {/* Modale Santé Individuelle */}
+          {selectedActeType && (
+            <ModalActe
+              isOpen={modalActeOpen}
+              onClose={() => {
+                setModalActeOpen(false)
+                setSelectedActeType(null)
+              }}
+              onSave={handleSaveSanteIndActivity}
+              acteType={selectedActeType}
+              loading={santeIndLoading}
+              isLocked={isSanteIndMonthLocked}
+            />
+          )}
         </div>
       </DashboardLayout>
     )
