@@ -171,7 +171,8 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
       textColor: calculatedKPIs.commissionEstimee > 0 ? 'text-yellow-700 dark:text-yellow-300' : 'text-gray-700 dark:text-gray-300',
       description: 'Commission calculée',
       suffix: '',
-      hasInfo: false
+      hasInfo: false,
+      showModal: true
     },
     
     // Commission réelle
