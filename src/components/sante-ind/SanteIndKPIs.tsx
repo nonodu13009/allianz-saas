@@ -366,10 +366,10 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Percent className="h-5 w-5 text-purple-600" />
-              Tableau des Commissions Réelles
+              Commissions Estimées → Réelles
             </DialogTitle>
             <DialogDescription>
-              Grille de commission basée sur le CA pondéré et le critère qualité
+              Les commissions estimées deviennent réelles quand le critère qualité (4 révisions) est atteint
             </DialogDescription>
           </DialogHeader>
           
@@ -400,13 +400,18 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
             {/* Critère qualité */}
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
               <h4 className="font-medium text-sm text-orange-700 dark:text-orange-300 mb-2">Critère Qualité</h4>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm text-orange-600 dark:text-orange-400">Minimum 4 révisions</span>
                 <Badge className="bg-orange-100 text-orange-800 text-xs">Obligatoire</Badge>
               </div>
-              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                Sans ce critère, la commission reste à 0%
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs text-orange-600 dark:text-orange-400">
+                  <strong>✅ Critère atteint :</strong> Commission estimée = Commission réelle
+                </p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">
+                  <strong>❌ Critère non atteint :</strong> Commission réelle = 0€
+                </p>
+              </div>
             </div>
 
             {/* Formule */}
