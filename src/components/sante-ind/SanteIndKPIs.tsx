@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SanteIndActivity, SanteIndKPI, SanteIndActeType, SanteIndFilter } from '@/types/sante-ind'
 import { calculateKPIs, formatEuroInt, formatPercentage, filterActivities } from '@/lib/sante-ind'
+import { CommissionProgressChart } from './CommissionProgressChart'
 import { 
   TrendingUp, 
   Users, 
@@ -307,51 +308,11 @@ export function SanteIndKPIs({ activities, yearMonth, filter, kpis, loading = fa
         </div>
       </div>
 
-      {/* Détail des seuils de commission */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <Target className="h-5 w-5 text-blue-600" />
-          Seuils de Commission
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {[
-            { seuil: '< 10 000 €', taux: 0, min: 0, max: 9999 },
-            { seuil: '10 000 - 13 999 €', taux: 2, min: 10000, max: 13999 },
-            { seuil: '14 000 - 17 999 €', taux: 3, min: 14000, max: 17999 },
-            { seuil: '18 000 - 21 999 €', taux: 4, min: 18000, max: 21999 },
-            { seuil: '≥ 22 000 €', taux: 6, min: 22000, max: Infinity }
-          ].map((seuil, index) => {
-            const isActive = calculatedKPIs.productionPondere >= seuil.min && 
-                           (seuil.max === Infinity || calculatedKPIs.productionPondere <= seuil.max)
-            
-            return (
-              <div key={index} className={`text-center p-4 rounded-lg border-2 ${
-                isActive 
-                  ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800' 
-                  : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700'
-              }`}>
-                <div className={`text-2xl font-bold ${
-                  isActive ? 'text-emerald-600' : 'text-gray-400'
-                }`}>
-                  {seuil.taux}%
-                </div>
-                <div className={`text-sm ${
-                  isActive ? 'text-emerald-600' : 'text-gray-500'
-                }`}>
-                  {seuil.seuil}
-                </div>
-                {isActive && (
-                  <div className="mt-2">
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs">
-                      Actuel
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      {/* Graphique de progression des commissions */}
+      <CommissionProgressChart 
+        currentCA={calculatedKPIs.productionPondere}
+        currentMonth={monthName}
+      />
 
       {/* Détail des actes par type */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
