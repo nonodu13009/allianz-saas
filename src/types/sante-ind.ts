@@ -1,269 +1,326 @@
-/**
- * Types et interfaces pour le module CDC Santé Individuelle
- * Basé sur les spécifications de docs/cdc_sante_ind.md
- */
+// Types pour le module CDC Santé Individuelle
+// Basé sur les spécifications du CDC Santé Individuelle
 
-// ============================================================================
-// TYPES D'ACTES COMMERCIAUX
-// ============================================================================
+// Types d'actes commerciaux Santé Individuelle
+export enum SanteIndActeType {
+  AFFAIRE_NOUVELLE = 'Affaire nouvelle',
+  REVISION = 'Révision',
+  ADHESION_GROUPE = 'Adhésion groupe',
+  COURTAGE_VERS_ALLIANZ = 'Courtage → Allianz',
+  ALLIANZ_VERS_COURTAGE = 'Allianz → Courtage'
+}
 
-export type ActeType = 
-  | 'affaire_nouvelle'
-  | 'revision'
-  | 'adhesion_groupe'
-  | 'courtage_vers_allianz'
-  | 'allianz_vers_courtage'
+// Types de compagnies pour les Affaires Nouvelles
+export enum CompagnieType {
+  ALLIANZ = 'Allianz',
+  COURTAGE = 'Courtage'
+}
 
-export type Compagnie = 'Allianz' | 'Courtage'
-
-// ============================================================================
-// INTERFACE PRINCIPALE - ACTIVITÉ SANTÉ INDIVIDUELLE
-// ============================================================================
-
+// Interface pour une activité Santé Individuelle
 export interface SanteIndActivity {
-  // Identifiants
   id: string
   userId: string
-  yearMonth: string // Format: "2025-09"
-  
-  // Données de l'activité
-  dateSaisie: string // ISO date string
-  natureActe: ActeType
-  nomClient: string // Capitalisé automatiquement
-  numeroContrat: string
+  type: SanteIndActeType
+  clientName: string
+  contractNumber: string
   dateEffet: string // ISO date string
   ca: number // Entier en euros
   caPondere: number // Calculé automatiquement selon grille
+  dateSaisie: string // ISO date string
+  yearMonth: string // Format: YYYY-MM
   
-  // Champs conditionnels
-  compagnie?: Compagnie // Requis si natureActe === 'affaire_nouvelle'
+  // Champs spécifiques aux Affaires Nouvelles
+  compagnie?: CompagnieType
   
-  // Métadonnées Firebase
-  createdAt: string // ISO timestamp
-  updatedAt: string // ISO timestamp
+  // Métadonnées
+  createdAt: string
+  updatedAt: string
 }
 
-// ============================================================================
-// GRILLE DE PONDÉRATION (CA → CA PONDÉRÉ)
-// ============================================================================
-
-export const CA_PONDERE_RATES: Record<ActeType, number> = {
-  affaire_nouvelle: 1.00,      // 100%
-  revision: 0.50,              // 50%
-  adhesion_groupe: 0.50,       // 50%
-  courtage_vers_allianz: 0.75, // 75%
-  allianz_vers_courtage: 0.50  // 50%
-} as const
-
-// ============================================================================
-// SEUILS DE COMMISSION (TABLEAU PROGRESSIF)
-// ============================================================================
-
-export interface CommissionThreshold {
-  min: number // Montant minimum (inclus)
-  max?: number // Montant maximum (exclus, undefined pour "et plus")
-  rate: number // Taux de commission (0.00 à 0.06)
+// Interface pour le verrouillage mensuel
+export interface SanteIndLock {
+  id: string // Format: {userId}_{yearMonth}
+  userId: string
+  yearMonth: string // Format: YYYY-MM
+  isLocked: boolean
+  lockedAt?: string // ISO date string
+  lockedBy?: string // ID de l'administrateur qui a verrouillé
+  createdAt: string
+  updatedAt: string
 }
 
-export const COMMISSION_THRESHOLDS: CommissionThreshold[] = [
-  { min: 0, max: 10000, rate: 0.00 },      // < 10 000 € → 0%
-  { min: 10000, max: 14000, rate: 0.02 },  // 10 000 - 13 999 € → 2%
-  { min: 14000, max: 18000, rate: 0.03 },  // 14 000 - 17 999 € → 3%
-  { min: 18000, max: 22000, rate: 0.04 },  // 18 000 - 21 999 € → 4%
-  { min: 22000, rate: 0.06 }               // ≥ 22 000 € → 6%
-] as const
-
-// ============================================================================
-// KPIs MENSUELS
-// ============================================================================
-
-export interface KPIMensuel {
-  // Production
-  productionBrute: number // Somme des CA du mois
-  productionPondere: number // Somme des CA pondéré du mois
+// Interface pour les KPIs mensuels
+export interface SanteIndKPI {
+  yearMonth: string // Format: YYYY-MM
+  userId: string
+  
+  // Compteurs par type d'acte
+  nombreAffairesNouvelles: number
+  nombreRevisions: number
+  nombreAdhesionsGroupe: number
+  nombreCourtageVersAllianz: number
+  nombreAllianzVersCourtage: number
+  
+  // Montants
+  productionBrute: number // Somme des CA
+  productionPondere: number // Somme des CA pondérés
   
   // Commission
-  tauxCommission: number // Taux applicable (0/2/3/4/6%)
-  commissionEstimee: number // Calculée sur la production pondérée
-  
-  // Volumes par type d'acte
-  volumes: {
-    affaire_nouvelle: number
-    revision: number
-    adhesion_groupe: number
-    courtage_vers_allianz: number
-    allianz_vers_courtage: number
-  }
+  tauxCommission: number // 0, 2, 3, 4, ou 6%
+  commissionEstimee: number // Calculée selon seuils
   
   // Critère qualitatif
-  nombreRevisions: number
-  minimumRevisionsAtteint: boolean // >= 4 révisions
+  critereQualitatifAtteint: boolean // Minimum 4 révisions
+  
+  // Métadonnées
+  calculatedAt: string
+  updatedAt: string
 }
 
-// ============================================================================
-// STATISTIQUES DE PRODUCTION
-// ============================================================================
-
-export interface ProductionStats {
-  totalActivites: number
-  totalCA: number
-  totalCAPondere: number
-  moyenneCA: number
-  moyenneCAPondere: number
-  premierActe?: string // Date du premier acte du mois
-  dernierActe?: string // Date du dernier acte du mois
-}
-
-// ============================================================================
-// SYSTÈME DE VERROUILLAGE
-// ============================================================================
-
-export interface SanteIndLock {
-  id: string
-  userId: string
-  yearMonth: string // Format: "2025-09"
-  isLocked: boolean
-  lockedBy: string // Admin user ID
-  lockedAt: string // ISO timestamp
-  reason?: string // Raison du verrouillage
-}
-
-export type LockStatus = 'unlocked' | 'locked' | 'unknown'
-
-// ============================================================================
-// FILTRES ET TRI
-// ============================================================================
-
+// Interface pour les filtres
 export interface SanteIndFilter {
-  natureActe?: ActeType
-  compagnie?: Compagnie
-  dateDebut?: string // ISO date
-  dateFin?: string // ISO date
-  nomClient?: string // Recherche partielle
+  type: 'all' | SanteIndActeType
+  day?: number // Pour filtrer par jour du mois
+  compagnie?: CompagnieType // Pour filtrer par compagnie
 }
 
-export type SanteIndSortField = 
-  | 'dateSaisie'
-  | 'nomClient'
-  | 'natureActe'
-  | 'numeroContrat'
-  | 'dateEffet'
-  | 'ca'
-  | 'caPondere'
-  | 'compagnie'
-
-export type SortDirection = 'asc' | 'desc'
-
-export interface SanteIndSort {
-  field: SanteIndSortField
-  direction: SortDirection
-}
-
-// ============================================================================
-// FORMULAIRES ET VALIDATION
-// ============================================================================
-
-export interface SanteIndActivityForm {
-  natureActe: ActeType
-  nomClient: string
-  numeroContrat: string
-  dateEffet: string
-  ca: number
-  compagnie?: Compagnie
-}
-
-export interface ValidationError {
-  field: string
-  message: string
-}
-
-export interface ValidationResult {
-  isValid: boolean
-  errors: ValidationError[]
-}
-
-// ============================================================================
-// NAVIGATION MENSUELLE
-// ============================================================================
-
-export interface MonthNavigation {
+// Interface pour la navigation mensuelle
+export interface SanteIndMonthNavigation {
   currentYear: number
   currentMonth: number // 1-12
-  currentYearMonth: string // "2025-09"
+  currentYearMonth: string // Format: YYYY-MM
   canGoPrevious: boolean
   canGoNext: boolean
-  isCurrentMonth: boolean
 }
 
-// ============================================================================
-// ÉTATS D'INTERFACE
-// ============================================================================
-
-export interface SanteIndUIState {
-  isLoading: boolean
-  isSaving: boolean
-  isDeleting: boolean
-  error?: string
-  successMessage?: string
+// Interface pour les données de la timeline
+export interface SanteIndTimelineData {
+  day: number
+  totalActivities: number
+  acteCounts: Record<SanteIndActeType, number>
+  hasData: boolean
 }
 
-export interface ModalState {
-  isOpen: boolean
-  type: ActeType | null
-  activityId?: string // Pour édition
+// Interface pour les statistiques d'un jour
+export interface SanteIndDayStats {
+  day: number
+  activities: SanteIndActivity[]
+  totalCount: number
+  acteCounts: Record<SanteIndActeType, number>
 }
 
-// ============================================================================
-// RÉPONSES API
-// ============================================================================
+// Grille de pondération par type d'acte
+export const PONDERATION_RATES: Record<SanteIndActeType, number> = {
+  [SanteIndActeType.AFFAIRE_NOUVELLE]: 1.00, // 100%
+  [SanteIndActeType.REVISION]: 0.50, // 50%
+  [SanteIndActeType.ADHESION_GROUPE]: 0.50, // 50%
+  [SanteIndActeType.COURTAGE_VERS_ALLIANZ]: 0.75, // 75%
+  [SanteIndActeType.ALLIANZ_VERS_COURTAGE]: 0.50 // 50%
+}
 
-export interface SanteIndApiResponse<T = unknown> {
+// Seuils de commission selon production pondérée
+export interface CommissionSeuil {
+  min: number
+  max?: number // undefined pour le dernier seuil
+  taux: number // Pourcentage (0, 2, 3, 4, 6)
+}
+
+export const COMMISSION_SEUILS: CommissionSeuil[] = [
+  { min: 0, max: 9999, taux: 0 }, // < 10 000 € → 0%
+  { min: 10000, max: 13999, taux: 2 }, // 10 000 - 13 999 € → 2%
+  { min: 14000, max: 17999, taux: 3 }, // 14 000 - 17 999 € → 3%
+  { min: 18000, max: 21999, taux: 4 }, // 18 000 - 21 999 € → 4%
+  { min: 22000, taux: 6 } // ≥ 22 000 € → 6%
+]
+
+// Interface pour les erreurs de validation
+export interface SanteIndValidationError {
+  field: string
+  message: string
+  code: string
+}
+
+// Interface pour les réponses API
+export interface SanteIndResponse<T> {
   success: boolean
   data?: T
   error?: string
-  message?: string
+  validationErrors?: SanteIndValidationError[]
 }
 
-export interface SanteIndActivitiesResponse {
-  activities: SanteIndActivity[]
-  totalCount: number
-  hasMore: boolean
-  lockStatus: LockStatus
+// Interface pour les paramètres de requête
+export interface SanteIndQueryParams {
+  yearMonth?: string
+  userId?: string
+  type?: SanteIndActeType
+  compagnie?: CompagnieType
+  day?: number
+  limit?: number
+  offset?: number
 }
 
-// ============================================================================
-// UTILITAIRES DE TYPE
-// ============================================================================
+// Interface pour les statistiques de performance
+export interface SanteIndPerformanceStats {
+  totalActivities: number
+  totalProductionBrute: number
+  totalProductionPondere: number
+  totalCommissions: number
+  averagePerDay: number
+  bestDay: number
+  bestDayCount: number
+}
 
-export type SanteIndActivityCreate = Omit<SanteIndActivity, 'id' | 'createdAt' | 'updatedAt' | 'caPondere'>
-export type SanteIndActivityUpdate = Partial<Pick<SanteIndActivity, 'nomClient' | 'numeroContrat' | 'dateEffet' | 'ca' | 'compagnie'>>
+// Interface pour les objectifs mensuels
+export interface SanteIndMonthlyGoals {
+  yearMonth: string
+  userId: string
+  targetProductionBrute: number
+  targetProductionPondere: number
+  targetCommissions: number
+  targetRevisions: number // Minimum 4
+  createdAt: string
+  updatedAt: string
+}
 
-// ============================================================================
-// CONSTANTES
-// ============================================================================
+// Interface pour les notifications
+export interface SanteIndNotification {
+  id: string
+  userId: string
+  type: 'info' | 'warning' | 'success' | 'error'
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+  expiresAt?: string
+}
 
-export const ACTE_TYPE_LABELS: Record<ActeType, string> = {
-  affaire_nouvelle: 'Affaire nouvelle',
-  revision: 'Révision',
-  adhesion_groupe: 'Adhésion groupe',
-  courtage_vers_allianz: 'Courtage → Allianz',
-  allianz_vers_courtage: 'Allianz → Courtage'
-} as const
+// Interface pour les préférences utilisateur
+export interface SanteIndPreferences {
+  userId: string
+  defaultCompagnie?: CompagnieType
+  autoSave: boolean
+  notificationsEnabled: boolean
+  theme: 'light' | 'dark' | 'auto'
+  createdAt: string
+  updatedAt: string
+}
 
-export const COMPAGNIE_LABELS: Record<Compagnie, string> = {
-  Allianz: 'Allianz',
-  Courtage: 'Courtage'
-} as const
+// Interface pour les exports
+export interface SanteIndExport {
+  yearMonth: string
+  userId: string
+  format: 'csv' | 'excel' | 'pdf'
+  data: SanteIndActivity[]
+  kpis: SanteIndKPI
+  generatedAt: string
+  fileSize: number
+  downloadUrl: string
+}
 
-export const MINIMUM_REVISIONS_REQUIRED = 4
+// Interface pour les audits
+export interface SanteIndAudit {
+  id: string
+  activityId: string
+  action: 'create' | 'update' | 'delete'
+  userId: string
+  timestamp: string
+  changes?: Record<string, any>
+  ipAddress?: string
+  userAgent?: string
+}
 
-// ============================================================================
-// TYPES POUR LES TESTS
-// ============================================================================
+// Interface pour les rapports
+export interface SanteIndReport {
+  id: string
+  yearMonth: string
+  userId: string
+  type: 'monthly' | 'weekly' | 'daily'
+  data: {
+    activities: SanteIndActivity[]
+    kpis: SanteIndKPI
+    timeline: SanteIndTimelineData[]
+    stats: SanteIndPerformanceStats
+  }
+  generatedAt: string
+  expiresAt: string
+}
 
-export interface SanteIndTestData {
+// Interface pour les données de la modale
+export interface SanteIndModalData {
+  type: SanteIndActeType
+  clientName: string
+  contractNumber: string
+  dateEffet: string
+  ca: number
+  compagnie?: CompagnieType // Seulement pour Affaire nouvelle
+}
+
+// Interface pour les données de la table
+export interface SanteIndTableData {
   activities: SanteIndActivity[]
-  locks: SanteIndLock[]
-  expectedKPIs: KPIMensuel
-  expectedStats: ProductionStats
+  isLoading: boolean
+  error?: string
+  isLocked: boolean
+  lockDate?: string
+}
+
+// Interface pour les données du dashboard
+export interface SanteIndDashboardData {
+  currentMonth: SanteIndMonthNavigation
+  kpis: SanteIndKPI
+  tableData: SanteIndTableData
+  timelineData: SanteIndTimelineData[]
+  filters: SanteIndFilter
+}
+
+// Interface pour les calculs de commission
+export interface CommissionCalculation {
+  productionPondere: number
+  tauxApplicable: number
+  commissionEstimee: number
+  seuilAtteint: CommissionSeuil
+  prochainSeuil?: CommissionSeuil
+  ecartProchainSeuil?: number
+}
+
+// Interface pour les statistiques de production
+export interface ProductionStats {
+  totalBrute: number
+  totalPondere: number
+  moyenneParActe: number
+  repartitionParType: Record<SanteIndActeType, {
+    count: number
+    brut: number
+    pondere: number
+    pourcentage: number
+  }>
+}
+
+// Interface pour les alertes de critère qualitatif
+export interface QualiteAlert {
+  type: 'warning' | 'error' | 'success'
+  message: string
+  currentRevisions: number
+  requiredRevisions: number
+  isBlocking: boolean
+}
+
+// Interface pour les données de synchronisation
+export interface SanteIndSyncData {
+  lastSync: string
+  pendingChanges: number
+  isOnline: boolean
+  hasError: boolean
+  errorMessage?: string
+}
+
+// Interface pour les paramètres de configuration
+export interface SanteIndConfig {
+  version: string
+  minRevisionsForQuality: number
+  defaultCurrency: string
+  dateFormat: string
+  timeFormat: string
+  autoSaveInterval: number
+  maxRetries: number
 }

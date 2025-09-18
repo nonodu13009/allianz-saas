@@ -1,252 +1,219 @@
+// Hook personnalisé pour la gestion des activités Santé Individuelle
+// Intègre le service Santé Individuelle avec React
+
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/contexts/auth-context'
-
-import {
-  SanteIndActivity,
-  SanteIndActivityCreate,
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { 
+  SanteIndActivity, 
+  SanteIndActeType, 
+  CompagnieType,
+  SanteIndKPI,
   SanteIndFilter,
-  SanteIndSort,
-  LockStatus,
-  MonthNavigation,
-  KPIMensuel,
-  ProductionStats
-} from '../types/sante-ind'
-
-import {
-  santeIndService,
-  createMonthNavigation,
-  calculateKPIMensuel,
-  calculateProductionStats,
-  filterActivities,
-  sortActivities
-} from '../lib/sante-ind-service'
-
-// ============================================================================
-// TYPES ET INTERFACES
-// ============================================================================
+  SanteIndMonthNavigation,
+  ProductionStats,
+  QualiteAlert
+} from '@/types/sante-ind'
+import { santeIndService } from '@/lib/sante-ind-service'
 
 interface UseSanteIndActivitiesOptions {
-  yearMonth?: string
-  autoLoad?: boolean
+  yearMonth: string
+  userId: string
+  autoRefresh?: boolean
+  refreshInterval?: number // en millisecondes
 }
 
 interface UseSanteIndActivitiesReturn {
   // Données
   activities: SanteIndActivity[]
-  filteredActivities: SanteIndActivity[]
-  kpi: KPIMensuel
-  stats: ProductionStats
-  lockStatus: LockStatus
-  
-  // Navigation
-  navigation: MonthNavigation
-  
-  // États
-  isLoading: boolean
-  isSaving: boolean
+  kpis: SanteIndKPI | null
+  loading: boolean
   error: string | null
   
-  // Filtres et tri
-  filter: SanteIndFilter
-  sort: SanteIndSort
-  
   // Actions
-  loadActivities: () => Promise<void>
-  saveActivity: (activity: SanteIndActivityCreate) => Promise<SanteIndActivity>
-  updateActivity: (id: string, activity: Partial<SanteIndActivity>) => Promise<SanteIndActivity>
+  saveActivity: (activity: Omit<SanteIndActivity, 'id'>) => Promise<SanteIndActivity>
+  updateActivity: (id: string, updates: Partial<SanteIndActivity>) => Promise<SanteIndActivity>
   deleteActivity: (id: string) => Promise<void>
-  refreshData: () => Promise<void>
+  refreshActivities: () => Promise<void>
+  refreshKPIs: () => Promise<void>
   
-  // Navigation
-  navigateToMonth: (year: number, month: number) => void
-  navigateToPreviousMonth: () => void
-  navigateToNextMonth: () => void
-  resetToCurrentMonth: () => void
+  // Navigation mensuelle
+  navigation: SanteIndMonthNavigation
+  goToPreviousMonth: () => void
+  goToNextMonth: () => void
+  goToCurrentMonth: () => void
   
-  // Filtres et tri
-  setFilter: (filter: SanteIndFilter) => void
-  setSort: (sort: SanteIndSort) => void
-  clearFilters: () => void
+  // Filtres
+  filters: SanteIndFilter
+  setFilters: (filters: Partial<SanteIndFilter>) => void
+  filteredActivities: SanteIndActivity[]
+  
+  // Statistiques
+  productionStats: ProductionStats | null
+  qualiteAlert: QualiteAlert | null
+  
+  // Verrouillage
+  isMonthLocked: boolean
+  lockLoading: boolean
   
   // Utilitaires
-  getActivityById: (id: string) => SanteIndActivity | undefined
-  getActivitiesByType: (type: string) => SanteIndActivity[]
+  hasData: boolean
+  totalActivities: number
 }
 
-// ============================================================================
-// HOOK PRINCIPAL
-// ============================================================================
-
-export function useSanteIndActivities(options: UseSanteIndActivitiesOptions = {}): UseSanteIndActivitiesReturn {
-  const { user } = useAuth()
-  const { yearMonth, autoLoad = true } = options
+export function useSanteIndActivities({
+  yearMonth,
+  userId,
+  autoRefresh = true,
+  refreshInterval = 30000 // 30 secondes
+}: UseSanteIndActivitiesOptions): UseSanteIndActivitiesReturn {
   
-  // ============================================================================
-  // ÉTAT LOCAL
-  // ============================================================================
-  
-  // Données
+  // États
   const [activities, setActivities] = useState<SanteIndActivity[]>([])
-  const [lockStatus, setLockStatus] = useState<LockStatus>('unlocked')
-  
-  // États de chargement
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [kpis, setKpis] = useState<SanteIndKPI | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMonthLocked, setIsMonthLocked] = useState(false)
+  const [lockLoading, setLockLoading] = useState(false)
   
-  // Navigation
-  const [currentDate] = useState(new Date())
-  const [currentYear, setCurrentYear] = useState(currentDate.getFullYear())
-  const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth() + 1)
-  const [navigation, setNavigation] = useState<MonthNavigation>(() => 
-    createMonthNavigation(currentYear, currentMonth)
-  )
-  
-  // Filtres et tri
-  const [filter, setFilter] = useState<SanteIndFilter>({})
-  const [sort, setSort] = useState<SanteIndSort>({
-    field: 'dateSaisie',
-    direction: 'desc'
+  // Navigation mensuelle
+  const [currentYear, setCurrentYear] = useState(() => {
+    const now = new Date()
+    return now.getFullYear()
   })
-
-  // ============================================================================
-  // CALCULS DÉRIVÉS
-  // ============================================================================
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date()
+    return now.getMonth() + 1
+  })
   
-  // Activités filtrées et triées
-  const filteredActivities = useCallback(() => {
-    let result = activities
-    
-    // Appliquer les filtres
-    if (Object.keys(filter).length > 0) {
-      result = filterActivities(result, filter)
-    }
-    
-    // Appliquer le tri
-    result = sortActivities(result, sort)
-    
-    return result
-  }, [activities, filter, sort])
-
-  // KPIs calculés
-  const kpi = useCallback(() => {
-    return calculateKPIMensuel(activities)
-  }, [activities])
-
-  // Statistiques calculées
-  const stats = useCallback(() => {
-    return calculateProductionStats(activities)
-  }, [activities])
-
-  // ============================================================================
-  // EFFETS
-  // ============================================================================
+  // Filtres
+  const [filters, setFiltersState] = useState<SanteIndFilter>({
+    type: 'all'
+  })
   
-  // Mettre à jour la navigation
-  useEffect(() => {
-    const newNavigation = createMonthNavigation(currentYear, currentMonth)
-    setNavigation(newNavigation)
-  }, [currentYear, currentMonth])
-
-  // Charger automatiquement les données
-  useEffect(() => {
-    if (autoLoad && user) {
-      loadActivities()
-    }
-  }, [autoLoad, user, currentYear, currentMonth])
-
-  // ============================================================================
-  // FONCTIONS DE CHARGEMENT
-  // ============================================================================
+  // Refs pour éviter les re-renders inutiles
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   
+  // Génération d'ID temporaire
+  const generateTempId = useCallback(() => {
+    return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  }, [])
+  
+  // Navigation mensuelle
+  const navigation: SanteIndMonthNavigation = {
+    currentYear,
+    currentMonth,
+    currentYearMonth: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
+    canGoPrevious: true, // Toujours possible d'aller en arrière
+    canGoNext: true // Toujours possible d'aller en avant
+  }
+  
+  // Chargement des activités
   const loadActivities = useCallback(async () => {
-    if (!user) return
-    
-    setIsLoading(true)
-    setError(null)
-    
     try {
-      const currentYearMonth = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
-      const targetYearMonth = yearMonth || currentYearMonth
+      setLoading(true)
+      setError(null)
       
-      // TODO: Implémenter les appels API Firebase
-      // const [activitiesData, lockData] = await Promise.all([
-      //   fetchActivities(user.uid, targetYearMonth),
-      //   fetchLockStatus(targetYearMonth)
-      // ])
-      
-      // Simulation temporaire
-      const mockActivities: SanteIndActivity[] = []
-      const mockLockStatus: LockStatus = 'unlocked'
-      
-      setActivities(mockActivities)
-      setLockStatus(mockLockStatus)
+      const loadedActivities = await santeIndService.getActivities(yearMonth)
+      setActivities(loadedActivities)
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue'
       setError(errorMessage)
-      console.error('Erreur lors du chargement des activités:', err)
+      console.error('Erreur chargement activités Santé Individuelle:', err)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
-  }, [user, currentYear, currentMonth, yearMonth])
-
-  // ============================================================================
-  // FONCTIONS DE SAUVEGARDE
-  // ============================================================================
+  }, [yearMonth])
   
-  const saveActivity = useCallback(async (activityData: SanteIndActivityCreate): Promise<SanteIndActivity> => {
-    if (!user) throw new Error('Utilisateur non connecté')
-    
-    setIsSaving(true)
-    setError(null)
-    
+  // Chargement des KPIs
+  const loadKPIs = useCallback(async () => {
     try {
-      // TODO: Implémenter l'appel API de sauvegarde
-      // const savedActivity = await createActivity(activityData)
+      const calculatedKPIs = await santeIndService.calculateKPIs(yearMonth, userId)
+      setKpis(calculatedKPIs)
+    } catch (err) {
+      console.error('Erreur calcul KPIs Santé Individuelle:', err)
+    }
+  }, [yearMonth, userId])
+  
+  // Vérification du verrouillage
+  const checkLockStatus = useCallback(async () => {
+    try {
+      setLockLoading(true)
+      const locked = await santeIndService.isMonthLocked(yearMonth, userId)
+      setIsMonthLocked(locked)
+    } catch (err) {
+      console.error('Erreur vérification verrouillage:', err)
+    } finally {
+      setLockLoading(false)
+    }
+  }, [yearMonth, userId])
+  
+  // Sauvegarde d'une nouvelle activité
+  const saveActivity = useCallback(async (activityData: Omit<SanteIndActivity, 'id'>): Promise<SanteIndActivity> => {
+    try {
+      setError(null)
       
-      // Simulation temporaire
+      // Vérification du verrouillage
+      if (isMonthLocked) {
+        throw new Error('Le mois est verrouillé, impossible de modifier les données')
+      }
+      
+      // Création de l'activité avec ID temporaire
       const newActivity: SanteIndActivity = {
         ...activityData,
-        id: `temp-${Date.now()}`,
+        id: generateTempId(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
       
-      setActivities(prev => [newActivity, ...prev])
-      return newActivity
+      // Sauvegarde
+      const savedActivity = await santeIndService.saveActivity(activityData)
+      
+      // Mise à jour immédiate de l'état local
+      setActivities(prev => [savedActivity, ...prev])
+      
+      // Recalcul des KPIs
+      await loadKPIs()
+      
+      return savedActivity
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la sauvegarde'
       setError(errorMessage)
       throw err
-    } finally {
-      setIsSaving(false)
     }
-  }, [user])
-
-  const updateActivity = useCallback(async (id: string, updates: Partial<SanteIndActivity>): Promise<SanteIndActivity> => {
-    if (!user) throw new Error('Utilisateur non connecté')
-    
-    setIsSaving(true)
-    setError(null)
-    
+  }, [isMonthLocked, generateTempId, loadKPIs])
+  
+  // Mise à jour d'une activité existante
+  const updateActivity = useCallback(async (
+    id: string, 
+    updates: Partial<SanteIndActivity>
+  ): Promise<SanteIndActivity> => {
     try {
-      // TODO: Implémenter l'appel API de mise à jour
-      // const updatedActivity = await updateActivityAPI(id, updates)
+      setError(null)
       
-      // Simulation temporaire
-      const updatedActivity: SanteIndActivity = {
-        ...activities.find(a => a.id === id)!,
-        ...updates,
-        updatedAt: new Date().toISOString()
+      // Vérification du verrouillage
+      if (isMonthLocked) {
+        throw new Error('Le mois est verrouillé, impossible de modifier les données')
       }
       
+      // Recherche de l'activité existante
+      const existingActivity = activities.find(a => a.id === id)
+      if (!existingActivity) {
+        throw new Error('Activité non trouvée')
+      }
+      
+      // Mise à jour
+      const updatedActivity = await santeIndService.updateActivity(id, updates)
+      
+      // Mise à jour immédiate de l'état local
       setActivities(prev => 
         prev.map(a => a.id === id ? updatedActivity : a)
       )
+      
+      // Recalcul des KPIs
+      await loadKPIs()
       
       return updatedActivity
       
@@ -254,128 +221,192 @@ export function useSanteIndActivities(options: UseSanteIndActivitiesOptions = {}
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la mise à jour'
       setError(errorMessage)
       throw err
-    } finally {
-      setIsSaving(false)
     }
-  }, [user, activities])
-
+  }, [isMonthLocked, activities, loadKPIs])
+  
+  // Suppression d'une activité
   const deleteActivity = useCallback(async (id: string): Promise<void> => {
-    if (!user) throw new Error('Utilisateur non connecté')
-    
-    setIsSaving(true)
-    setError(null)
-    
     try {
-      // TODO: Implémenter l'appel API de suppression
-      // await deleteActivityAPI(id)
+      setError(null)
       
-      // Simulation temporaire
+      // Vérification du verrouillage
+      if (isMonthLocked) {
+        throw new Error('Le mois est verrouillé, impossible de modifier les données')
+      }
+      
+      // Suppression
+      await santeIndService.deleteActivity(id)
+      
+      // Mise à jour immédiate de l'état local
       setActivities(prev => prev.filter(a => a.id !== id))
+      
+      // Recalcul des KPIs
+      await loadKPIs()
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression'
       setError(errorMessage)
       throw err
-    } finally {
-      setIsSaving(false)
     }
-  }, [user])
-
-  // ============================================================================
-  // FONCTIONS DE NAVIGATION
-  // ============================================================================
+  }, [isMonthLocked, loadKPIs])
   
-  const navigateToMonth = useCallback((year: number, month: number) => {
-    setCurrentYear(year)
-    setCurrentMonth(month)
+  // Actualisation manuelle
+  const refreshActivities = useCallback(async () => {
+    await loadActivities()
+    await loadKPIs()
+    await checkLockStatus()
+  }, [loadActivities, loadKPIs, checkLockStatus])
+  
+  // Actualisation des KPIs seulement
+  const refreshKPIs = useCallback(async () => {
+    await loadKPIs()
+  }, [loadKPIs])
+  
+  // Navigation mensuelle
+  const goToPreviousMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      if (prev === 1) {
+        setCurrentYear(prevYear => prevYear - 1)
+        return 12
+      }
+      return prev - 1
+    })
   }, [])
-
-  const navigateToPreviousMonth = useCallback(() => {
-    const newNavigation = santeIndService.navigateToPreviousMonth(currentYear, currentMonth)
-    setCurrentYear(newNavigation.currentYear)
-    setCurrentMonth(newNavigation.currentMonth)
-  }, [currentYear, currentMonth])
-
-  const navigateToNextMonth = useCallback(() => {
-    const newNavigation = santeIndService.navigateToNextMonth(currentYear, currentMonth)
-    setCurrentYear(newNavigation.currentYear)
-    setCurrentMonth(newNavigation.currentMonth)
-  }, [currentYear, currentMonth])
-
-  const resetToCurrentMonth = useCallback(() => {
+  
+  const goToNextMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      if (prev === 12) {
+        setCurrentYear(prevYear => prevYear + 1)
+        return 1
+      }
+      return prev + 1
+    })
+  }, [])
+  
+  const goToCurrentMonth = useCallback(() => {
     const now = new Date()
     setCurrentYear(now.getFullYear())
     setCurrentMonth(now.getMonth() + 1)
   }, [])
-
-  // ============================================================================
-  // FONCTIONS UTILITAIRES
-  // ============================================================================
   
-  const refreshData = useCallback(async () => {
-    await loadActivities()
-  }, [loadActivities])
-
-  const clearFilters = useCallback(() => {
-    setFilter({})
-    setSort({
-      field: 'dateSaisie',
-      direction: 'desc'
-    })
+  // Gestion des filtres
+  const setFilters = useCallback((newFilters: Partial<SanteIndFilter>) => {
+    setFiltersState(prev => ({ ...prev, ...newFilters }))
   }, [])
-
-  const getActivityById = useCallback((id: string): SanteIndActivity | undefined => {
-    return activities.find(a => a.id === id)
-  }, [activities])
-
-  const getActivitiesByType = useCallback((type: string): SanteIndActivity[] => {
-    return activities.filter(a => a.natureActe === type)
-  }, [activities])
-
-  // ============================================================================
-  // RETOUR DU HOOK
-  // ============================================================================
+  
+  // Filtrage des activités
+  const filteredActivities = activities.filter(activity => {
+    if (filters.type !== 'all' && activity.type !== filters.type) {
+      return false
+    }
+    
+    if (filters.day !== undefined) {
+      const activityDay = new Date(activity.dateSaisie).getDate()
+      if (activityDay !== filters.day) {
+        return false
+      }
+    }
+    
+    if (filters.compagnie !== undefined && activity.compagnie !== filters.compagnie) {
+      return false
+    }
+    
+    return true
+  })
+  
+  // Calcul des statistiques de production
+  const productionStats = activities.length > 0 
+    ? santeIndService.calculateProductionStats(activities)
+    : null
+  
+  // Génération de l'alerte qualité
+  const qualiteAlert = kpis 
+    ? santeIndService.generateQualiteAlert(kpis.nombreRevisions)
+    : null
+  
+  // Actualisation automatique
+  useEffect(() => {
+    if (autoRefresh) {
+      refreshIntervalRef.current = setInterval(refreshActivities, refreshInterval)
+      
+      return () => {
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current)
+        }
+      }
+    }
+  }, [autoRefresh, refreshActivities, refreshInterval])
+  
+  // Chargement initial
+  useEffect(() => {
+    if (yearMonth && userId) {
+      refreshActivities()
+    }
+  }, [yearMonth, userId, refreshActivities])
+  
+  // Nettoyage
+  useEffect(() => {
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+      }
+    }
+  }, [])
+  
+  // Calcul des dérivés
+  const hasData = activities.length > 0
+  const totalActivities = activities.length
   
   return {
     // Données
     activities,
-    filteredActivities: filteredActivities(),
-    kpi: kpi(),
-    stats: stats(),
-    lockStatus,
-    
-    // Navigation
-    navigation,
-    
-    // États
-    isLoading,
-    isSaving,
+    kpis,
+    loading,
     error,
     
-    // Filtres et tri
-    filter,
-    sort,
-    
     // Actions
-    loadActivities,
     saveActivity,
     updateActivity,
     deleteActivity,
-    refreshData,
+    refreshActivities,
+    refreshKPIs,
     
-    // Navigation
-    navigateToMonth,
-    navigateToPreviousMonth,
-    navigateToNextMonth,
-    resetToCurrentMonth,
+    // Navigation mensuelle
+    navigation,
+    goToPreviousMonth,
+    goToNextMonth,
+    goToCurrentMonth,
     
-    // Filtres et tri
-    setFilter,
-    setSort,
-    clearFilters,
+    // Filtres
+    filters,
+    setFilters,
+    filteredActivities,
+    
+    // Statistiques
+    productionStats,
+    qualiteAlert,
+    
+    // Verrouillage
+    isMonthLocked,
+    lockLoading,
     
     // Utilitaires
-    getActivityById,
-    getActivitiesByType
+    hasData,
+    totalActivities
   }
+}
+
+// Hook simplifié pour les cas d'usage basiques
+export function useSanteIndActivitiesSimple(yearMonth: string, userId: string) {
+  return useSanteIndActivities({ 
+    yearMonth, 
+    userId,
+    autoRefresh: true,
+    refreshInterval: 30000
+  })
+}
+
+// Hook pour les cas nécessitant un contrôle fin
+export function useSanteIndActivitiesAdvanced(options: UseSanteIndActivitiesOptions) {
+  return useSanteIndActivities(options)
 }
