@@ -5,20 +5,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { SanteCollActivity, SanteCollKPI } from '@/types/sante-coll'
 import { formatEuroInt, formatEuroDecimal, calculateCommission } from '@/lib/sante-coll'
 import { 
   TrendingUp, 
-  TrendingDown, 
   Target, 
   Euro, 
-  Users, 
-  FileText,
-  CheckCircle,
-  AlertCircle,
-  Building2,
-  Calendar
+  FileText
 } from 'lucide-react'
 
 interface SanteCollKPIsProps {
@@ -84,156 +77,121 @@ export function SanteCollKPIs({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        {/* Production */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Euro className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Production brute</span>
-            </div>
-            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {formatEuroInt(displayKPIs.productionBrute)}
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Production pondérée</span>
-            </div>
-            <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-              {formatEuroInt(displayKPIs.productionPondere)}
-            </div>
-          </div>
-        </div>
-
-        {/* Commission */}
-        {commissionCalculation && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-800 dark:text-purple-200">Commission estimée</span>
-            </div>
-            
+      <CardContent className="p-6">
+        {/* Grille de cartes KPIs compactes */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Production brute */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                {formatEuroDecimal(commissionCalculation.commissionEstimee)}
-              </div>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-                {commissionCalculation.tauxApplicable}%
+              <Euro className="h-5 w-5 text-blue-600" />
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                Production
               </Badge>
             </div>
-            
-            {commissionCalculation.prochainSeuil && (
-              <div className="text-xs text-purple-600 dark:text-purple-400">
-                Prochain seuil: {formatEuroInt(commissionCalculation.prochainSeuil.min)} 
-                ({formatEuroInt(commissionCalculation.ecartProchainSeuil!)} restant)
-              </div>
-            )}
+            <div className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-1">
+              {formatEuroInt(displayKPIs.productionBrute)}
+            </div>
+            <div className="text-xs text-blue-600 dark:text-blue-400">
+              Production brute
+            </div>
           </div>
-        )}
 
-        {/* Activités par type */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Répartition des activités
-          </h4>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-emerald-600">✨</span>
-                <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Affaires nouvelles</span>
-              </div>
-              <span className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
-                {displayKPIs.nombreAffairesNouvelles}
-              </span>
+          {/* Production pondérée */}
+          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-xl p-4 border border-emerald-200 dark:border-emerald-700">
+            <div className="flex items-center justify-between mb-2">
+              <Target className="h-5 w-5 text-emerald-600" />
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 text-xs">
+                Pondérée
+              </Badge>
             </div>
-            
-            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-blue-600">📝</span>
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Révisions</span>
-              </div>
-              <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                {displayKPIs.nombreRevisions}
-              </span>
+            <div className="text-lg font-bold text-emerald-900 dark:text-emerald-100 mb-1">
+              {formatEuroInt(displayKPIs.productionPondere)}
             </div>
-            
-            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-purple-600">👥</span>
-                <span className="text-sm font-medium text-purple-800 dark:text-purple-200">Adhésions groupe</span>
-              </div>
-              <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                {displayKPIs.nombreAdhesionsGroupe}
-              </span>
+            <div className="text-xs text-emerald-600 dark:text-emerald-400">
+              Production pondérée
             </div>
-            
-            <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-orange-600">🔄</span>
-                <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Transferts</span>
-              </div>
-              <span className="text-lg font-bold text-orange-900 dark:text-orange-100">
-                {displayKPIs.nombreTransfertsCourtage}
-              </span>
+          </div>
+
+          {/* Commission */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl p-4 border border-purple-200 dark:border-purple-700">
+            <div className="flex items-center justify-between mb-2">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
+                {commissionCalculation?.tauxApplicable || 0}%
+              </Badge>
+            </div>
+            <div className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-1">
+              {formatEuroDecimal(commissionCalculation?.commissionEstimee || 0)}
+            </div>
+            <div className="text-xs text-purple-600 dark:text-purple-400">
+              Commission estimée
+            </div>
+          </div>
+
+          {/* Total activités */}
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/30 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+            <div className="flex items-center justify-between mb-2">
+              <FileText className="h-5 w-5 text-gray-600" />
+              <Badge variant="secondary" className="bg-gray-100 text-gray-800 text-xs">
+                Total
+              </Badge>
+            </div>
+            <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
+              {displayKPIs.nombreAffairesNouvelles + displayKPIs.nombreRevisions + displayKPIs.nombreAdhesionsGroupe + displayKPIs.nombreTransfertsCourtage}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              Activités totales
             </div>
           </div>
         </div>
 
-        {/* Critère qualitatif */}
-        <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            {displayKPIs.critereQualitatifAtteint ? (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            ) : (
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-            )}
-            <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              Critère qualitatif
-            </span>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-yellow-700 dark:text-yellow-300">
-              Minimum 4 révisions requises
+        {/* Cartes des types d'activités */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {/* Affaires nouvelles */}
+          <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg p-3 border border-emerald-200 dark:border-emerald-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-emerald-600 text-lg">✨</span>
+              <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Affaires nouvelles</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
-                {displayKPIs.nombreRevisions}/4
-              </span>
-              {displayKPIs.critereQualitatifAtteint ? (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                  ✅ Atteint
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                  ⚠️ En cours
-                </Badge>
-              )}
+            <div className="text-xl font-bold text-emerald-900 dark:text-emerald-100">
+              {displayKPIs.nombreAffairesNouvelles}
             </div>
           </div>
-          
-          <div className="mt-2">
-            <Progress 
-              value={(displayKPIs.nombreRevisions / 4) * 100} 
-              className="h-2"
-            />
+
+          {/* Révisions */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-blue-600 text-lg">📝</span>
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Révisions</span>
+            </div>
+            <div className="text-xl font-bold text-blue-900 dark:text-blue-100">
+              {displayKPIs.nombreRevisions}
+            </div>
+          </div>
+
+          {/* Adhésions groupe */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-purple-600 text-lg">👥</span>
+              <span className="text-sm font-medium text-purple-800 dark:text-purple-200">Adhésions groupe</span>
+            </div>
+            <div className="text-xl font-bold text-purple-900 dark:text-purple-100">
+              {displayKPIs.nombreAdhesionsGroupe}
+            </div>
+          </div>
+
+          {/* Transferts */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg p-3 border border-orange-200 dark:border-orange-700">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-orange-600 text-lg">🔄</span>
+              <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Transferts</span>
+            </div>
+            <div className="text-xl font-bold text-orange-900 dark:text-orange-100">
+              {displayKPIs.nombreTransfertsCourtage}
+            </div>
           </div>
         </div>
 
-        {/* Total des activités */}
-        <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-            Total des activités
-          </div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {displayKPIs.nombreAffairesNouvelles + displayKPIs.nombreRevisions + displayKPIs.nombreAdhesionsGroupe + displayKPIs.nombreTransfertsCourtage}
-          </div>
-        </div>
       </CardContent>
     </Card>
   )
