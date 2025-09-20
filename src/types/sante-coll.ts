@@ -3,16 +3,16 @@
 
 // Types d'actes commerciaux Santé Collective (10 types)
 export enum SanteCollActeType {
-  AFFAIRE_NOUVELLE = 'Affaire nouvelle',
-  REVISION = 'Révision',
-  ADHESION_GROUPE = 'Adhésion groupe',
-  TRANSFERT_COURTAGE = 'Transfert courtage',
-  RESILIATION = 'Résiliation',
-  MODIFICATION_CONTRAT = 'Modification contrat',
-  RENOUVELLEMENT = 'Renouvellement',
-  EXTENSION_GARANTIE = 'Extension garantie',
-  CHANGEMENT_TARIF = 'Changement tarif',
-  AUTRE_ACTE = 'Autre acte'
+  AN_COLLECTIVE_SANTE = 'AN Collective en Santé',
+  AN_COLLECTIVE_PREVOYANCE = 'AN Collective en Prévoyance',
+  AN_COLLECTIVE_RETRAITE = 'AN Collective en Retraite',
+  AN_INDIVIDUELLE_SANTE = 'AN Individuelle en Santé',
+  AN_INDIVIDUELLE_PREVOYANCE = 'AN Individuelle en Prévoyance',
+  AN_INDIVIDUELLE_RETRAITE = 'AN Individuelle en Retraite',
+  ADHESION_RENFORT_COLLECTIVE = 'Adhésion/Renfort en Collective',
+  REVISION_COLLECTIVE = 'Révision Collective',
+  COURTAGE_VERS_ALLIANZ = 'Courtage → Allianz',
+  ALLIANZ_VERS_COURTAGE = 'Allianz → Courtage'
 }
 
 // Types d'origines pour les activités (3 types)
@@ -131,16 +131,16 @@ export interface SanteCollDayStats {
 
 // Grille de pondération par type d'acte
 export const PONDERATION_RATES: Record<SanteCollActeType, number> = {
-  [SanteCollActeType.AFFAIRE_NOUVELLE]: 1.00, // 100%
-  [SanteCollActeType.REVISION]: 0.50, // 50%
-  [SanteCollActeType.ADHESION_GROUPE]: 0.50, // 50%
-  [SanteCollActeType.TRANSFERT_COURTAGE]: 0.75, // 75%
-  [SanteCollActeType.RESILIATION]: 0.25, // 25%
-  [SanteCollActeType.MODIFICATION_CONTRAT]: 0.60, // 60%
-  [SanteCollActeType.RENOUVELLEMENT]: 0.80, // 80%
-  [SanteCollActeType.EXTENSION_GARANTIE]: 0.40, // 40%
-  [SanteCollActeType.CHANGEMENT_TARIF]: 0.30, // 30%
-  [SanteCollActeType.AUTRE_ACTE]: 0.50 // 50%
+  [SanteCollActeType.AN_COLLECTIVE_SANTE]: 1.00,           // COLL AN SANTE
+  [SanteCollActeType.AN_COLLECTIVE_PREVOYANCE]: 1.00,      // COLL AN PCE
+  [SanteCollActeType.AN_COLLECTIVE_RETRAITE]: 1.00,        // COLL AN RETRAITE
+  [SanteCollActeType.AN_INDIVIDUELLE_SANTE]: 1.00,          // IND AN SANTE
+  [SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE]: 1.00,    // IND AN PCE
+  [SanteCollActeType.AN_INDIVIDUELLE_RETRAITE]: 1.00,      // IND AN VIE & RETRAITE
+  [SanteCollActeType.ADHESION_RENFORT_COLLECTIVE]: 0.50,    // COLL ADHESION + RENFORT
+  [SanteCollActeType.REVISION_COLLECTIVE]: 0.75,           // REVISION GAMME ANCIENNE
+  [SanteCollActeType.COURTAGE_VERS_ALLIANZ]: 0.75,         // COURTAGE->ALLIANZ
+  [SanteCollActeType.ALLIANZ_VERS_COURTAGE]: 0.50          // ALLIANZ->COURTAGE
 }
 
 // Seuils de commission selon production pondérée

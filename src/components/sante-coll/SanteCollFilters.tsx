@@ -63,16 +63,16 @@ export function SanteCollFilters({
       icon: FileText,
       color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
       options: {
-        [SanteCollActeType.AFFAIRE_NOUVELLE]: { label: 'Affaire nouvelle', icon: '✨' },
-        [SanteCollActeType.REVISION]: { label: 'Révision', icon: '📝' },
-        [SanteCollActeType.ADHESION_GROUPE]: { label: 'Adhésion groupe', icon: '👥' },
-        [SanteCollActeType.TRANSFERT_COURTAGE]: { label: 'Transfert courtage', icon: '🔄' },
-        [SanteCollActeType.RESILIATION]: { label: 'Résiliation', icon: '❌' },
-        [SanteCollActeType.MODIFICATION_CONTRAT]: { label: 'Modification contrat', icon: '📋' },
-        [SanteCollActeType.RENOUVELLEMENT]: { label: 'Renouvellement', icon: '🔄' },
-        [SanteCollActeType.EXTENSION_GARANTIE]: { label: 'Extension garantie', icon: '🛡️' },
-        [SanteCollActeType.CHANGEMENT_TARIF]: { label: 'Changement tarif', icon: '💰' },
-        [SanteCollActeType.AUTRE_ACTE]: { label: 'Autre acte', icon: '📄' }
+        [SanteCollActeType.AN_COLLECTIVE_SANTE]: { label: 'AN Collective Santé', icon: '🏥' },
+        [SanteCollActeType.AN_COLLECTIVE_PREVOYANCE]: { label: 'AN Collective Prévoyance', icon: '🛡️' },
+        [SanteCollActeType.AN_COLLECTIVE_RETRAITE]: { label: 'AN Collective Retraite', icon: '👴' },
+        [SanteCollActeType.AN_INDIVIDUELLE_SANTE]: { label: 'AN Individuelle Santé', icon: '👤' },
+        [SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE]: { label: 'AN Individuelle Prévoyance', icon: '🔒' },
+        [SanteCollActeType.AN_INDIVIDUELLE_RETRAITE]: { label: 'AN Individuelle Retraite', icon: '💼' },
+        [SanteCollActeType.ADHESION_RENFORT_COLLECTIVE]: { label: 'Adhésion/Renfort Collective', icon: '👥' },
+        [SanteCollActeType.REVISION_COLLECTIVE]: { label: 'Révision Collective', icon: '📝' },
+        [SanteCollActeType.COURTAGE_VERS_ALLIANZ]: { label: 'Courtage → Allianz', icon: '➡️' },
+        [SanteCollActeType.ALLIANZ_VERS_COURTAGE]: { label: 'Allianz → Courtage', icon: '⬅️' }
       }
     },
     compagnie: {

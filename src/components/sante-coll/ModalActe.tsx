@@ -130,7 +130,12 @@ export function ModalActe({
     }
 
     // Validation spécifique aux Affaires Nouvelles
-    if (formData.type === SanteCollActeType.AFFAIRE_NOUVELLE && !formData.compagnie) {
+    if ((formData.type === SanteCollActeType.AN_COLLECTIVE_SANTE || 
+         formData.type === SanteCollActeType.AN_COLLECTIVE_PREVOYANCE || 
+         formData.type === SanteCollActeType.AN_COLLECTIVE_RETRAITE || 
+         formData.type === SanteCollActeType.AN_INDIVIDUELLE_SANTE || 
+         formData.type === SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE || 
+         formData.type === SanteCollActeType.AN_INDIVIDUELLE_RETRAITE) && !formData.compagnie) {
       newErrors.compagnie = 'La compagnie est obligatoire pour les Affaires Nouvelles'
     }
 
@@ -250,16 +255,16 @@ export function ModalActe({
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Sélectionner un type d'acte</option>
-                  <option value={SanteCollActeType.AFFAIRE_NOUVELLE}>{SanteCollActeType.AFFAIRE_NOUVELLE}</option>
-                  <option value={SanteCollActeType.REVISION}>{SanteCollActeType.REVISION}</option>
-                  <option value={SanteCollActeType.ADHESION_GROUPE}>{SanteCollActeType.ADHESION_GROUPE}</option>
-                  <option value={SanteCollActeType.TRANSFERT_COURTAGE}>{SanteCollActeType.TRANSFERT_COURTAGE}</option>
-                  <option value={SanteCollActeType.RESILIATION}>{SanteCollActeType.RESILIATION}</option>
-                  <option value={SanteCollActeType.MODIFICATION_CONTRAT}>{SanteCollActeType.MODIFICATION_CONTRAT}</option>
-                  <option value={SanteCollActeType.RENOUVELLEMENT}>{SanteCollActeType.RENOUVELLEMENT}</option>
-                  <option value={SanteCollActeType.EXTENSION_GARANTIE}>{SanteCollActeType.EXTENSION_GARANTIE}</option>
-                  <option value={SanteCollActeType.CHANGEMENT_TARIF}>{SanteCollActeType.CHANGEMENT_TARIF}</option>
-                  <option value={SanteCollActeType.AUTRE_ACTE}>{SanteCollActeType.AUTRE_ACTE}</option>
+                  <option value={SanteCollActeType.AN_COLLECTIVE_SANTE}>{SanteCollActeType.AN_COLLECTIVE_SANTE}</option>
+                  <option value={SanteCollActeType.AN_COLLECTIVE_PREVOYANCE}>{SanteCollActeType.AN_COLLECTIVE_PREVOYANCE}</option>
+                  <option value={SanteCollActeType.AN_COLLECTIVE_RETRAITE}>{SanteCollActeType.AN_COLLECTIVE_RETRAITE}</option>
+                  <option value={SanteCollActeType.AN_INDIVIDUELLE_SANTE}>{SanteCollActeType.AN_INDIVIDUELLE_SANTE}</option>
+                  <option value={SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE}>{SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE}</option>
+                  <option value={SanteCollActeType.AN_INDIVIDUELLE_RETRAITE}>{SanteCollActeType.AN_INDIVIDUELLE_RETRAITE}</option>
+                  <option value={SanteCollActeType.ADHESION_RENFORT_COLLECTIVE}>{SanteCollActeType.ADHESION_RENFORT_COLLECTIVE}</option>
+                  <option value={SanteCollActeType.REVISION_COLLECTIVE}>{SanteCollActeType.REVISION_COLLECTIVE}</option>
+                  <option value={SanteCollActeType.COURTAGE_VERS_ALLIANZ}>{SanteCollActeType.COURTAGE_VERS_ALLIANZ}</option>
+                  <option value={SanteCollActeType.ALLIANZ_VERS_COURTAGE}>{SanteCollActeType.ALLIANZ_VERS_COURTAGE}</option>
                 </select>
                 {errors.type && (
                   <p className="text-sm text-red-600">{errors.type}</p>
@@ -321,7 +326,12 @@ export function ModalActe({
               </div>
 
               {/* Compagnie (seulement pour Affaires Nouvelles) */}
-              {formData.type === SanteCollActeType.AFFAIRE_NOUVELLE && (
+              {(formData.type === SanteCollActeType.AN_COLLECTIVE_SANTE || 
+                formData.type === SanteCollActeType.AN_COLLECTIVE_PREVOYANCE || 
+                formData.type === SanteCollActeType.AN_COLLECTIVE_RETRAITE || 
+                formData.type === SanteCollActeType.AN_INDIVIDUELLE_SANTE || 
+                formData.type === SanteCollActeType.AN_INDIVIDUELLE_PREVOYANCE || 
+                formData.type === SanteCollActeType.AN_INDIVIDUELLE_RETRAITE) && (
                 <div className="space-y-2">
                   <Label htmlFor="compagnie">Compagnie *</Label>
                   <select
