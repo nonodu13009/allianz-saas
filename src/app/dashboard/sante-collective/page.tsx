@@ -179,14 +179,6 @@ export default function SanteCollDashboardPage() {
           loading={loading}
         />
 
-        {/* Filtres Santé Collective */}
-        <SanteCollFilters
-          currentFilter={filters}
-          onFilterChange={setFilters}
-          activitiesCount={activities.length}
-          filteredCount={filteredActivities.length}
-        />
-
         {/* KPIs Santé Collective */}
         <SanteCollKPIs
           activities={activities}
@@ -201,6 +193,14 @@ export default function SanteCollDashboardPage() {
           isLocked={isMonthLocked}
           disabled={loading}
           isLoading={loading}
+        />
+
+        {/* Filtres Santé Collective */}
+        <SanteCollFilters
+          currentFilter={filters}
+          onFilterChange={setFilters}
+          activitiesCount={activities.length}
+          filteredCount={filteredActivities.length}
         />
 
         {/* Affichage des erreurs */}
