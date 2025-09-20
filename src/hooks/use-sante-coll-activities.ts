@@ -176,16 +176,24 @@ export function useSanteCollActivities({
       }
 
       const response = await fetch(`/api/sante-coll-activities?${params}`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const result = await response.json()
 
       if (result.success) {
         setActivities(result.data || [])
+        setError(null) // Clear any previous errors
       } else {
         setError(result.error || 'Erreur lors du chargement des activités')
       }
     } catch (err) {
       console.error('Erreur lors du chargement des activités Santé Collective:', err)
-      setError('Erreur de connexion')
+      // En cas d'erreur, on initialise avec un tableau vide plutôt que d'afficher l'erreur
+      setActivities([])
+      setError('Service temporairement indisponible')
     } finally {
       setLoading(false)
     }

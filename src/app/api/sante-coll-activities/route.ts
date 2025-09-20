@@ -155,8 +155,22 @@ export async function GET(request: NextRequest) {
       q = query(q, where('compagnie', '==', compagnie))
     }
 
-    // Exécuter la requête
-    const querySnapshot = await getDocs(q)
+    // Exécuter la requête avec gestion d'erreur Firebase
+    let querySnapshot
+    try {
+      querySnapshot = await getDocs(q)
+    } catch (firebaseError) {
+      console.error('Erreur Firebase lors de la récupération des activités:', firebaseError)
+      
+      // Retourner un tableau vide en cas d'erreur Firebase
+      const response: SanteCollApiResponse<SanteCollActivity[]> = {
+        success: true,
+        data: [],
+        message: '0 activité(s) Santé Collective récupérée(s) (service temporairement indisponible)'
+      }
+
+      return NextResponse.json(response)
+    }
     const activities: SanteCollActivity[] = []
 
     querySnapshot.forEach((doc) => {
