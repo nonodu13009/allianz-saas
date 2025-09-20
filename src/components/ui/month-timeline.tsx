@@ -146,15 +146,15 @@ export function MonthTimeline({
           </div>
           
           {showNavigation && onMonthChange && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handlePreviousMonth}
-                className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                className="h-10 w-10 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 shadow-sm"
                 title="Mois précédent"
               >
-                <ChevronLeft className="h-4 w-4 text-gray-600 hover:text-blue-600" />
+                <ChevronLeft className="h-5 w-5 text-blue-600" />
               </Button>
               
               {/* Bouton retour au mois actuel */}
@@ -175,10 +175,10 @@ export function MonthTimeline({
                 variant="outline"
                 size="sm"
                 onClick={handleNextMonth}
-                className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                className="h-10 w-10 p-0 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all duration-200 shadow-sm"
                 title="Mois suivant"
               >
-                <ChevronRight className="h-4 w-4 text-gray-600 hover:text-blue-600" />
+                <ChevronRight className="h-5 w-5 text-blue-600" />
               </Button>
             </div>
           )}
