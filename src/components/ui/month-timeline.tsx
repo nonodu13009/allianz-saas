@@ -157,6 +157,13 @@ export function MonthTimeline({
                 <ChevronLeft className="h-5 w-5 text-blue-600" />
               </Button>
               
+              {/* Date du mois */}
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  {monthName}
+                </span>
+              </div>
+              
               {/* Bouton retour au mois actuel */}
               {!isCurrentMonth() && (
                 <Button
