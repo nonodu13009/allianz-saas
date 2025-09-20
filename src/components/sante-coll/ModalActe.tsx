@@ -315,8 +315,8 @@ export function ModalActe({
                 >
                   <option value="">Sélectionner une origine</option>
                   <option value="Prospection">Prospection</option>
-                  <option value="Relation client">Relation client</option>
-                  <option value="Référencement">Référencement</option>
+                  <option value="Réactif">Réactif</option>
+                  <option value="Proactif">Proactif</option>
                 </select>
               </div>
 

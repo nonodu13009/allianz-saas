@@ -18,8 +18,8 @@ export enum SanteCollActeType {
 // Types d'origines pour les activités (3 types)
 export enum SanteCollOrigine {
   PROSPECTION = 'Prospection',
-  RELATION_CLIENT = 'Relation client',
-  REFERENCEMENT = 'Référencement'
+  REACTIF = 'Réactif',
+  PROACTIF = 'Proactif'
 }
 
 // Types de compagnies pour les Affaires Nouvelles

@@ -48,16 +48,16 @@ export function SanteCollFilters({
 
   // Configuration des filtres principaux
   const filterCategories = {
-    origine: {
-      label: 'Origine',
-      icon: Target,
-      color: 'bg-blue-100 text-blue-800 border-blue-200',
-      options: {
-        [SanteCollOrigine.PROSPECTION]: { label: 'Prospection', icon: '🎯' },
-        [SanteCollOrigine.RELATION_CLIENT]: { label: 'Relation client', icon: '🤝' },
-        [SanteCollOrigine.REFERENCEMENT]: { label: 'Référencement', icon: '⭐' }
-      }
-    },
+      origine: {
+        label: 'Origine',
+        icon: Target,
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        options: {
+          [SanteCollOrigine.PROSPECTION]: { label: 'Prospection', icon: '🎯' },
+          [SanteCollOrigine.REACTIF]: { label: 'Réactif', icon: '⚡' },
+          [SanteCollOrigine.PROACTIF]: { label: 'Proactif', icon: '🚀' }
+        }
+      },
     type: {
       label: 'Type d\'acte',
       icon: FileText,
