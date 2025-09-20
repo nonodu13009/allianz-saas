@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer le verrouillage du mois
-    const lockRef = doc(db, 'santeIndLocks', yearMonth)
+    const lockRef = doc(db, 'sante_ind_locks', yearMonth)
     const lockSnap = await getDoc(lockRef)
 
     let lockStatus: LockStatus = 'unlocked'
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const lockRef = doc(db, 'santeIndLocks', yearMonth)
+    const lockRef = doc(db, 'sante_ind_locks', yearMonth)
     
     if (status === 'locked') {
       // Créer ou mettre à jour le verrouillage
@@ -207,7 +207,7 @@ export async function PUT(request: NextRequest) {
 
     // Récupérer tous les verrouillages
     const locksQuery = query(
-      collection(db, 'santeIndLocks'),
+      collection(db, 'sante_ind_locks'),
       where('status', '==', 'locked')
     )
     

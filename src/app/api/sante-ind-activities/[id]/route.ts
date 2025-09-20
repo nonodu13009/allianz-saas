@@ -43,7 +43,7 @@ export async function GET(
     }
 
     // Récupérer l'activité
-    const docRef = doc(db, 'santeIndActivities', id)
+    const docRef = doc(db, 'sante_ind_activities', id)
     const docSnap = await getDoc(docRef)
 
     if (!docSnap.exists()) {
@@ -110,7 +110,7 @@ export async function PUT(
     }
 
     // Vérifier que l'activité existe
-    const docRef = doc(db, 'santeIndActivities', id)
+    const docRef = doc(db, 'sante_ind_activities', id)
     const docSnap = await getDoc(docRef)
 
     if (!docSnap.exists()) {
@@ -187,7 +187,7 @@ export async function DELETE(
     }
 
     // Vérifier que l'activité existe
-    const docRef = doc(db, 'santeIndActivities', id)
+    const docRef = doc(db, 'sante_ind_activities', id)
     const docSnap = await getDoc(docRef)
 
     if (!docSnap.exists()) {

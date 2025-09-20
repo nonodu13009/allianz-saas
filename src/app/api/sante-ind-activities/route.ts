@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Sauvegarder en base
-    const docRef = await addDoc(collection(db, 'santeIndActivities'), firebaseData)
+    const docRef = await addDoc(collection(db, 'sante_ind_activities'), firebaseData)
 
     const response: SanteIndApiResponse<SanteIndActivity> = {
       success: true,
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     // Construire la requête
     let q = query(
-      collection(db, 'santeIndActivities'),
+      collection(db, 'sante_ind_activities'),
       where('userId', '==', userId),
       orderBy('dateSaisie', 'desc')
     )
