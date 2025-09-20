@@ -38,8 +38,21 @@ export function SanteCollKPIs({
   // Parsing de l'année et du mois
   const [year, month] = yearMonth.split('-').map(Number)
   
-  // Calcul de la commission si pas de KPIs
-  const commissionCalculation = kpis ? calculateCommission(kpis.productionPondere) : null
+  // KPIs par défaut si pas de données
+  const defaultKPIs: SanteCollKPI = {
+    productionBrute: 0,
+    productionPondere: 0,
+    nombreAffairesNouvelles: 0,
+    nombreRevisions: 0,
+    nombreAdhesionsGroupe: 0,
+    nombreTransfertsCourtage: 0,
+    critereQualitatifAtteint: false
+  }
+
+  const displayKPIs = kpis || defaultKPIs
+  
+  // Calcul de la commission
+  const commissionCalculation = calculateCommission(displayKPIs.productionPondere)
 
   if (loading) {
     return (
@@ -56,27 +69,6 @@ export function SanteCollKPIs({
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
               <p className="text-gray-600 dark:text-gray-400">Chargement des KPIs...</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!kpis) {
-    return (
-      <Card className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
-            KPIs Santé Collective - {month}/{year}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="text-4xl mb-2">📊</div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Aucune donnée disponible pour ce mois
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -101,7 +93,7 @@ export function SanteCollKPIs({
               <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Production brute</span>
             </div>
             <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {formatEuroInt(kpis.productionBrute)}
+              {formatEuroInt(displayKPIs.productionBrute)}
             </div>
           </div>
           
@@ -111,7 +103,7 @@ export function SanteCollKPIs({
               <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Production pondérée</span>
             </div>
             <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-              {formatEuroInt(kpis.productionPondere)}
+              {formatEuroInt(displayKPIs.productionPondere)}
             </div>
           </div>
         </div>
@@ -156,7 +148,7 @@ export function SanteCollKPIs({
                 <span className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Affaires nouvelles</span>
               </div>
               <span className="text-lg font-bold text-emerald-900 dark:text-emerald-100">
-                {kpis.nombreAffairesNouvelles}
+                {displayKPIs.nombreAffairesNouvelles}
               </span>
             </div>
             
@@ -166,7 +158,7 @@ export function SanteCollKPIs({
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Révisions</span>
               </div>
               <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                {kpis.nombreRevisions}
+                {displayKPIs.nombreRevisions}
               </span>
             </div>
             
@@ -176,7 +168,7 @@ export function SanteCollKPIs({
                 <span className="text-sm font-medium text-purple-800 dark:text-purple-200">Adhésions groupe</span>
               </div>
               <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                {kpis.nombreAdhesionsGroupe}
+                {displayKPIs.nombreAdhesionsGroupe}
               </span>
             </div>
             
@@ -186,7 +178,7 @@ export function SanteCollKPIs({
                 <span className="text-sm font-medium text-orange-800 dark:text-orange-200">Transferts</span>
               </div>
               <span className="text-lg font-bold text-orange-900 dark:text-orange-100">
-                {kpis.nombreTransfertsCourtage}
+                {displayKPIs.nombreTransfertsCourtage}
               </span>
             </div>
           </div>
@@ -195,7 +187,7 @@ export function SanteCollKPIs({
         {/* Critère qualitatif */}
         <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
-            {kpis.critereQualitatifAtteint ? (
+            {displayKPIs.critereQualitatifAtteint ? (
               <CheckCircle className="h-4 w-4 text-green-600" />
             ) : (
               <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -211,9 +203,9 @@ export function SanteCollKPIs({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
-                {kpis.nombreRevisions}/4
+                {displayKPIs.nombreRevisions}/4
               </span>
-              {kpis.critereQualitatifAtteint ? (
+              {displayKPIs.critereQualitatifAtteint ? (
                 <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
                   ✅ Atteint
                 </Badge>
@@ -227,7 +219,7 @@ export function SanteCollKPIs({
           
           <div className="mt-2">
             <Progress 
-              value={(kpis.nombreRevisions / 4) * 100} 
+              value={(displayKPIs.nombreRevisions / 4) * 100} 
               className="h-2"
             />
           </div>
@@ -239,7 +231,7 @@ export function SanteCollKPIs({
             Total des activités
           </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            {kpis.nombreAffairesNouvelles + kpis.nombreRevisions + kpis.nombreAdhesionsGroupe + kpis.nombreTransfertsCourtage}
+            {displayKPIs.nombreAffairesNouvelles + displayKPIs.nombreRevisions + displayKPIs.nombreAdhesionsGroupe + displayKPIs.nombreTransfertsCourtage}
           </div>
         </div>
       </CardContent>
