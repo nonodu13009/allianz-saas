@@ -52,7 +52,13 @@ export async function POST(request: NextRequest) {
       'Affaire nouvelle': 1.00,
       'Révision': 0.50,
       'Adhésion groupe': 0.50,
-      'Transfert courtage': 0.75
+      'Transfert courtage': 0.75,
+      'Résiliation': 0.25,
+      'Modification contrat': 0.60,
+      'Renouvellement': 0.80,
+      'Extension garantie': 0.40,
+      'Changement tarif': 0.30,
+      'Autre acte': 0.50
     }
     
     const caPondere = activityData.ca * (ponderationRates[activityData.type] || 1.00)

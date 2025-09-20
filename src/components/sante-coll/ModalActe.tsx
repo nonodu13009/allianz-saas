@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { SanteCollActeType, SanteCollOrigine, CompagnieType } from '@/types/sante-coll'
+import { SanteCollActeType, SanteCollOrigine, CompagnieType, PONDERATION_RATES } from '@/types/sante-coll'
 import { calculateCAPondere, formatEuroInt, capitalizeClientName } from '@/lib/sante-coll'
 import { toast } from 'sonner'
 import { 
@@ -30,7 +30,6 @@ interface ModalActeProps {
   isOpen: boolean
   onClose: () => void
   onSave: (data: any) => void
-  acteType: SanteCollActeType
   loading?: boolean
   isLocked?: boolean
   existingActivity?: any
@@ -41,7 +40,6 @@ export function ModalActe({
   isOpen, 
   onClose, 
   onSave, 
-  acteType, 
   loading = false, 
   isLocked = false,
   existingActivity,
@@ -53,6 +51,7 @@ export function ModalActe({
     contractNumber: '',
     dateEffet: '',
     ca: '',
+    type: '',
     origine: '',
     compagnie: '',
     comment: ''
@@ -70,6 +69,7 @@ export function ModalActe({
           contractNumber: existingActivity.contractNumber || '',
           dateEffet: existingActivity.dateEffet || '',
           ca: existingActivity.ca?.toString() || '',
+          type: existingActivity.type || '',
           origine: existingActivity.origine || '',
           compagnie: existingActivity.compagnie || '',
           comment: existingActivity.comment || ''
@@ -81,6 +81,7 @@ export function ModalActe({
           contractNumber: '',
           dateEffet: '',
           ca: '',
+          type: '',
           origine: '',
           compagnie: '',
           comment: ''
@@ -124,8 +125,12 @@ export function ModalActe({
       newErrors.ca = 'Le CA doit être supérieur à 0'
     }
 
+    if (!formData.type) {
+      newErrors.type = 'Le type d\'acte est obligatoire'
+    }
+
     // Validation spécifique aux Affaires Nouvelles
-    if (acteType === SanteCollActeType.AFFAIRE_NOUVELLE && !formData.compagnie) {
+    if (formData.type === SanteCollActeType.AFFAIRE_NOUVELLE && !formData.compagnie) {
       newErrors.compagnie = 'La compagnie est obligatoire pour les Affaires Nouvelles'
     }
 
@@ -148,11 +153,11 @@ export function ModalActe({
     // Capitalisation du nom client
     const capitalizedName = capitalizeClientName(formData.clientName)
     const ca = parseFloat(formData.ca)
-    const caPondere = calculateCAPondere(ca, acteType)
+    const caPondere = calculateCAPondere(ca, formData.type as SanteCollActeType)
 
     // Préparation des données
     const activityData = {
-      type: acteType,
+      type: formData.type,
       clientName: capitalizedName,
       contractNumber: formData.contractNumber.trim(),
       dateEffet: formData.dateEffet,
@@ -168,54 +173,17 @@ export function ModalActe({
     onSave(activityData)
   }
 
-  // Configuration selon le type d'acte
-  const getActeTypeConfig = () => {
-    const configs = {
-      [SanteCollActeType.AFFAIRE_NOUVELLE]: {
-        title: 'Nouvelle Affaire',
-        icon: '✨',
-        color: 'text-emerald-600',
-        bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
-        borderColor: 'border-emerald-200 dark:border-emerald-800'
-      },
-      [SanteCollActeType.REVISION]: {
-        title: 'Révision',
-        icon: '📝',
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-        borderColor: 'border-blue-200 dark:border-blue-800'
-      },
-      [SanteCollActeType.ADHESION_GROUPE]: {
-        title: 'Adhésion Groupe',
-        icon: '👥',
-        color: 'text-purple-600',
-        bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-        borderColor: 'border-purple-200 dark:border-purple-800'
-      },
-      [SanteCollActeType.TRANSFERT_COURTAGE]: {
-        title: 'Transfert Courtage',
-        icon: '🔄',
-        color: 'text-orange-600',
-        bgColor: 'bg-orange-50 dark:bg-orange-900/20',
-        borderColor: 'border-orange-200 dark:border-orange-800'
-      }
-    }
-    
-    return configs[acteType] || configs[SanteCollActeType.AFFAIRE_NOUVELLE]
-  }
-
-  const config = getActeTypeConfig()
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className={`flex items-center gap-3 ${config.color}`}>
-            <div className={`p-2 rounded-lg ${config.bgColor}`}>
-              <span className="text-2xl">{config.icon}</span>
+          <DialogTitle className="flex items-center gap-3 text-blue-600">
+            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+              <span className="text-2xl">📝</span>
             </div>
             <div>
-              <div className="text-xl font-bold">{config.title}</div>
+              <div className="text-xl font-bold">Nouvel acte</div>
               <div className="text-sm font-normal text-gray-600 dark:text-gray-400">
                 Santé Collective
               </div>
@@ -274,6 +242,31 @@ export function ModalActe({
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="type">Type d'acte *</Label>
+                <select
+                  id="type"
+                  value={formData.type}
+                  onChange={(e) => handleInputChange('type', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                  <option value="">Sélectionner un type d'acte</option>
+                  <option value="Affaire nouvelle">Affaire nouvelle</option>
+                  <option value="Révision">Révision</option>
+                  <option value="Adhésion groupe">Adhésion groupe</option>
+                  <option value="Transfert courtage">Transfert courtage</option>
+                  <option value="Résiliation">Résiliation</option>
+                  <option value="Modification contrat">Modification contrat</option>
+                  <option value="Renouvellement">Renouvellement</option>
+                  <option value="Extension garantie">Extension garantie</option>
+                  <option value="Changement tarif">Changement tarif</option>
+                  <option value="Autre acte">Autre acte</option>
+                </select>
+                {errors.type && (
+                  <p className="text-sm text-red-600">{errors.type}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="dateEffet">Date d'effet *</Label>
                 <Input
                   id="dateEffet"
@@ -328,7 +321,7 @@ export function ModalActe({
               </div>
 
               {/* Compagnie (seulement pour Affaires Nouvelles) */}
-              {acteType === SanteCollActeType.AFFAIRE_NOUVELLE && (
+              {formData.type === 'Affaire nouvelle' && (
                 <div className="space-y-2">
                   <Label htmlFor="compagnie">Compagnie *</Label>
                   <select
@@ -363,18 +356,21 @@ export function ModalActe({
           </div>
 
           {/* Calcul du CA pondéré */}
-          {formData.ca && (
-            <div className={`p-4 rounded-lg border ${config.bgColor} ${config.borderColor}`}>
+          {formData.ca && formData.type && (
+            <div className="p-4 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <TrendingUp className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                     CA pondéré calculé
                   </span>
                 </div>
-                <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  {formatEuroInt(calculateCAPondere(parseFloat(formData.ca) || 0, acteType))}
+                <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                  {formatEuroInt(calculateCAPondere(parseFloat(formData.ca) || 0, formData.type as SanteCollActeType))}
                 </div>
+              </div>
+              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                Coefficient: {((PONDERATION_RATES[formData.type as SanteCollActeType] || 1) * 100).toFixed(0)}%
               </div>
             </div>
           )}

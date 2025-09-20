@@ -70,8 +70,8 @@ export default function SanteCollDashboardPage() {
 
 
   // Gestionnaires des actions CRUD
-  const handleButtonClick = (acteType: SanteCollActeType) => {
-    setSelectedActeType(acteType)
+  const handleNewActeClick = () => {
+    setSelectedActeType(null)
     setEditingActivity(null)
     setModalActeOpen(true)
   }
@@ -98,7 +98,7 @@ export default function SanteCollDashboardPage() {
   const handleEditActivity = async (activity: any) => {
     try {
       setEditingActivity(activity)
-      setSelectedActeType(activity.type)
+      setSelectedActeType(null)
       setModalActeOpen(true)
     } catch (error) {
       console.error('Erreur lors de l\'édition:', error)
@@ -197,7 +197,7 @@ export default function SanteCollDashboardPage() {
 
         {/* Boutons de saisie */}
         <SanteCollButtons
-          onButtonClick={handleButtonClick}
+          onNewActeClick={handleNewActeClick}
           isLocked={isMonthLocked}
           disabled={loading}
           isLoading={loading}
@@ -232,18 +232,15 @@ export default function SanteCollDashboardPage() {
         />
 
         {/* Modale de saisie */}
-        {selectedActeType && (
-          <ModalActe
-            isOpen={modalActeOpen}
-            onClose={handleCloseModal}
-            onSave={handleSaveActivity}
-            acteType={selectedActeType}
-            loading={loading}
-            isLocked={isMonthLocked}
-            existingActivity={editingActivity}
-            yearMonth={currentYearMonth}
-          />
-        )}
+        <ModalActe
+          isOpen={modalActeOpen}
+          onClose={handleCloseModal}
+          onSave={handleSaveActivity}
+          loading={loading}
+          isLocked={isMonthLocked}
+          existingActivity={editingActivity}
+          yearMonth={currentYearMonth}
+        />
       </div>
     </DashboardLayout>
   )
