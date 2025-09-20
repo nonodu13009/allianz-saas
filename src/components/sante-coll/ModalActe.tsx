@@ -250,16 +250,16 @@ export function ModalActe({
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.type ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Sélectionner un type d'acte</option>
-                  <option value="Affaire nouvelle">Affaire nouvelle</option>
-                  <option value="Révision">Révision</option>
-                  <option value="Adhésion groupe">Adhésion groupe</option>
-                  <option value="Transfert courtage">Transfert courtage</option>
-                  <option value="Résiliation">Résiliation</option>
-                  <option value="Modification contrat">Modification contrat</option>
-                  <option value="Renouvellement">Renouvellement</option>
-                  <option value="Extension garantie">Extension garantie</option>
-                  <option value="Changement tarif">Changement tarif</option>
-                  <option value="Autre acte">Autre acte</option>
+                  <option value={SanteCollActeType.AFFAIRE_NOUVELLE}>{SanteCollActeType.AFFAIRE_NOUVELLE}</option>
+                  <option value={SanteCollActeType.REVISION}>{SanteCollActeType.REVISION}</option>
+                  <option value={SanteCollActeType.ADHESION_GROUPE}>{SanteCollActeType.ADHESION_GROUPE}</option>
+                  <option value={SanteCollActeType.TRANSFERT_COURTAGE}>{SanteCollActeType.TRANSFERT_COURTAGE}</option>
+                  <option value={SanteCollActeType.RESILIATION}>{SanteCollActeType.RESILIATION}</option>
+                  <option value={SanteCollActeType.MODIFICATION_CONTRAT}>{SanteCollActeType.MODIFICATION_CONTRAT}</option>
+                  <option value={SanteCollActeType.RENOUVELLEMENT}>{SanteCollActeType.RENOUVELLEMENT}</option>
+                  <option value={SanteCollActeType.EXTENSION_GARANTIE}>{SanteCollActeType.EXTENSION_GARANTIE}</option>
+                  <option value={SanteCollActeType.CHANGEMENT_TARIF}>{SanteCollActeType.CHANGEMENT_TARIF}</option>
+                  <option value={SanteCollActeType.AUTRE_ACTE}>{SanteCollActeType.AUTRE_ACTE}</option>
                 </select>
                 {errors.type && (
                   <p className="text-sm text-red-600">{errors.type}</p>
@@ -314,14 +314,14 @@ export function ModalActe({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Sélectionner une origine</option>
-                  <option value="Prospection">Prospection</option>
-                  <option value="Réactif">Réactif</option>
-                  <option value="Proactif">Proactif</option>
+                  <option value={SanteCollOrigine.PROSPECTION}>{SanteCollOrigine.PROSPECTION}</option>
+                  <option value={SanteCollOrigine.REACTIF}>{SanteCollOrigine.REACTIF}</option>
+                  <option value={SanteCollOrigine.PROACTIF}>{SanteCollOrigine.PROACTIF}</option>
                 </select>
               </div>
 
               {/* Compagnie (seulement pour Affaires Nouvelles) */}
-              {formData.type === 'Affaire nouvelle' && (
+              {formData.type === SanteCollActeType.AFFAIRE_NOUVELLE && (
                 <div className="space-y-2">
                   <Label htmlFor="compagnie">Compagnie *</Label>
                   <select
@@ -331,9 +331,9 @@ export function ModalActe({
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.compagnie ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value="">Sélectionner une compagnie</option>
-                    <option value="Allianz">Allianz</option>
-                    <option value="Unim/Uniced">Unim/Uniced</option>
-                    <option value="Courtage">Courtage</option>
+                    <option value={CompagnieType.ALLIANZ}>{CompagnieType.ALLIANZ}</option>
+                    <option value={CompagnieType.UNIM_UNICED}>{CompagnieType.UNIM_UNICED}</option>
+                    <option value={CompagnieType.COURTAGE}>{CompagnieType.COURTAGE}</option>
                   </select>
                   {errors.compagnie && (
                     <p className="text-sm text-red-600">{errors.compagnie}</p>
