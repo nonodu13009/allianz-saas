@@ -14,7 +14,8 @@ import { db } from '@/lib/firebase'
 import {
   SanteCollActivity,
   SanteCollActivityCreate,
-  SanteCollApiResponse
+  SanteCollApiResponse,
+  calculatePrimePondereFinale
 } from '@/types/sante-coll'
 
 // ============================================================================
@@ -47,21 +48,16 @@ export async function POST(request: NextRequest) {
     // Vérifier les permissions (rôle CDC Santé Collective)
     // TODO: Implémenter la vérification des rôles
     
-    // Calculer le CA pondéré selon le type d'acte
-    const ponderationRates = {
-      'AN Collective en Santé': 1.00,
-      'AN Collective en Prévoyance': 1.00,
-      'AN Collective en Retraite': 1.00,
-      'AN Individuelle en Santé': 1.00,
-      'AN Individuelle en Prévoyance': 1.00,
-      'AN Individuelle en Retraite': 1.00,
-      'Adhésion/Renfort en Collective': 0.50,
-      'Révision Collective': 0.75,
-      'Courtage → Allianz': 0.75,
-      'Allianz → Courtage': 0.50
+    // Calculer le CA pondéré avec les 3 coefficients (Origine × Type × Compagnie)
+    let caPondere = activityData.ca
+    if (activityData.origine && activityData.type && activityData.compagnie) {
+      caPondere = calculatePrimePondereFinale(
+        activityData.origine,
+        activityData.type,
+        activityData.compagnie,
+        activityData.ca
+      )
     }
-    
-    const caPondere = activityData.ca * (ponderationRates[activityData.type] || 1.00)
 
     // Préparer les données pour Firebase
     const firebaseData = {

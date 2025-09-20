@@ -9,8 +9,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { SanteCollActeType, SanteCollOrigine, CompagnieType, PONDERATION_RATES } from '@/types/sante-coll'
-import { calculateCAPondere, formatEuroInt, capitalizeClientName } from '@/lib/sante-coll'
+import { 
+  SanteCollActeType, 
+  SanteCollOrigine, 
+  CompagnieType, 
+  PONDERATION_RATES_BY_ORIGINE,
+  PONDERATION_RATES_BY_TYPE,
+  PONDERATION_RATES_BY_COMPAGNIE,
+  calculatePrimePondereFinale
+} from '@/types/sante-coll'
+import { formatEuroInt, capitalizeClientName } from '@/lib/sante-coll'
 import { toast } from 'sonner'
 import { 
   PlusCircle, 
@@ -158,7 +166,17 @@ export function ModalActe({
     // Capitalisation du nom client
     const capitalizedName = capitalizeClientName(formData.clientName)
     const ca = parseFloat(formData.ca)
-    const caPondere = calculateCAPondere(ca, formData.type as SanteCollActeType)
+    
+    // Calcul de la prime pondérée avec les 3 coefficients
+    let caPondere = ca
+    if (formData.origine && formData.type && formData.compagnie) {
+      caPondere = calculatePrimePondereFinale(
+        formData.origine as SanteCollOrigine,
+        formData.type as SanteCollActeType,
+        formData.compagnie as CompagnieType,
+        ca
+      )
+    }
 
     // Préparation des données
     const activityData = {
@@ -365,25 +383,31 @@ export function ModalActe({
             </div>
           </div>
 
-          {/* Calcul du CA pondéré */}
-          {formData.ca && formData.type && (
-            <div className="p-4 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    CA pondéré calculé
-                  </span>
+              {/* Calcul du CA pondéré */}
+              {formData.ca && formData.type && formData.origine && formData.compagnie && (
+                <div className="p-4 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Prime pondérée calculée
+                      </span>
+                    </div>
+                    <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                      {formatEuroInt(calculatePrimePondereFinale(
+                        formData.origine as SanteCollOrigine,
+                        formData.type as SanteCollActeType,
+                        formData.compagnie as CompagnieType,
+                        parseFloat(formData.ca) || 0
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                    <div>Origine: {PONDERATION_RATES_BY_ORIGINE[formData.origine as SanteCollOrigine]} × Type: {PONDERATION_RATES_BY_TYPE[formData.type as SanteCollActeType]} × Compagnie: {PONDERATION_RATES_BY_COMPAGNIE[formData.compagnie as CompagnieType]}</div>
+                    <div>Coefficient final: {((PONDERATION_RATES_BY_ORIGINE[formData.origine as SanteCollOrigine] || 1) * (PONDERATION_RATES_BY_TYPE[formData.type as SanteCollActeType] || 1) * (PONDERATION_RATES_BY_COMPAGNIE[formData.compagnie as CompagnieType] || 1)).toFixed(2)}</div>
+                  </div>
                 </div>
-                <div className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                  {formatEuroInt(calculateCAPondere(parseFloat(formData.ca) || 0, formData.type as SanteCollActeType))}
-                </div>
-              </div>
-              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                Coefficient: {((PONDERATION_RATES[formData.type as SanteCollActeType] || 1) * 100).toFixed(0)}%
-              </div>
-            </div>
-          )}
+              )}
         </div>
 
         {/* Actions */}

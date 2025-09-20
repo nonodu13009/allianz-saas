@@ -129,8 +129,15 @@ export interface SanteCollDayStats {
   acteCounts: Record<SanteCollActeType, number>
 }
 
-// Grille de pondération par type d'acte
-export const PONDERATION_RATES: Record<SanteCollActeType, number> = {
+// Coefficients selon l'origine de l'affaire
+export const PONDERATION_RATES_BY_ORIGINE: Record<SanteCollOrigine, number> = {
+  [SanteCollOrigine.PROACTIF]: 1.00,     // Coefficient 1,00
+  [SanteCollOrigine.REACTIF]: 0.50,      // Coefficient 0,50
+  [SanteCollOrigine.PROSPECTION]: 1.50   // Coefficient 1,50
+}
+
+// Coefficients selon le type d'acte
+export const PONDERATION_RATES_BY_TYPE: Record<SanteCollActeType, number> = {
   [SanteCollActeType.AN_COLLECTIVE_SANTE]: 1.00,           // COLL AN SANTE
   [SanteCollActeType.AN_COLLECTIVE_PREVOYANCE]: 1.00,      // COLL AN PCE
   [SanteCollActeType.AN_COLLECTIVE_RETRAITE]: 1.00,        // COLL AN RETRAITE
@@ -141,6 +148,28 @@ export const PONDERATION_RATES: Record<SanteCollActeType, number> = {
   [SanteCollActeType.REVISION_COLLECTIVE]: 0.75,           // REVISION GAMME ANCIENNE
   [SanteCollActeType.COURTAGE_VERS_ALLIANZ]: 0.75,         // COURTAGE->ALLIANZ
   [SanteCollActeType.ALLIANZ_VERS_COURTAGE]: 0.50          // ALLIANZ->COURTAGE
+}
+
+// Coefficients selon la compagnie
+export const PONDERATION_RATES_BY_COMPAGNIE: Record<CompagnieType, number> = {
+  [CompagnieType.ALLIANZ]: 1.20,        // Coefficient 1,20
+  [CompagnieType.UNIM_UNICED]: 1.50,    // Coefficient 1,50
+  [CompagnieType.COURTAGE]: 1.00        // Coefficient 1,00
+}
+
+// Fonction de calcul de la prime pondérée finale
+export function calculatePrimePondereFinale(
+  origine: SanteCollOrigine, 
+  type: SanteCollActeType, 
+  compagnie: CompagnieType,
+  primeBrute: number
+): number {
+  const coefficientOrigine = PONDERATION_RATES_BY_ORIGINE[origine]
+  const coefficientType = PONDERATION_RATES_BY_TYPE[type]
+  const coefficientCompagnie = PONDERATION_RATES_BY_COMPAGNIE[compagnie]
+  const coefficientFinal = coefficientOrigine * coefficientType * coefficientCompagnie
+  
+  return Math.round(primeBrute * coefficientFinal)
 }
 
 // Seuils de commission selon production pondérée
