@@ -21,7 +21,8 @@ import {
   Target,
   Users,
   TrendingUp,
-  X
+  X,
+  FileText
 } from 'lucide-react'
 
 interface SanteCollFiltersProps {

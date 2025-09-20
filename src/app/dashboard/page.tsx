@@ -23,6 +23,7 @@ import {
 } from '@/components/sante-ind'
 import { useSanteIndActivities } from '@/hooks/use-sante-ind-activities'
 import { SanteIndActeType } from '@/types/sante-ind'
+import SanteCollDashboardPage from './sante-collective/page'
 
 const getRoleSpecificContent = (role: string) => {
   switch (role) {
@@ -380,6 +381,11 @@ export default function DashboardPage() {
         </div>
       </DashboardLayout>
     )
+  }
+
+  // Dashboard spécial pour les CDC Santé Collective
+  if (user.role === 'cdc_sante_coll') {
+    return <SanteCollDashboardPage />
   }
 
   // Dashboard spécial pour les CDC Santé Individuelle

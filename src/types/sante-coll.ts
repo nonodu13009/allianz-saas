@@ -157,6 +157,14 @@ export interface SanteCollResponse<T> {
   validationErrors?: SanteCollValidationError[]
 }
 
+// Alias pour la compatibilité avec l'API
+export type SanteCollApiResponse<T = any> = SanteCollResponse<T>
+
+// Interface pour la création d'activité
+export interface SanteCollActivityCreate extends Omit<SanteCollActivity, 'id' | 'createdAt' | 'updatedAt' | 'caPondere'> {
+  caPondere?: number // Optionnel car calculé automatiquement
+}
+
 // Interface pour les paramètres de requête
 export interface SanteCollQueryParams {
   yearMonth?: string
