@@ -1,12 +1,11 @@
 // Composant de filtres pour le dashboard CDC Santé Collective
-// Système de filtres par origine, acte, compagnie avec bouton reset
+// Système de filtres en cascade : 3 tags principaux puis sous-filtres
 
 "use client"
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   SanteCollFilter, 
   SanteCollActeType, 
@@ -16,398 +15,234 @@ import {
 import { 
   Filter, 
   RotateCcw, 
-  Calendar,
-  Building2,
   Target,
-  Users,
-  TrendingUp,
-  X,
-  FileText
+  Building2,
+  FileText,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 
 interface SanteCollFiltersProps {
   currentFilter: SanteCollFilter
   onFilterChange: (filter: SanteCollFilter) => void
-  selectedDay?: number
-  onDayFilterChange?: (day: number | undefined) => void
-  yearMonth: string
   activitiesCount?: number
   filteredCount?: number
 }
 
+type FilterCategory = 'origine' | 'type' | 'compagnie' | null
+
 export function SanteCollFilters({
   currentFilter,
   onFilterChange,
-  selectedDay,
-  onDayFilterChange,
-  yearMonth,
   activitiesCount = 0,
   filteredCount = 0
 }: SanteCollFiltersProps) {
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<FilterCategory>(null)
 
-  // Parsing de l'année et du mois pour l'affichage
-  const [year, month] = yearMonth.split('-').map(Number)
-  const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ]
-
-  // Configuration des types d'actes avec icônes et couleurs
-  const acteTypeConfig = {
-    [SanteCollActeType.AFFAIRE_NOUVELLE]: {
-      label: 'Affaire nouvelle',
-      icon: '✨',
-      color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      shortLabel: 'AN'
-    },
-    [SanteCollActeType.REVISION]: {
-      label: 'Révision',
-      icon: '📝',
+  // Configuration des filtres principaux
+  const filterCategories = {
+    origine: {
+      label: 'Origine',
+      icon: Target,
       color: 'bg-blue-100 text-blue-800 border-blue-200',
-      shortLabel: 'Révision'
+      options: {
+        [SanteCollOrigine.PROSPECTION]: { label: 'Prospection', icon: '🎯' },
+        [SanteCollOrigine.RELATION_CLIENT]: { label: 'Relation client', icon: '🤝' },
+        [SanteCollOrigine.REFERENCEMENT]: { label: 'Référencement', icon: '⭐' },
+        [SanteCollOrigine.PARTENARIAT]: { label: 'Partenariat', icon: '🤝' },
+        [SanteCollOrigine.AUTRE]: { label: 'Autre', icon: '📋' }
+      }
     },
-    [SanteCollActeType.ADHESION_GROUPE]: {
-      label: 'Adhésion groupe',
-      icon: '👥',
+    type: {
+      label: 'Type d\'acte',
+      icon: FileText,
+      color: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      options: {
+        [SanteCollActeType.AFFAIRE_NOUVELLE]: { label: 'Affaire nouvelle', icon: '✨' },
+        [SanteCollActeType.REVISION]: { label: 'Révision', icon: '📝' },
+        [SanteCollActeType.ADHESION_GROUPE]: { label: 'Adhésion groupe', icon: '👥' },
+        [SanteCollActeType.TRANSFERT_COURTAGE]: { label: 'Transfert courtage', icon: '🔄' }
+      }
+    },
+    compagnie: {
+      label: 'Compagnie',
+      icon: Building2,
       color: 'bg-purple-100 text-purple-800 border-purple-200',
-      shortLabel: 'Groupe'
-    },
-    [SanteCollActeType.TRANSFERT_COURTAGE]: {
-      label: 'Transfert courtage',
-      icon: '🔄',
-      color: 'bg-orange-100 text-orange-800 border-orange-200',
-      shortLabel: 'Transfert'
-    }
-  }
-
-  // Configuration des origines avec icônes et couleurs
-  const origineConfig = {
-    [SanteCollOrigine.PROSPECTION]: {
-      label: 'Prospection',
-      icon: '🎯',
-      color: 'bg-blue-100 text-blue-800 border-blue-200'
-    },
-    [SanteCollOrigine.RELATION_CLIENT]: {
-      label: 'Relation client',
-      icon: '🤝',
-      color: 'bg-green-100 text-green-800 border-green-200'
-    },
-    [SanteCollOrigine.REFERENCEMENT]: {
-      label: 'Référencement',
-      icon: '⭐',
-      color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    },
-    [SanteCollOrigine.PARTENARIAT]: {
-      label: 'Partenariat',
-      icon: '🤝',
-      color: 'bg-purple-100 text-purple-800 border-purple-200'
-    },
-    [SanteCollOrigine.AUTRE]: {
-      label: 'Autre',
-      icon: '📋',
-      color: 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-
-  // Configuration des compagnies avec icônes et couleurs
-  const compagnieConfig = {
-    [CompagnieType.ALLIANZ]: {
-      label: 'Allianz',
-      icon: '🏢',
-      color: 'bg-blue-100 text-blue-800 border-blue-200'
-    },
-    [CompagnieType.COURTAGE]: {
-      label: 'Courtage',
-      icon: '🏛️',
-      color: 'bg-gray-100 text-gray-800 border-gray-200'
-    },
-    [CompagnieType.AUTRE]: {
-      label: 'Autre',
-      icon: '🏢',
-      color: 'bg-orange-100 text-orange-800 border-orange-200'
+      options: {
+        [CompagnieType.ALLIANZ]: { label: 'Allianz', icon: '🏢' },
+        [CompagnieType.COURTAGE]: { label: 'Courtage', icon: '🏛️' },
+        [CompagnieType.AUTRE]: { label: 'Autre', icon: '🏢' }
+      }
     }
   }
 
   // Gestion des changements de filtres
-  const handleActeTypeChange = (type: SanteCollActeType | 'all') => {
-    onFilterChange({
-      ...currentFilter,
-      type: type === 'all' ? 'all' : type
-    })
+  const handleCategorySelect = (category: FilterCategory) => {
+    setSelectedCategory(category)
   }
 
-  const handleOrigineChange = (origine: SanteCollOrigine | undefined) => {
-    onFilterChange({
-      ...currentFilter,
-      origine: origine
-    })
-  }
-
-  const handleCompagnieChange = (compagnie: CompagnieType | undefined) => {
-    onFilterChange({
-      ...currentFilter,
-      compagnie: compagnie
-    })
-  }
-
-  const handleDayChange = (day: number | undefined) => {
-    if (onDayFilterChange) {
-      onDayFilterChange(day)
+  const handleFilterSelect = (category: FilterCategory, value: string | undefined) => {
+    const newFilter = { ...currentFilter }
+    
+    switch (category) {
+      case 'origine':
+        newFilter.origine = value as SanteCollOrigine | undefined
+        break
+      case 'type':
+        newFilter.type = value === 'all' ? 'all' : (value as SanteCollActeType)
+        break
+      case 'compagnie':
+        newFilter.compagnie = value as CompagnieType | undefined
+        break
     }
+    
+    onFilterChange(newFilter)
+    setSelectedCategory(null) // Fermer le sous-menu
   }
 
   const handleResetFilters = () => {
     onFilterChange({
       type: 'all',
       origine: undefined,
-      compagnie: undefined,
-      day: undefined
+      compagnie: undefined
     })
-    if (onDayFilterChange) {
-      onDayFilterChange(undefined)
-    }
+    setSelectedCategory(null)
   }
 
   // Vérifier si des filtres sont actifs
   const hasActiveFilters = 
     currentFilter.type !== 'all' || 
     currentFilter.origine || 
-    currentFilter.compagnie || 
-    currentFilter.day ||
-    selectedDay
-
-  // Générer les jours du mois pour le filtre par jour
-  const daysInMonth = new Date(year, month, 0).getDate()
-  const monthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+    currentFilter.compagnie
 
   return (
-    <Card className="bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Filter className="h-5 w-5 text-blue-600" />
-            Filtres - {monthNames[month - 1]} {year}
-          </CardTitle>
-          
-          <div className="flex items-center gap-2">
-            {/* Compteur d'activités */}
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {filteredCount} / {activitiesCount} activités
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Filter className="h-5 w-5 text-blue-600" />
+          <span className="font-medium text-gray-900 dark:text-gray-100">
+            Filtres
+          </span>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              {filteredCount} / {activitiesCount}
             </Badge>
-            
-            {/* Bouton reset */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetFilters}
-              disabled={!hasActiveFilters}
-              className="flex items-center gap-1"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reset
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Filtres principaux */}
-        <div className="space-y-4">
-          {/* Filtre par type d'acte */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <FileText className="h-4 w-4 inline mr-1" />
-              Type d'acte
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={currentFilter.type === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleActeTypeChange('all')}
-                className="flex items-center gap-1"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Tous
-              </Button>
-              {Object.entries(acteTypeConfig).map(([type, config]) => (
-                <Button
-                  key={type}
-                  variant={currentFilter.type === type ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleActeTypeChange(type as SanteCollActeType)}
-                  className="flex items-center gap-1"
-                >
-                  <span>{config.icon}</span>
-                  {config.shortLabel}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Filtres avancés */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
-            >
-              <Filter className="h-4 w-4" />
-              Filtres avancés
-              {showAdvancedFilters ? ' ▲' : ' ▼'}
-            </Button>
-          </div>
-
-          {showAdvancedFilters && (
-            <div className="space-y-4 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-              {/* Filtre par origine */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Target className="h-4 w-4 inline mr-1" />
-                  Origine
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={!currentFilter.origine ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleOrigineChange(undefined)}
-                    className="flex items-center gap-1"
-                  >
-                    Toutes
-                  </Button>
-                  {Object.entries(origineConfig).map(([origine, config]) => (
-                    <Button
-                      key={origine}
-                      variant={currentFilter.origine === origine ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleOrigineChange(origine as SanteCollOrigine)}
-                      className="flex items-center gap-1"
-                    >
-                      <span>{config.icon}</span>
-                      {config.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filtre par compagnie */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Building2 className="h-4 w-4 inline mr-1" />
-                  Compagnie
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant={!currentFilter.compagnie ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleCompagnieChange(undefined)}
-                    className="flex items-center gap-1"
-                  >
-                    Toutes
-                  </Button>
-                  {Object.entries(compagnieConfig).map(([compagnie, config]) => (
-                    <Button
-                      key={compagnie}
-                      variant={currentFilter.compagnie === compagnie ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleCompagnieChange(compagnie as CompagnieType)}
-                      className="flex items-center gap-1"
-                    >
-                      <span>{config.icon}</span>
-                      {config.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filtre par jour */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Jour du mois
-                </label>
-                <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-                  <Button
-                    variant={!selectedDay ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleDayChange(undefined)}
-                    className="flex items-center gap-1"
-                  >
-                    Tous
-                  </Button>
-                  {monthDays.map((day) => (
-                    <Button
-                      key={day}
-                      variant={selectedDay === day ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleDayChange(day)}
-                      className="min-w-[2.5rem]"
-                    >
-                      {day}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
           )}
         </div>
-
-        {/* Résumé des filtres actifs */}
+        
         {hasActiveFilters && (
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Filtres actifs :
-              </span>
-              
-              {currentFilter.type !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {acteTypeConfig[currentFilter.type as SanteCollActeType]?.icon}
-                  {acteTypeConfig[currentFilter.type as SanteCollActeType]?.shortLabel}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleActeTypeChange('all')}
-                  />
-                </Badge>
-              )}
-              
-              {currentFilter.origine && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {origineConfig[currentFilter.origine]?.icon}
-                  {origineConfig[currentFilter.origine]?.label}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleOrigineChange(undefined)}
-                  />
-                </Badge>
-              )}
-              
-              {currentFilter.compagnie && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  {compagnieConfig[currentFilter.compagnie]?.icon}
-                  {compagnieConfig[currentFilter.compagnie]?.label}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleCompagnieChange(undefined)}
-                  />
-                </Badge>
-              )}
-              
-              {(selectedDay || currentFilter.day) && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  Jour {(selectedDay || currentFilter.day)}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => handleDayChange(undefined)}
-                  />
-                </Badge>
-              )}
-            </div>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResetFilters}
+            className="flex items-center gap-1"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Reset
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Tags principaux */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {Object.entries(filterCategories).map(([key, category]) => {
+          const IconComponent = category.icon
+          const isSelected = selectedCategory === key
+          const hasActiveFilter = 
+            (key === 'origine' && currentFilter.origine) ||
+            (key === 'type' && currentFilter.type !== 'all') ||
+            (key === 'compagnie' && currentFilter.compagnie)
+          
+          return (
+            <Button
+              key={key}
+              variant={isSelected ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCategorySelect(key as FilterCategory)}
+              className={`flex items-center gap-2 ${hasActiveFilter ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}`}
+            >
+              <IconComponent className="h-4 w-4" />
+              {category.label}
+              {isSelected ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            </Button>
+          )
+        })}
+      </div>
+
+      {/* Sous-filtres */}
+      {selectedCategory && (
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+          <div className="flex flex-wrap gap-2">
+            {/* Option "Tous" */}
+            <Button
+              variant={getCurrentFilterValue(selectedCategory) === undefined ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleFilterSelect(selectedCategory, undefined)}
+              className="flex items-center gap-1"
+            >
+              Tous
+            </Button>
+            
+            {/* Options spécifiques */}
+            {Object.entries(filterCategories[selectedCategory].options).map(([value, option]) => (
+              <Button
+                key={value}
+                variant={getCurrentFilterValue(selectedCategory) === value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleFilterSelect(selectedCategory, value)}
+                className="flex items-center gap-1"
+              >
+                <span>{option.icon}</span>
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filtres actifs */}
+      {hasActiveFilters && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-600 dark:text-gray-400">Filtres actifs :</span>
+            
+            {currentFilter.type !== 'all' && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <span>{filterCategories.type.options[currentFilter.type as SanteCollActeType]?.icon}</span>
+                {filterCategories.type.options[currentFilter.type as SanteCollActeType]?.label}
+              </Badge>
+            )}
+            
+            {currentFilter.origine && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <span>{filterCategories.origine.options[currentFilter.origine]?.icon}</span>
+                {filterCategories.origine.options[currentFilter.origine]?.label}
+              </Badge>
+            )}
+            
+            {currentFilter.compagnie && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <span>{filterCategories.compagnie.options[currentFilter.compagnie]?.icon}</span>
+                {filterCategories.compagnie.options[currentFilter.compagnie]?.label}
+              </Badge>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
+
+  // Helper function pour obtenir la valeur actuelle du filtre
+  function getCurrentFilterValue(category: FilterCategory): string | undefined {
+    switch (category) {
+      case 'origine':
+        return currentFilter.origine
+      case 'type':
+        return currentFilter.type === 'all' ? undefined : currentFilter.type
+      case 'compagnie':
+        return currentFilter.compagnie
+      default:
+        return undefined
+    }
+  }
 }

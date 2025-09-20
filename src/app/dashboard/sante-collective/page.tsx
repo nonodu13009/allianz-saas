@@ -68,15 +68,6 @@ export default function SanteCollDashboardPage() {
     setSelectedDay(undefined)
   }
 
-  // Gestionnaires des filtres
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters)
-  }
-
-  const handleDayFilterChange = (day: number | undefined) => {
-    setSelectedDay(day)
-    setFilters(prev => ({ ...prev, day }))
-  }
 
   // Gestionnaires des actions CRUD
   const handleButtonClick = (acteType: SanteCollActeType) => {
@@ -191,10 +182,7 @@ export default function SanteCollDashboardPage() {
         {/* Filtres Santé Collective */}
         <SanteCollFilters
           currentFilter={filters}
-          onFilterChange={handleFilterChange}
-          selectedDay={selectedDay}
-          onDayFilterChange={handleDayFilterChange}
-          yearMonth={currentYearMonth}
+          onFilterChange={setFilters}
           activitiesCount={activities.length}
           filteredCount={filteredActivities.length}
         />
