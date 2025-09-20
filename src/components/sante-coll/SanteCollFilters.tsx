@@ -38,6 +38,13 @@ export function SanteCollFilters({
   filteredCount = 0
 }: SanteCollFiltersProps) {
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>(null)
+  
+  // Par défaut, tous les filtres sont "all" (aucun filtre actif)
+  const defaultFilter: SanteCollFilter = {
+    type: 'all',
+    origine: undefined,
+    compagnie: undefined
+  }
 
   // Configuration des filtres principaux
   const filterCategories = {
@@ -82,7 +89,13 @@ export function SanteCollFilters({
 
   // Gestion des changements de filtres
   const handleCategorySelect = (category: FilterCategory) => {
-    setSelectedCategory(category)
+    if (selectedCategory === category) {
+      // Si on clique sur le même tag, on ferme
+      setSelectedCategory(null)
+    } else {
+      // Sinon on ouvre le nouveau tag
+      setSelectedCategory(category)
+    }
   }
 
   const handleFilterSelect = (category: FilterCategory, value: string | undefined) => {
@@ -101,19 +114,15 @@ export function SanteCollFilters({
     }
     
     onFilterChange(newFilter)
-    setSelectedCategory(null) // Fermer le sous-menu
+    setSelectedCategory(null) // Fermer le sous-menu après sélection
   }
 
   const handleResetFilters = () => {
-    onFilterChange({
-      type: 'all',
-      origine: undefined,
-      compagnie: undefined
-    })
+    onFilterChange(defaultFilter)
     setSelectedCategory(null)
   }
 
-  // Vérifier si des filtres sont actifs
+  // Vérifier si des filtres sont actifs (différents des valeurs par défaut)
   const hasActiveFilters = 
     currentFilter.type !== 'all' || 
     currentFilter.origine || 
@@ -163,7 +172,13 @@ export function SanteCollFilters({
               variant={isSelected ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleCategorySelect(key as FilterCategory)}
-              className={`flex items-center gap-2 ${hasActiveFilter ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}`}
+              className={`flex items-center gap-2 ${
+                hasActiveFilter 
+                  ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200' 
+                  : isSelected 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'hover:bg-gray-50'
+              }`}
             >
               <IconComponent className="h-4 w-4" />
               {category.label}
@@ -175,14 +190,23 @@ export function SanteCollFilters({
 
       {/* Sous-filtres */}
       {selectedCategory && (
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+          <div className="mb-2">
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              Sélectionner {filterCategories[selectedCategory].label.toLowerCase()} :
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2">
             {/* Option "Tous" */}
             <Button
               variant={getCurrentFilterValue(selectedCategory) === undefined ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleFilterSelect(selectedCategory, undefined)}
-              className="flex items-center gap-1"
+              className={`flex items-center gap-1 ${
+                getCurrentFilterValue(selectedCategory) === undefined 
+                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                  : 'hover:bg-blue-100'
+              }`}
             >
               Tous
             </Button>
@@ -194,7 +218,11 @@ export function SanteCollFilters({
                 variant={getCurrentFilterValue(selectedCategory) === value ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleFilterSelect(selectedCategory, value)}
-                className="flex items-center gap-1"
+                className={`flex items-center gap-1 ${
+                  getCurrentFilterValue(selectedCategory) === value 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'hover:bg-blue-100'
+                }`}
               >
                 <span>{option.icon}</span>
                 {option.label}
