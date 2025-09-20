@@ -121,7 +121,7 @@ export function SanteCollKPIs({
               </Badge>
             </div>
             <div className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-1">
-              {formatEuroDecimal(commissionCalculation?.commissionEstimee || 0)}
+              {formatEuroInt(commissionCalculation?.commissionEstimee || 0)}
             </div>
             <div className="text-xs text-purple-600 dark:text-purple-400">
               Commission estimée
