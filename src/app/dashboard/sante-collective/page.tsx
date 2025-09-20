@@ -10,7 +10,9 @@ import {
   SanteCollFilters,
   SanteCollTimeline,
   SanteCollKPIs,
-  SanteCollTable
+  SanteCollTable,
+  SanteCollButtons,
+  ModalActe
 } from '@/components/sante-coll'
 import { useSanteCollActivities } from '@/hooks/use-sante-coll-activities'
 import { SanteCollActeType, SanteCollOrigine, CompagnieType } from '@/types/sante-coll'
@@ -26,6 +28,11 @@ export default function SanteCollDashboardPage() {
   
   const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number)
   const [selectedDay, setSelectedDay] = useState<number | undefined>()
+  
+  // États pour les modales
+  const [modalActeOpen, setModalActeOpen] = useState(false)
+  const [selectedActeType, setSelectedActeType] = useState<SanteCollActeType | null>(null)
+  const [editingActivity, setEditingActivity] = useState<any>(null)
 
   // Hook pour les activités Santé Collective
   const {
@@ -51,16 +58,12 @@ export default function SanteCollDashboardPage() {
 
   // Gestionnaires de navigation
   const handleNavigate = (year: number, month: number) => {
-    setCurrentYear(year)
-    setCurrentMonth(month)
     setCurrentYearMonth(`${year}-${month.toString().padStart(2, '0')}`)
     setSelectedDay(undefined) // Reset du jour sélectionné
   }
 
   const handleResetToCurrent = () => {
     const now = new Date()
-    setCurrentYear(now.getFullYear())
-    setCurrentMonth(now.getMonth() + 1)
     setCurrentYearMonth(`${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`)
     setSelectedDay(undefined)
   }
@@ -76,9 +79,24 @@ export default function SanteCollDashboardPage() {
   }
 
   // Gestionnaires des actions CRUD
+  const handleButtonClick = (acteType: SanteCollActeType) => {
+    setSelectedActeType(acteType)
+    setEditingActivity(null)
+    setModalActeOpen(true)
+  }
+
   const handleSaveActivity = async (activityData: any) => {
     try {
-      await saveActivity(activityData)
+      if (editingActivity) {
+        // Modification
+        await updateActivity(editingActivity.id, activityData)
+      } else {
+        // Création
+        await saveActivity(activityData)
+      }
+      setModalActeOpen(false)
+      setSelectedActeType(null)
+      setEditingActivity(null)
       // TODO: Afficher un toast de succès
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
@@ -88,8 +106,9 @@ export default function SanteCollDashboardPage() {
 
   const handleEditActivity = async (activity: any) => {
     try {
-      // TODO: Ouvrir la modale d'édition
-      console.log('Édition de l\'activité:', activity)
+      setEditingActivity(activity)
+      setSelectedActeType(activity.type)
+      setModalActeOpen(true)
     } catch (error) {
       console.error('Erreur lors de l\'édition:', error)
     }
@@ -108,6 +127,12 @@ export default function SanteCollDashboardPage() {
   const handleViewActivity = (activity: any) => {
     // TODO: Ouvrir la modale de visualisation
     console.log('Visualisation de l\'activité:', activity)
+  }
+
+  const handleCloseModal = () => {
+    setModalActeOpen(false)
+    setSelectedActeType(null)
+    setEditingActivity(null)
   }
 
   // Gestionnaire de la timeline
@@ -182,6 +207,14 @@ export default function SanteCollDashboardPage() {
           loading={loading}
         />
 
+        {/* Boutons de saisie */}
+        <SanteCollButtons
+          onButtonClick={handleButtonClick}
+          isLocked={isMonthLocked}
+          disabled={loading}
+          isLoading={loading}
+        />
+
         {/* Affichage des erreurs */}
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
@@ -210,15 +243,19 @@ export default function SanteCollDashboardPage() {
           loading={loading}
         />
 
-        {/* TODO: Ajouter les modales de saisie */}
-        {/* <SanteCollModalActe
-          isOpen={modalActeOpen}
-          onClose={() => setModalActeOpen(false)}
-          onSave={handleSaveActivity}
-          acteType={selectedActeType}
-          loading={loading}
-          isLocked={isMonthLocked}
-        /> */}
+        {/* Modale de saisie */}
+        {selectedActeType && (
+          <ModalActe
+            isOpen={modalActeOpen}
+            onClose={handleCloseModal}
+            onSave={handleSaveActivity}
+            acteType={selectedActeType}
+            loading={loading}
+            isLocked={isMonthLocked}
+            existingActivity={editingActivity}
+            yearMonth={currentYearMonth}
+          />
+        )}
       </div>
     </DashboardLayout>
   )

@@ -1,0 +1,417 @@
+// Modale générique pour la saisie des actes commerciaux Santé Collective
+// Adaptée aux 4 types d'actes avec design identique au CDC Commercial
+
+"use client"
+
+import { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { SanteCollActeType, SanteCollOrigine, CompagnieType } from '@/types/sante-coll'
+import { calculateCAPondere, formatEuroInt, capitalizeClientName } from '@/lib/sante-coll'
+import { toast } from 'sonner'
+import { 
+  PlusCircle, 
+  Save, 
+  X, 
+  Euro, 
+  Calendar, 
+  User, 
+  FileText,
+  Sparkles,
+  TrendingUp,
+  Building2,
+  Target
+} from 'lucide-react'
+
+interface ModalActeProps {
+  isOpen: boolean
+  onClose: () => void
+  onSave: (data: any) => void
+  acteType: SanteCollActeType
+  loading?: boolean
+  isLocked?: boolean
+  existingActivity?: any
+  yearMonth?: string
+}
+
+export function ModalActe({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  acteType, 
+  loading = false, 
+  isLocked = false,
+  existingActivity,
+  yearMonth
+}: ModalActeProps) {
+  
+  const [formData, setFormData] = useState({
+    clientName: '',
+    contractNumber: '',
+    dateEffet: '',
+    ca: '',
+    origine: '',
+    compagnie: '',
+    comment: ''
+  })
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Reset du formulaire à l'ouverture
+  useEffect(() => {
+    if (isOpen) {
+      if (existingActivity) {
+        // Mode édition
+        setFormData({
+          clientName: existingActivity.clientName || '',
+          contractNumber: existingActivity.contractNumber || '',
+          dateEffet: existingActivity.dateEffet || '',
+          ca: existingActivity.ca?.toString() || '',
+          origine: existingActivity.origine || '',
+          compagnie: existingActivity.compagnie || '',
+          comment: existingActivity.comment || ''
+        })
+      } else {
+        // Mode création
+        setFormData({
+          clientName: '',
+          contractNumber: '',
+          dateEffet: '',
+          ca: '',
+          origine: '',
+          compagnie: '',
+          comment: ''
+        })
+      }
+      setErrors({})
+    }
+  }, [isOpen, existingActivity])
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    
+    // Effacer l'erreur du champ modifié
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
+    }
+  }
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.clientName.trim()) {
+      newErrors.clientName = 'Le nom du client est obligatoire'
+    }
+
+    if (!formData.contractNumber.trim()) {
+      newErrors.contractNumber = 'Le numéro de contrat est obligatoire'
+    }
+
+    if (!formData.dateEffet) {
+      newErrors.dateEffet = 'La date d\'effet est obligatoire'
+    }
+
+    if (!formData.ca || parseFloat(formData.ca) <= 0) {
+      newErrors.ca = 'Le CA doit être supérieur à 0'
+    }
+
+    // Validation spécifique aux Affaires Nouvelles
+    if (acteType === SanteCollActeType.AFFAIRE_NOUVELLE && !formData.compagnie) {
+      newErrors.compagnie = 'La compagnie est obligatoire pour les Affaires Nouvelles'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSave = () => {
+    // Vérification du verrouillage
+    if (isLocked) {
+      toast.error('Ce mois est verrouillé. Aucune modification n\'est autorisée.')
+      return
+    }
+
+    if (!validateForm()) {
+      toast.error('Veuillez corriger les erreurs dans le formulaire')
+      return
+    }
+
+    // Capitalisation du nom client
+    const capitalizedName = capitalizeClientName(formData.clientName)
+    const ca = parseFloat(formData.ca)
+    const caPondere = calculateCAPondere(ca, acteType)
+
+    // Préparation des données
+    const activityData = {
+      type: acteType,
+      clientName: capitalizedName,
+      contractNumber: formData.contractNumber.trim(),
+      dateEffet: formData.dateEffet,
+      ca,
+      caPondere,
+      origine: formData.origine || undefined,
+      compagnie: formData.compagnie || undefined,
+      comment: formData.comment.trim() || undefined,
+      dateSaisie: new Date().toISOString(),
+      yearMonth: yearMonth || `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`
+    }
+
+    onSave(activityData)
+  }
+
+  // Configuration selon le type d'acte
+  const getActeTypeConfig = () => {
+    const configs = {
+      [SanteCollActeType.AFFAIRE_NOUVELLE]: {
+        title: 'Nouvelle Affaire',
+        icon: '✨',
+        color: 'text-emerald-600',
+        bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+        borderColor: 'border-emerald-200 dark:border-emerald-800'
+      },
+      [SanteCollActeType.REVISION]: {
+        title: 'Révision',
+        icon: '📝',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+        borderColor: 'border-blue-200 dark:border-blue-800'
+      },
+      [SanteCollActeType.ADHESION_GROUPE]: {
+        title: 'Adhésion Groupe',
+        icon: '👥',
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+        borderColor: 'border-purple-200 dark:border-purple-800'
+      },
+      [SanteCollActeType.TRANSFERT_COURTAGE]: {
+        title: 'Transfert Courtage',
+        icon: '🔄',
+        color: 'text-orange-600',
+        bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+        borderColor: 'border-orange-200 dark:border-orange-800'
+      }
+    }
+    
+    return configs[acteType] || configs[SanteCollActeType.AFFAIRE_NOUVELLE]
+  }
+
+  const config = getActeTypeConfig()
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className={`flex items-center gap-3 ${config.color}`}>
+            <div className={`p-2 rounded-lg ${config.bgColor}`}>
+              <span className="text-2xl">{config.icon}</span>
+            </div>
+            <div>
+              <div className="text-xl font-bold">{config.title}</div>
+              <div className="text-sm font-normal text-gray-600 dark:text-gray-400">
+                Santé Collective
+              </div>
+            </div>
+          </DialogTitle>
+          <DialogDescription>
+            {existingActivity ? 'Modifier les informations de l\'activité' : 'Saisir les informations de la nouvelle activité'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Informations client */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Informations client
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="clientName">Nom du client *</Label>
+                <Input
+                  id="clientName"
+                  value={formData.clientName}
+                  onChange={(e) => handleInputChange('clientName', e.target.value)}
+                  placeholder="Nom du client"
+                  className={errors.clientName ? 'border-red-500' : ''}
+                />
+                {errors.clientName && (
+                  <p className="text-sm text-red-600">{errors.clientName}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contractNumber">N° contrat *</Label>
+                <Input
+                  id="contractNumber"
+                  value={formData.contractNumber}
+                  onChange={(e) => handleInputChange('contractNumber', e.target.value)}
+                  placeholder="Numéro de contrat"
+                  className={errors.contractNumber ? 'border-red-500' : ''}
+                />
+                {errors.contractNumber && (
+                  <p className="text-sm text-red-600">{errors.contractNumber}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Informations contrat */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Informations contrat
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateEffet">Date d'effet *</Label>
+                <Input
+                  id="dateEffet"
+                  type="date"
+                  value={formData.dateEffet}
+                  onChange={(e) => handleInputChange('dateEffet', e.target.value)}
+                  className={errors.dateEffet ? 'border-red-500' : ''}
+                />
+                {errors.dateEffet && (
+                  <p className="text-sm text-red-600">{errors.dateEffet}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ca">CA (€) *</Label>
+                <Input
+                  id="ca"
+                  type="number"
+                  value={formData.ca}
+                  onChange={(e) => handleInputChange('ca', e.target.value)}
+                  placeholder="0"
+                  className={errors.ca ? 'border-red-500' : ''}
+                />
+                {errors.ca && (
+                  <p className="text-sm text-red-600">{errors.ca}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Informations spécifiques */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Informations spécifiques
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="origine">Origine</Label>
+                <select
+                  id="origine"
+                  value={formData.origine}
+                  onChange={(e) => handleInputChange('origine', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sélectionner une origine</option>
+                  <option value="Prospection">Prospection</option>
+                  <option value="Relation client">Relation client</option>
+                  <option value="Référencement">Référencement</option>
+                  <option value="Partenariat">Partenariat</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+
+              {/* Compagnie (seulement pour Affaires Nouvelles) */}
+              {acteType === SanteCollActeType.AFFAIRE_NOUVELLE && (
+                <div className="space-y-2">
+                  <Label htmlFor="compagnie">Compagnie *</Label>
+                  <select
+                    id="compagnie"
+                    value={formData.compagnie}
+                    onChange={(e) => handleInputChange('compagnie', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.compagnie ? 'border-red-500' : 'border-gray-300'}`}
+                  >
+                    <option value="">Sélectionner une compagnie</option>
+                    <option value="Allianz">Allianz</option>
+                    <option value="Courtage">Courtage</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                  {errors.compagnie && (
+                    <p className="text-sm text-red-600">{errors.compagnie}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="comment">Commentaire</Label>
+              <textarea
+                id="comment"
+                value={formData.comment}
+                onChange={(e) => handleInputChange('comment', e.target.value)}
+                placeholder="Commentaire optionnel"
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Calcul du CA pondéré */}
+          {formData.ca && (
+            <div className={`p-4 rounded-lg border ${config.bgColor} ${config.borderColor}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    CA pondéré calculé
+                  </span>
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  {formatEuroInt(calculateCAPondere(parseFloat(formData.ca) || 0, acteType))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Annuler
+          </Button>
+          
+          <Button
+            onClick={handleSave}
+            disabled={loading || isLocked}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {loading ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                Sauvegarde...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {existingActivity ? 'Modifier' : 'Créer'}
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
