@@ -1,28 +1,32 @@
 // Types pour le module CDC Santé Collective
 // Basé sur les spécifications du CDC Santé Collective
 
-// Types d'actes commerciaux Santé Collective
+// Types d'actes commerciaux Santé Collective (10 types)
 export enum SanteCollActeType {
   AFFAIRE_NOUVELLE = 'Affaire nouvelle',
   REVISION = 'Révision',
   ADHESION_GROUPE = 'Adhésion groupe',
-  TRANSFERT_COURTAGE = 'Transfert courtage'
+  TRANSFERT_COURTAGE = 'Transfert courtage',
+  RESILIATION = 'Résiliation',
+  MODIFICATION_CONTRAT = 'Modification contrat',
+  RENOUVELLEMENT = 'Renouvellement',
+  EXTENSION_GARANTIE = 'Extension garantie',
+  CHANGEMENT_TARIF = 'Changement tarif',
+  AUTRE_ACTE = 'Autre acte'
 }
 
-// Types d'origines pour les activités
+// Types d'origines pour les activités (3 types)
 export enum SanteCollOrigine {
   PROSPECTION = 'Prospection',
   RELATION_CLIENT = 'Relation client',
-  REFERENCEMENT = 'Référencement',
-  PARTENARIAT = 'Partenariat',
-  AUTRE = 'Autre'
+  REFERENCEMENT = 'Référencement'
 }
 
 // Types de compagnies pour les Affaires Nouvelles
 export enum CompagnieType {
   ALLIANZ = 'Allianz',
-  COURTAGE = 'Courtage',
-  AUTRE = 'Autre'
+  UNIM_UNICED = 'Unim/Uniced',
+  COURTAGE = 'Courtage'
 }
 
 // Interface pour une activité Santé Collective
@@ -69,6 +73,12 @@ export interface SanteCollKPI {
   nombreRevisions: number
   nombreAdhesionsGroupe: number
   nombreTransfertsCourtage: number
+  nombreResiliations: number
+  nombreModificationsContrat: number
+  nombreRenouvellements: number
+  nombreExtensionsGarantie: number
+  nombreChangementsTarif: number
+  nombreAutresActes: number
   
   // Montants
   productionBrute: number // Somme des CA
@@ -124,7 +134,13 @@ export const PONDERATION_RATES: Record<SanteCollActeType, number> = {
   [SanteCollActeType.AFFAIRE_NOUVELLE]: 1.00, // 100%
   [SanteCollActeType.REVISION]: 0.50, // 50%
   [SanteCollActeType.ADHESION_GROUPE]: 0.50, // 50%
-  [SanteCollActeType.TRANSFERT_COURTAGE]: 0.75 // 75%
+  [SanteCollActeType.TRANSFERT_COURTAGE]: 0.75, // 75%
+  [SanteCollActeType.RESILIATION]: 0.25, // 25%
+  [SanteCollActeType.MODIFICATION_CONTRAT]: 0.60, // 60%
+  [SanteCollActeType.RENOUVELLEMENT]: 0.80, // 80%
+  [SanteCollActeType.EXTENSION_GARANTIE]: 0.40, // 40%
+  [SanteCollActeType.CHANGEMENT_TARIF]: 0.30, // 30%
+  [SanteCollActeType.AUTRE_ACTE]: 0.50 // 50%
 }
 
 // Seuils de commission selon production pondérée

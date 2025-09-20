@@ -48,9 +48,7 @@ export function SanteCollFilters({
       options: {
         [SanteCollOrigine.PROSPECTION]: { label: 'Prospection', icon: '🎯' },
         [SanteCollOrigine.RELATION_CLIENT]: { label: 'Relation client', icon: '🤝' },
-        [SanteCollOrigine.REFERENCEMENT]: { label: 'Référencement', icon: '⭐' },
-        [SanteCollOrigine.PARTENARIAT]: { label: 'Partenariat', icon: '🤝' },
-        [SanteCollOrigine.AUTRE]: { label: 'Autre', icon: '📋' }
+        [SanteCollOrigine.REFERENCEMENT]: { label: 'Référencement', icon: '⭐' }
       }
     },
     type: {
@@ -61,7 +59,13 @@ export function SanteCollFilters({
         [SanteCollActeType.AFFAIRE_NOUVELLE]: { label: 'Affaire nouvelle', icon: '✨' },
         [SanteCollActeType.REVISION]: { label: 'Révision', icon: '📝' },
         [SanteCollActeType.ADHESION_GROUPE]: { label: 'Adhésion groupe', icon: '👥' },
-        [SanteCollActeType.TRANSFERT_COURTAGE]: { label: 'Transfert courtage', icon: '🔄' }
+        [SanteCollActeType.TRANSFERT_COURTAGE]: { label: 'Transfert courtage', icon: '🔄' },
+        [SanteCollActeType.RESILIATION]: { label: 'Résiliation', icon: '❌' },
+        [SanteCollActeType.MODIFICATION_CONTRAT]: { label: 'Modification contrat', icon: '📋' },
+        [SanteCollActeType.RENOUVELLEMENT]: { label: 'Renouvellement', icon: '🔄' },
+        [SanteCollActeType.EXTENSION_GARANTIE]: { label: 'Extension garantie', icon: '🛡️' },
+        [SanteCollActeType.CHANGEMENT_TARIF]: { label: 'Changement tarif', icon: '💰' },
+        [SanteCollActeType.AUTRE_ACTE]: { label: 'Autre acte', icon: '📄' }
       }
     },
     compagnie: {
@@ -70,8 +74,8 @@ export function SanteCollFilters({
       color: 'bg-purple-100 text-purple-800 border-purple-200',
       options: {
         [CompagnieType.ALLIANZ]: { label: 'Allianz', icon: '🏢' },
-        [CompagnieType.COURTAGE]: { label: 'Courtage', icon: '🏛️' },
-        [CompagnieType.AUTRE]: { label: 'Autre', icon: '🏢' }
+        [CompagnieType.UNIM_UNICED]: { label: 'Unim/Uniced', icon: '🏥' },
+        [CompagnieType.COURTAGE]: { label: 'Courtage', icon: '🏛️' }
       }
     }
   }

@@ -65,6 +65,48 @@ export function SanteCollButtons({
       icon: '🔄',
       color: 'bg-orange-500 hover:bg-orange-600 text-white',
       description: 'Transfert vers courtage'
+    },
+    [SanteCollActeType.RESILIATION]: {
+      label: 'Résiliation',
+      shortLabel: 'Résiliation',
+      icon: '❌',
+      color: 'bg-red-500 hover:bg-red-600 text-white',
+      description: 'Résiliation d\'un contrat'
+    },
+    [SanteCollActeType.MODIFICATION_CONTRAT]: {
+      label: 'Modification contrat',
+      shortLabel: 'Modif',
+      icon: '📋',
+      color: 'bg-indigo-500 hover:bg-indigo-600 text-white',
+      description: 'Modification des conditions contractuelles'
+    },
+    [SanteCollActeType.RENOUVELLEMENT]: {
+      label: 'Renouvellement',
+      shortLabel: 'Renouvel',
+      icon: '🔄',
+      color: 'bg-cyan-500 hover:bg-cyan-600 text-white',
+      description: 'Renouvellement d\'un contrat'
+    },
+    [SanteCollActeType.EXTENSION_GARANTIE]: {
+      label: 'Extension garantie',
+      shortLabel: 'Extension',
+      icon: '🛡️',
+      color: 'bg-teal-500 hover:bg-teal-600 text-white',
+      description: 'Extension des garanties'
+    },
+    [SanteCollActeType.CHANGEMENT_TARIF]: {
+      label: 'Changement tarif',
+      shortLabel: 'Tarif',
+      icon: '💰',
+      color: 'bg-yellow-500 hover:bg-yellow-600 text-white',
+      description: 'Modification des tarifs'
+    },
+    [SanteCollActeType.AUTRE_ACTE]: {
+      label: 'Autre acte',
+      shortLabel: 'Autre',
+      icon: '📄',
+      color: 'bg-gray-500 hover:bg-gray-600 text-white',
+      description: 'Autre type d\'acte commercial'
     }
   }
 
@@ -99,18 +141,17 @@ export function SanteCollButtons({
       </div>
 
       {/* Boutons d'actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
         {Object.entries(acteTypeConfig).map(([type, config]) => (
           <Button
             key={type}
             onClick={() => onButtonClick(type as SanteCollActeType)}
             disabled={disabled || isLoading || isLocked}
-            className={`h-20 flex flex-col items-center justify-center gap-2 ${config.color} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105`}
+            className={`h-16 flex flex-col items-center justify-center gap-1 ${config.color} disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105`}
           >
-            <div className="text-2xl">{config.icon}</div>
+            <div className="text-lg">{config.icon}</div>
             <div className="text-center">
-              <div className="font-semibold text-sm">{config.shortLabel}</div>
-              <div className="text-xs opacity-90">{config.label}</div>
+              <div className="font-semibold text-xs">{config.shortLabel}</div>
             </div>
           </Button>
         ))}

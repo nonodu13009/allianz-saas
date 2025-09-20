@@ -324,8 +324,6 @@ export function ModalActe({
                   <option value="Prospection">Prospection</option>
                   <option value="Relation client">Relation client</option>
                   <option value="Référencement">Référencement</option>
-                  <option value="Partenariat">Partenariat</option>
-                  <option value="Autre">Autre</option>
                 </select>
               </div>
 
@@ -341,8 +339,8 @@ export function ModalActe({
                   >
                     <option value="">Sélectionner une compagnie</option>
                     <option value="Allianz">Allianz</option>
+                    <option value="Unim/Uniced">Unim/Uniced</option>
                     <option value="Courtage">Courtage</option>
-                    <option value="Autre">Autre</option>
                   </select>
                   {errors.compagnie && (
                     <p className="text-sm text-red-600">{errors.compagnie}</p>
