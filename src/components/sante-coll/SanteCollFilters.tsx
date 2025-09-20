@@ -143,17 +143,15 @@ export function SanteCollFilters({
           )}
         </div>
         
-        {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResetFilters}
-            className="flex items-center gap-1"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResetFilters}
+          className="flex items-center gap-1"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Reset
+        </Button>
       </div>
 
       {/* Tags principaux */}
