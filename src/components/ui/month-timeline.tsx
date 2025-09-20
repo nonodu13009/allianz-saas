@@ -158,8 +158,8 @@ export function MonthTimeline({
               </Button>
               
               {/* Date du mois */}
-              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center">
                   {monthName}
                 </span>
               </div>
