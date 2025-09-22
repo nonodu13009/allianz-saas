@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Edit, Trash2, Users, UserPlus, RefreshCw, Eye, EyeOff, Key, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/components/providers';
-import { createUser, updateUser, deleteUser, getUsers, UserData, roleMapping } from '@/lib/firebase-users';
+import { useUsers } from '@/lib/users-context';
+import { UserData, roleMapping } from '@/lib/firebase-users';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -17,8 +18,7 @@ import Link from 'next/link';
 
 export function TeamManagementPage() {
   const { user } = useAuth();
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { users, loading, addUser, updateUserData, removeUser } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
@@ -36,21 +36,6 @@ export function TeamManagementPage() {
   const [newPassword, setNewPassword] = useState('');
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const usersData = await getUsers();
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Erreur lors du chargement des utilisateurs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateUser = async () => {
     try {
@@ -58,8 +43,7 @@ export function TeamManagementPage() {
         ...formData,
         password: formData.password || 'allianz'
       };
-      await createUser(userData);
-      await loadUsers();
+      await addUser(userData);
       setIsCreateDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -75,8 +59,7 @@ export function TeamManagementPage() {
         ...formData,
         etp: formData.etp ? parseFloat(formData.etp) : 1
       };
-      await updateUser(editingUser.uid, updateData);
-      await loadUsers();
+      await updateUserData(editingUser.uid, updateData);
       setEditingUser(null);
       resetForm();
     } catch (error) {
@@ -88,8 +71,7 @@ export function TeamManagementPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
     
     try {
-      await deleteUser(uid);
-      await loadUsers();
+      await removeUser(uid);
     } catch (error) {
       console.error('Erreur lors de la suppression de l\'utilisateur:', error);
     }
@@ -546,26 +528,25 @@ export function TeamManagementPage() {
               onClick={async () => {
                 if (!newPassword) return;
                 
-                try {
-                  // Mettre à jour tous les utilisateurs avec le nouveau mot de passe
-                  for (const user of users) {
-                    if (user.uid) {
-                      await updateUser(user.uid, { 
-                        password: newPassword,
-                        updatedAt: new Date()
-                      });
+                    try {
+                      // Mettre à jour tous les utilisateurs avec le nouveau mot de passe
+                      for (const user of users) {
+                        if (user.uid) {
+                          await updateUserData(user.uid, { 
+                            password: newPassword,
+                            updatedAt: new Date()
+                          });
+                        }
+                      }
+                      
+                      setShowChangePasswordDialog(false);
+                      setNewPassword('');
+                      
+                      // Mettre à jour le mot de passe par défaut dans le formulaire
+                      setFormData(prev => ({ ...prev, password: newPassword }));
+                    } catch (error) {
+                      console.error('Erreur lors du changement de mot de passe:', error);
                     }
-                  }
-                  
-                  await loadUsers();
-                  setShowChangePasswordDialog(false);
-                  setNewPassword('');
-                  
-                  // Mettre à jour le mot de passe par défaut dans le formulaire
-                  setFormData(prev => ({ ...prev, password: newPassword }));
-                } catch (error) {
-                  console.error('Erreur lors du changement de mot de passe:', error);
-                }
               }}
               disabled={!newPassword}
               className="bg-orange-600 hover:bg-orange-700"

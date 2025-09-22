@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { UsersProvider } from '@/lib/users-context';
 
 type Theme = 'light' | 'dark';
 
@@ -175,7 +176,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       <AuthContext.Provider value={{ user, login, logout, isLoading }}>
-        {children}
+        <UsersProvider>
+          {children}
+        </UsersProvider>
       </AuthContext.Provider>
     </ThemeContext.Provider>
   );

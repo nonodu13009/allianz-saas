@@ -10,8 +10,10 @@ import {
   BarChart3,
   Shield,
   Target,
-  Clock
+  Clock,
+  UserCheck
 } from 'lucide-react';
+import { useUsers } from '@/lib/users-context';
 
 const dashboardData = {
   administrateur: {
@@ -133,6 +135,7 @@ const dashboardData = {
 
 export function DashboardContent() {
   const { user } = useAuth();
+  const { users, loading } = useUsers();
 
   if (!user) return null;
 
@@ -167,34 +170,112 @@ export function DashboardContent() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.stats.map((stat, index) => (
-          <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {stat.label}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {stat.value}
-                  </p>
-                  <p className={`text-sm ${stat.color} font-medium`}>
-                    {stat.change}
-                  </p>
+        {user.role === 'administrateur' ? (
+          <>
+            {/* KPI Nombre de personnes */}
+            <Card className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Nombre de personnes
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {loading ? '...' : users.length}
+                    </p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      {loading ? 'Chargement...' : `${users.filter(u => u.prenom && u.nom).length} complètes`}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 group-hover:scale-110 transition-transform">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <div className={`p-3 rounded-xl bg-gradient-to-r ${
-                  stat.color === 'text-blue-600 dark:text-blue-400' ? 'from-blue-500 to-blue-600' :
-                  stat.color === 'text-green-600 dark:text-green-400' ? 'from-green-500 to-green-600' :
-                  stat.color === 'text-purple-600 dark:text-purple-400' ? 'from-purple-500 to-purple-600' :
-                  stat.color === 'text-indigo-600 dark:text-indigo-400' ? 'from-indigo-500 to-indigo-600' :
-                  'from-orange-500 to-orange-600'
-                } group-hover:scale-110 transition-transform`}>
-                  <stat.icon className="h-6 w-6 text-white" />
+              </CardContent>
+            </Card>
+
+            {/* KPI ETP Total */}
+            <Card className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      ETP Total
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {loading ? '...' : users.reduce((sum, u) => sum + (u.etp || 0), 0).toFixed(1)}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                      {loading ? 'Chargement...' : `Moyenne: ${(users.reduce((sum, u) => sum + (u.etp || 0), 0) / users.length || 0).toFixed(1)}`}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 group-hover:scale-110 transition-transform">
+                    <UserCheck className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+
+            {/* Autres stats pour administrateur */}
+            {data.stats.slice(2).map((stat, index) => (
+              <Card key={index + 2} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {stat.label}
+                      </p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {stat.value}
+                      </p>
+                      <p className={`text-sm ${stat.color} font-medium`}>
+                        {stat.change}
+                      </p>
+                    </div>
+                    <div className={`p-3 rounded-xl bg-gradient-to-r ${
+                      stat.color === 'text-blue-600 dark:text-blue-400' ? 'from-blue-500 to-blue-600' :
+                      stat.color === 'text-green-600 dark:text-green-400' ? 'from-green-500 to-green-600' :
+                      stat.color === 'text-purple-600 dark:text-purple-400' ? 'from-purple-500 to-purple-600' :
+                      stat.color === 'text-indigo-600 dark:text-indigo-400' ? 'from-indigo-500 to-indigo-600' :
+                      'from-orange-500 to-orange-600'
+                    } group-hover:scale-110 transition-transform`}>
+                      <stat.icon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          data.stats.map((stat, index) => (
+            <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {stat.label}
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {stat.value}
+                    </p>
+                    <p className={`text-sm ${stat.color} font-medium`}>
+                      {stat.change}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-xl bg-gradient-to-r ${
+                    stat.color === 'text-blue-600 dark:text-blue-400' ? 'from-blue-500 to-blue-600' :
+                    stat.color === 'text-green-600 dark:text-green-400' ? 'from-green-500 to-green-600' :
+                    stat.color === 'text-purple-600 dark:text-purple-400' ? 'from-purple-500 to-purple-600' :
+                    stat.color === 'text-indigo-600 dark:text-indigo-400' ? 'from-indigo-500 to-indigo-600' :
+                    'from-orange-500 to-orange-600'
+                  } group-hover:scale-110 transition-transform`}>
+                    <stat.icon className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Main Content Cards */}
