@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { UsersProvider } from '@/lib/users-context';
+import { getUsers } from '@/lib/firebase-users';
 
 type Theme = 'light' | 'dark';
 
@@ -155,18 +156,35 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser && password === 'allianz') {
-      setUser(foundUser);
+    try {
+      // Récupérer les utilisateurs depuis Firebase
+      const firebaseUsers = await getUsers();
+      
+      // Chercher l'utilisateur par email
+      const foundUser = firebaseUsers.find(u => u.email === email);
+      
+      if (foundUser && password === (foundUser.password || 'allianz')) {
+        // Convertir les données Firebase vers le format attendu
+        const userData = {
+          id: foundUser.uid || '',
+          prenom: foundUser.prenom || '',
+          nom: foundUser.nom || '',
+          email: foundUser.email,
+          role: foundUser.role || '',
+          role_front: foundUser.role_front || ''
+        };
+        setUser(userData);
+        setIsLoading(false);
+        return true;
+      }
+      
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Erreur lors de la connexion:', error);
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
   const logout = () => {

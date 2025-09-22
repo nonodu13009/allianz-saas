@@ -12,22 +12,24 @@ import {
   Calendar,
   MessageSquare,
   User,
-  LogOut
+  LogOut,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import Link from 'next/link';
 
 const navigationItems = {
-  administrateur: [
-    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
-    { icon: Users, label: 'Gestion équipe', href: '/team-management', active: false },
-    { icon: BarChart3, label: 'Analytics', href: '#', active: false },
-    { icon: FileText, label: 'Contrats', href: '#', active: false },
-    { icon: Calendar, label: 'Planning', href: '#', active: false },
-    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
-    { icon: Settings, label: 'Administration', href: '#', active: false },
-  ],
+      administrateur: [
+        { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+        { icon: Users, label: 'Gestion équipe', href: '/team-management', active: false },
+        { icon: TrendingUp, label: 'Commissions', href: '/commissions-management', active: false },
+        { icon: BarChart3, label: 'Analytics', href: '#', active: false },
+        { icon: FileText, label: 'Contrats', href: '#', active: false },
+        { icon: Calendar, label: 'Planning', href: '#', active: false },
+        { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+        { icon: Settings, label: 'Administration', href: '#', active: false },
+      ],
   cdc_commercial: [
     { icon: Home, label: 'Tableau de bord', href: '/', active: true },
     { icon: Users, label: 'Mes clients', href: '#', active: false },
@@ -112,33 +114,49 @@ export function Sidebar() {
       <nav className="flex-1 p-4 space-y-2">
         {items.map((item) => {
           const isActive = activeItem === item.label;
-          const ButtonContent = (
-            <Button
-              key={item.label}
-              variant={isActive ? "default" : "ghost"}
-              className={cn(
-                "w-full justify-start gap-3 py-3 px-4 text-left font-medium transition-all",
-                isActive
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-              )}
-              onClick={() => setActiveItem(item.label)}
-            >
-              <item.icon className={cn(
-                "h-5 w-5",
-                isActive ? "text-white" : "text-gray-500 dark:text-gray-400"
-              )} />
-              {item.label}
-            </Button>
-          );
-
-          return item.href && item.href !== '#' ? (
-            <Link key={item.label} href={item.href}>
-              {ButtonContent}
-            </Link>
-          ) : (
-            ButtonContent
-          );
+          
+          if (item.href && item.href !== '#') {
+            return (
+              <Link key={item.label} href={item.href}>
+                <Button
+                  variant={isActive ? "default" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-3 py-3 px-4 text-left font-medium transition-all",
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  )}
+                  onClick={() => setActiveItem(item.label)}
+                >
+                  <item.icon className={cn(
+                    "h-5 w-5",
+                    isActive ? "text-white" : "text-gray-500 dark:text-gray-400"
+                  )} />
+                  {item.label}
+                </Button>
+              </Link>
+            );
+          } else {
+            return (
+              <Button
+                key={item.label}
+                variant={isActive ? "default" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 py-3 px-4 text-left font-medium transition-all",
+                  isActive
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                )}
+                onClick={() => setActiveItem(item.label)}
+              >
+                <item.icon className={cn(
+                  "h-5 w-5",
+                  isActive ? "text-white" : "text-gray-500 dark:text-gray-400"
+                )} />
+                {item.label}
+              </Button>
+            );
+          }
         })}
       </nav>
 
