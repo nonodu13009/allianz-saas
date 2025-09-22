@@ -217,6 +217,12 @@ export function CommissionsManagementPage() {
         profits_exceptionnels: parseFloat(monthFormData.profits_exceptionnels) || 0,
         charges_agence: parseFloat(monthFormData.charges_agence) || 0,
         prelevements_julien: parseFloat(monthFormData.prelevements_julien) || 0,
+        prelevements_jean_michel: parseFloat(monthFormData.prelevements_jean_michel) || 0,
+        charges_agence: parseFloat(monthFormData.charges_agence) || 0,
+        prelevements_julien: parseFloat(monthFormData.prelevements_julien) || 0,
+        prelevements_jean_michel: parseFloat(monthFormData.prelevements_jean_michel) || 0,
+        charges_agence: parseFloat(monthFormData.charges_agence) || 0,
+        prelevements_julien: parseFloat(monthFormData.prelevements_julien) || 0,
         prelevements_jean_michel: parseFloat(monthFormData.prelevements_jean_michel) || 0
       };
 
