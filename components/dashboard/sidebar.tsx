@@ -16,52 +16,53 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import Link from 'next/link';
 
 const navigationItems = {
   administrateur: [
-    { icon: Home, label: 'Tableau de bord', active: true },
-    { icon: Users, label: 'Gestion équipe', active: false },
-    { icon: BarChart3, label: 'Analytics', active: false },
-    { icon: FileText, label: 'Contrats', active: false },
-    { icon: Calendar, label: 'Planning', active: false },
-    { icon: MessageSquare, label: 'Messages', active: false },
-    { icon: Settings, label: 'Administration', active: false },
+    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Users, label: 'Gestion équipe', href: '/team-management', active: false },
+    { icon: BarChart3, label: 'Analytics', href: '#', active: false },
+    { icon: FileText, label: 'Contrats', href: '#', active: false },
+    { icon: Calendar, label: 'Planning', href: '#', active: false },
+    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+    { icon: Settings, label: 'Administration', href: '#', active: false },
   ],
   cdc_commercial: [
-    { icon: Home, label: 'Tableau de bord', active: true },
-    { icon: Users, label: 'Mes clients', active: false },
-    { icon: BarChart3, label: 'Mes performances', active: false },
-    { icon: FileText, label: 'Mes contrats', active: false },
-    { icon: Calendar, label: 'Mon planning', active: false },
-    { icon: MessageSquare, label: 'Messages', active: false },
-    { icon: User, label: 'Mon profil', active: false },
+    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Users, label: 'Mes clients', href: '#', active: false },
+    { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
+    { icon: FileText, label: 'Mes contrats', href: '#', active: false },
+    { icon: Calendar, label: 'Mon planning', href: '#', active: false },
+    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+    { icon: User, label: 'Mon profil', href: '#', active: false },
   ],
   cdc_sante_coll: [
-    { icon: Home, label: 'Tableau de bord', active: true },
-    { icon: Users, label: 'Clients collectifs', active: false },
-    { icon: BarChart3, label: 'Mes performances', active: false },
-    { icon: FileText, label: 'Contrats santé', active: false },
-    { icon: Calendar, label: 'Mon planning', active: false },
-    { icon: MessageSquare, label: 'Messages', active: false },
-    { icon: User, label: 'Mon profil', active: false },
+    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Users, label: 'Clients collectifs', href: '#', active: false },
+    { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
+    { icon: FileText, label: 'Contrats santé', href: '#', active: false },
+    { icon: Calendar, label: 'Mon planning', href: '#', active: false },
+    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+    { icon: User, label: 'Mon profil', href: '#', active: false },
   ],
   cdc_sante_ind: [
-    { icon: Home, label: 'Tableau de bord', active: true },
-    { icon: Users, label: 'Clients individuels', active: false },
-    { icon: BarChart3, label: 'Mes performances', active: false },
-    { icon: FileText, label: 'Contrats santé', active: false },
-    { icon: Calendar, label: 'Mon planning', active: false },
-    { icon: MessageSquare, label: 'Messages', active: false },
-    { icon: User, label: 'Mon profil', active: false },
+    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Users, label: 'Clients individuels', href: '#', active: false },
+    { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
+    { icon: FileText, label: 'Contrats santé', href: '#', active: false },
+    { icon: Calendar, label: 'Mon planning', href: '#', active: false },
+    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+    { icon: User, label: 'Mon profil', href: '#', active: false },
   ],
   cdc_sinistre: [
-    { icon: Home, label: 'Tableau de bord', active: true },
-    { icon: FileText, label: 'Dossiers sinistres', active: false },
-    { icon: BarChart3, label: 'Mes performances', active: false },
-    { icon: Users, label: 'Mes clients', active: false },
-    { icon: Calendar, label: 'Mon planning', active: false },
-    { icon: MessageSquare, label: 'Messages', active: false },
-    { icon: User, label: 'Mon profil', active: false },
+    { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: FileText, label: 'Dossiers sinistres', href: '#', active: false },
+    { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
+    { icon: Users, label: 'Mes clients', href: '#', active: false },
+    { icon: Calendar, label: 'Mon planning', href: '#', active: false },
+    { icon: MessageSquare, label: 'Messages', href: '#', active: false },
+    { icon: User, label: 'Mon profil', href: '#', active: false },
   ],
 };
 
@@ -109,25 +110,36 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {items.map((item) => (
-          <Button
-            key={item.label}
-            variant={activeItem === item.label ? "default" : "ghost"}
-            className={cn(
-              "w-full justify-start gap-3 py-3 px-4 text-left font-medium transition-all",
-              activeItem === item.label
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-            )}
-            onClick={() => setActiveItem(item.label)}
-          >
-            <item.icon className={cn(
-              "h-5 w-5",
-              activeItem === item.label ? "text-white" : "text-gray-500 dark:text-gray-400"
-            )} />
-            {item.label}
-          </Button>
-        ))}
+        {items.map((item) => {
+          const isActive = activeItem === item.label;
+          const ButtonContent = (
+            <Button
+              key={item.label}
+              variant={isActive ? "default" : "ghost"}
+              className={cn(
+                "w-full justify-start gap-3 py-3 px-4 text-left font-medium transition-all",
+                isActive
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              )}
+              onClick={() => setActiveItem(item.label)}
+            >
+              <item.icon className={cn(
+                "h-5 w-5",
+                isActive ? "text-white" : "text-gray-500 dark:text-gray-400"
+              )} />
+              {item.label}
+            </Button>
+          );
+
+          return item.href && item.href !== '#' ? (
+            <Link key={item.label} href={item.href}>
+              {ButtonContent}
+            </Link>
+          ) : (
+            ButtonContent
+          );
+        })}
       </nav>
 
       {/* Logout */}
