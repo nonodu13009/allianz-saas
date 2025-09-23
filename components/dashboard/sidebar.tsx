@@ -13,7 +13,8 @@ import {
   MessageSquare,
   User,
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -32,6 +33,7 @@ const navigationItems = {
       ],
   cdc_commercial: [
     { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Briefcase, label: 'Module Commercial', href: '/commercial', active: false },
     { icon: Users, label: 'Mes clients', href: '#', active: false },
     { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
     { icon: FileText, label: 'Mes contrats', href: '#', active: false },
