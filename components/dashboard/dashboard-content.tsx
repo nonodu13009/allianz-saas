@@ -11,9 +11,14 @@ import {
   Shield,
   Target,
   Clock,
-  UserCheck
+  UserCheck,
+  Cog,
+  DollarSign,
+  CheckCircle
 } from 'lucide-react';
 import { useUsers } from '@/lib/users-context';
+import { useState, useEffect } from 'react';
+import { getCommercialActivitiesByUserAndMonth, calculateKPIs, CommercialActivity } from '@/lib/firebase-commercial';
 
 const dashboardData = {
   administrateur: {
@@ -136,6 +141,42 @@ const dashboardData = {
 export function DashboardContent() {
   const { user } = useAuth();
   const { users, loading } = useUsers();
+  const [commercialKPIs, setCommercialKPIs] = useState<{
+    ratioOtherToAuto: number;
+    totalProcessActs: number;
+    potentialCommissions: number;
+    realCommissions: number;
+  } | null>(null);
+  const [commercialLoading, setCommercialLoading] = useState(false);
+
+  // Charger les KPIs commerciaux du mois système
+  useEffect(() => {
+    const loadCommercialKPIs = async () => {
+      if (!user?.id) return;
+      
+      setCommercialLoading(true);
+      try {
+        const currentDate = new Date();
+        const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        const activities = await getCommercialActivitiesByUserAndMonth(user.id, month);
+        const kpis = calculateKPIs(activities);
+        
+        setCommercialKPIs({
+          ratioOtherToAuto: kpis.ratioOtherToAuto,
+          totalProcessActs: kpis.totalProcessActs,
+          potentialCommissions: kpis.potentialCommissions,
+          realCommissions: kpis.realCommissions
+        });
+      } catch (error) {
+        console.error('Erreur lors du chargement des KPIs commerciaux:', error);
+      } finally {
+        setCommercialLoading(false);
+      }
+    };
+
+    loadCommercialKPIs();
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -276,6 +317,104 @@ export function DashboardContent() {
             </Card>
           ))
         )}
+      </div>
+
+      {/* KPIs Commerciaux du mois système */}
+      <div className="space-y-4">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            KPIs du mois système
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
+            Indicateurs clés de performance commerciale pour {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Ratio autres/auto */}
+          <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-orange-500" />
+                Ratio autres/auto
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                {commercialLoading ? '...' : commercialKPIs ? `${Math.round(commercialKPIs.ratioOtherToAuto)}%` : '0%'}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Nombre de process */}
+          <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <Cog className="w-4 h-4 text-teal-500" />
+                Nombre de process
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">
+                {commercialLoading ? '...' : commercialKPIs?.totalProcessActs || 0}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Commissions potentielles */}
+          <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-yellow-500" />
+                Commissions potentielles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                {commercialLoading ? '...' : commercialKPIs ? `${Math.round(commercialKPIs.potentialCommissions).toLocaleString()} €` : '0 €'}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Commissions réelles */}
+          <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" />
+                Commissions réelles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {commercialLoading ? '...' : commercialKPIs ? `${Math.round(commercialKPIs.realCommissions).toLocaleString()} €` : '0 €'}
+                </div>
+                {commercialKPIs && commercialKPIs.realCommissions > 0 && (
+                  <div className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 px-2 py-1 rounded-full">
+                    ✓ Réelles
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Commentaire positif */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-green-800 dark:text-green-200">
+                Excellente performance ce mois !
+              </p>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Vos indicateurs commerciaux montrent une progression constante. Continuez sur cette lancée !
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content Cards */}
