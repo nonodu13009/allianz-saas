@@ -1,11 +1,11 @@
 'use client';
 
-import { useNavigation } from '@/lib/commercial-navigation-context';
+import { useSanteIndNavigation } from '@/lib/sante-ind-navigation-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, RotateCcw, Lock, Unlock } from 'lucide-react';
 
-export function MonthlyNavigation() {
+export function SanteIndMonthlyNavigation() {
   const {
     currentMonth,
     goToPreviousMonth,
@@ -14,7 +14,8 @@ export function MonthlyNavigation() {
     isLoading,
     isCurrentMonth,
     getCurrentMonthDisplay,
-  } = useNavigation();
+    isMonthLocked,
+  } = useSanteIndNavigation();
 
   const isCurrentMonthActive = isCurrentMonth(currentMonth);
 
@@ -36,15 +37,26 @@ export function MonthlyNavigation() {
           {/* Affichage du mois */}
           <div className="text-center min-w-[220px]">
             <div className="flex items-center justify-center gap-3">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {getCurrentMonthDisplay()}
               </h2>
               {/* Voyant de verrouillage */}
               <div className="flex items-center gap-1">
-                <Unlock className="h-5 w-5 text-green-500" />
-                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                  Déverrouillé
-                </span>
+                {isMonthLocked ? (
+                  <>
+                    <Lock className="h-5 w-5 text-red-500" />
+                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      Verrouillé
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-5 w-5 text-green-500" />
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      Déverrouillé
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -64,17 +76,13 @@ export function MonthlyNavigation() {
         {/* Bouton retour au mois actuel */}
         <div className="flex justify-center mt-4">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={goToCurrentMonth}
-            disabled={isLoading || isCurrentMonthActive}
-            className={`gap-2 text-sm transition-all ${
-              isCurrentMonthActive 
-                ? 'text-slate-400 cursor-not-allowed' 
-                : 'text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-            }`}
+            disabled={isCurrentMonthActive || isLoading}
+            className="gap-2 bg-white/50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-4 w-4" />
             Retour au mois actuel
           </Button>
         </div>

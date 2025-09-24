@@ -14,7 +14,8 @@ import {
   User,
   LogOut,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -52,6 +53,7 @@ const navigationItems = {
   ],
   cdc_sante_ind: [
     { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Heart, label: 'Module Santé Individuelle', href: '/sante-individuelle', active: false },
     { icon: Users, label: 'Clients individuels', href: '#', active: false },
     { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
     { icon: FileText, label: 'Contrats santé', href: '#', active: false },

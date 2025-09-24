@@ -279,7 +279,7 @@ export function DataTable() {
                       onClick={() => handleSort('dateCreated')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Date de saisie {getSortIcon('dateCreated')}
+                      Saisie {getSortIcon('dateCreated')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -309,7 +309,7 @@ export function DataTable() {
                       onClick={() => handleSort('effectDate')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Date d'effet {getSortIcon('effectDate')}
+                      Effet {getSortIcon('effectDate')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -319,7 +319,7 @@ export function DataTable() {
                       onClick={() => handleSort('actType')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Type d'acte {getSortIcon('actType')}
+                      Acte {getSortIcon('actType')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -359,7 +359,7 @@ export function DataTable() {
                       onClick={() => handleSort('potentialCommission')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Commission (AN uniquement) {getSortIcon('potentialCommission')}
+                      Commission {getSortIcon('potentialCommission')}
                     </Button>
                   </TableHead>
                   <TableHead className="text-center">
