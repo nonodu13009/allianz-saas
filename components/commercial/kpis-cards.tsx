@@ -191,17 +191,17 @@ export function KPIsCards() {
           </CardContent>
         </Card>
 
-        {/* Nombre d'actes total */}
+        {/* Nombre de process */}
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
               <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-              Nombre d'actes total
+              Nombre de process
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-teal-600 dark:text-teal-400">
-              {kpis.totalActs}
+              {kpis.totalProcessActs}
             </div>
           </CardContent>
         </Card>
@@ -232,7 +232,7 @@ export function KPIsCards() {
                         </li>
                         <li className="flex items-center gap-2">
                           <span className="text-green-500">✅</span>
-                          <span className="text-slate-700 dark:text-slate-300">Ratio contrats autres / contrats auto ≥ 100%</span>
+                          <span className="text-slate-700 dark:text-slate-300">Ratio contrats autres / contrats auto ≥ 200%</span>
                         </li>
                         <li className="flex items-center gap-2">
                           <span className="text-green-500">✅</span>

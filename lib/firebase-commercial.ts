@@ -84,7 +84,7 @@ export function calculateIsCommissionReal(
   
   if (processCount < 15) return false;
   
-  // Condition 2: Ratio contrats autres / contrats auto ≥ 100%
+  // Condition 2: Ratio contrats autres / contrats auto ≥ 200%
   const autoContracts = activities.filter(activity => 
     activity.productType === 'auto_moto'
   ).length;
@@ -94,7 +94,7 @@ export function calculateIsCommissionReal(
   ).length;
   
   const ratio = autoContracts === 0 ? 100 : (otherContracts / autoContracts) * 100;
-  if (ratio < 100) return false;
+  if (ratio < 200) return false; // Changé de 100% à 200%
   
   // Condition 3: Commissions potentielles ≥ 200 €
   const totalPotentialCommissions = activities.reduce(
@@ -309,12 +309,29 @@ export function calculateKPIs(activities: CommercialActivity[]) {
   const contractsOtherThanAuto = activities.filter(a => a.productType !== 'auto_moto').length;
   const totalCA = activities.reduce((sum, a) => sum + a.annualPremium, 0);
   const potentialCommissions = activities.reduce((sum, a) => sum + a.potentialCommission, 0);
-  const realCommissions = activities.reduce((sum, a) => sum + (a.isCommissionReal ? a.potentialCommission : 0), 0);
+  
+  // Calculer les commissions réelles selon les 3 conditions
+  const processCount = activities.filter(a => 
+    ['m+3', 'preterme_auto', 'preterme_iard'].includes(a.actType)
+  ).length;
   
   const autoContracts = activities.filter(a => a.productType === 'auto_moto').length;
   const ratioOtherToAuto = autoContracts === 0 ? 100 : (contractsOtherThanAuto / autoContracts) * 100;
   
-  const totalActs = activities.length;
+  // 3 conditions pour commissions réelles :
+  // 1. Commissions potentielles >= 200€
+  // 2. Ratio >= 200% (autres/auto)
+  // 3. Nombre de process >= 15
+  const isCommissionReal = potentialCommissions >= 200 && 
+                         ratioOtherToAuto >= 200 && 
+                         processCount >= 15;
+  
+  const realCommissions = isCommissionReal ? potentialCommissions : 0;
+  
+  // Nombre d'actes = seulement les process (M+3, Préterme Auto, Préterme IARD)
+  const totalProcessActs = activities.filter(a => 
+    ['m+3', 'preterme_auto', 'preterme_iard'].includes(a.actType)
+  ).length;
   
   return {
     totalCA,
@@ -323,6 +340,6 @@ export function calculateKPIs(activities: CommercialActivity[]) {
     potentialCommissions,
     realCommissions,
     ratioOtherToAuto,
-    totalActs,
+    totalProcessActs, // Changé de totalActs à totalProcessActs
   };
 }
