@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
 import { withRetry, createFirebaseOperation } from './error-handling';

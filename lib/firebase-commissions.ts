@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 import { db } from './firebase';
 
 export interface CommissionData {
