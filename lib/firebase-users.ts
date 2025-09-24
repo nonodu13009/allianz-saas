@@ -292,7 +292,7 @@ export const syncUsersFromAuth = async () => {
   
   try {
     // Récupérer tous les utilisateurs existants dans Firestore
-    const existingFirestoreUsers = await getUsers();
+    const { users: existingFirestoreUsers } = await getUsers();
     const existingEmails = existingFirestoreUsers.map(user => user.email);
     
     console.log('Synchronisation des utilisateurs...');
@@ -376,4 +376,15 @@ export const syncUsersFromAuth = async () => {
       message: 'Erreur système lors de la synchronisation'
     }];
   }
+};
+
+// Fonction pour créer tous les utilisateurs dans Firebase (alias pour syncUsersFromAuth)
+export const createUsersInFirebase = async () => {
+  return await syncUsersFromAuth();
+};
+
+// Fonction pour récupérer tous les utilisateurs (alias pour getUsers qui retourne juste le tableau)
+export const getAllUsers = async (): Promise<UserData[]> => {
+  const { users } = await getUsers();
+  return users;
 };
