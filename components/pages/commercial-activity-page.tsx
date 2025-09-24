@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, TrendingUp, Target, CheckCircle, BarChart3, Award, Users, Building, PieChart, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   CommercialActivity, 
   getCommercialActivitiesByUserAndMonth, 
@@ -140,6 +141,7 @@ export function CommercialActivityPage() {
           <Button onClick={handleAddActivity}>
             Nouvel acte
           </Button>
+          <ThemeToggle />
         </div>
       </div>
 
