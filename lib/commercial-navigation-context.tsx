@@ -27,6 +27,9 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Initialisation du mois actuel au chargement
   useEffect(() => {
     const initializeMonth = () => {
+      // Vérifier que nous sommes côté client
+      if (typeof window === 'undefined') return;
+      
       // Utiliser la date réelle du système
       const now = new Date();
       const currentMonthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -47,7 +50,9 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Fonction pour définir le mois actuel avec persistence
   const setCurrentMonth = (month: string) => {
     setCurrentMonthState(month);
-    localStorage.setItem('commercial-current-month', month);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('commercial-current-month', month);
+    }
   };
 
   // Navigation vers le mois précédent

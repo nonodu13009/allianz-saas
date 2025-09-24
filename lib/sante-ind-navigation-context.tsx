@@ -31,6 +31,8 @@ export function SanteIndNavigationProvider({ children }: { children: ReactNode }
 
   // Charger le mois depuis localStorage au montage
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedMonth = localStorage.getItem('sante-ind-current-month');
     if (savedMonth) {
       setCurrentMonth(savedMonth);
@@ -41,7 +43,7 @@ export function SanteIndNavigationProvider({ children }: { children: ReactNode }
 
   // Sauvegarder le mois dans localStorage quand il change
   useEffect(() => {
-    if (currentMonth) {
+    if (currentMonth && typeof window !== 'undefined') {
       localStorage.setItem('sante-ind-current-month', currentMonth);
     }
   }, [currentMonth]);

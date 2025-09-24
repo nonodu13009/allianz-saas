@@ -44,21 +44,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
     
     // Restaurer l'utilisateur depuis les cookies
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
-    
-    const storedUser = getCookie('user-session');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(storedUser));
-        setUser(userData);
-      } catch (error) {
-        console.error('Erreur lors de la restauration de l\'utilisateur:', error);
-        document.cookie = 'user-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    if (typeof window !== 'undefined') {
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return null;
+      };
+      
+      const storedUser = getCookie('user-session');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(decodeURIComponent(storedUser));
+          setUser(userData);
+        } catch (error) {
+          console.error('Erreur lors de la restauration de l\'utilisateur:', error);
+          document.cookie = 'user-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
       }
     }
   }, []);
@@ -96,12 +98,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         setUser(userData);
         
         // Sauvegarder l'utilisateur dans un cookie pour la persistance
-        const cookieValue = encodeURIComponent(JSON.stringify(userData));
-        const isProduction = process.env.NODE_ENV === 'production';
-        const cookieOptions = isProduction 
-          ? `path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`
-          : `path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
-        document.cookie = `user-session=${cookieValue}; ${cookieOptions}`;
+        if (typeof window !== 'undefined') {
+          const cookieValue = encodeURIComponent(JSON.stringify(userData));
+          const isProduction = process.env.NODE_ENV === 'production';
+          const cookieOptions = isProduction 
+            ? `path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`
+            : `path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
+          document.cookie = `user-session=${cookieValue}; ${cookieOptions}`;
+        }
         
         setIsLoading(false);
         return true;
@@ -118,7 +122,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    document.cookie = 'user-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    if (typeof window !== 'undefined') {
+      document.cookie = 'user-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    }
   };
 
   return (
