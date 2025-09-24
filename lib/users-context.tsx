@@ -30,7 +30,7 @@ export function UsersProvider({ children }: UsersProviderProps) {
     setLoading(true);
     setError(null);
     try {
-      const fetchedUsers = await getUsers();
+      const { users: fetchedUsers } = await getUsers();
       setUsers(fetchedUsers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des utilisateurs');

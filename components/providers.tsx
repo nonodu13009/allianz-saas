@@ -58,8 +58,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Récupérer les utilisateurs depuis Firebase
-      const firebaseUsers = await getUsers();
+      // Récupérer les utilisateurs depuis Firebase (nouvelle signature avec pagination)
+      const { users: firebaseUsers } = await getUsers();
       
       // Chercher l'utilisateur par email
       const foundUser = firebaseUsers.find(u => u.email === email);
