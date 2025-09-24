@@ -114,7 +114,7 @@ Module de saisie et de suivi de l'activité commerciale pour les utilisateurs ay
 - 🟢 **Jours normaux** : Vert (lundi-vendredi)
 - 🟠 **Samedi** : Orange
 - 🔴 **Dimanche** : Rouge
-- ⚪ **Jour système** : Bordure blanche épaisse (jours spéciaux)
+- ⚪ **Aujourd'hui** : Bordure blanche épaisse (jour actuel)
 
 **Contenu des pastilles** :
 - **Nombre d'actes** : Chiffre centré dans chaque pastille

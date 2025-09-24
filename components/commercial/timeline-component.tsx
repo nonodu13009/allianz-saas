@@ -210,7 +210,7 @@ export function TimelineComponent() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-white border-2 border-slate-400 rounded-full"></div>
-              <span>Jour système</span>
+              <span>Aujourd'hui</span>
             </div>
           </div>
         </CardHeader>
@@ -233,7 +233,7 @@ export function TimelineComponent() {
                         {dayData.dayNumber} {getDayName(dayData)}
                         {isSystemDay(dayData) && (
                           <span className="ml-2 text-xs bg-white text-black px-1 rounded">
-                            Jour système
+                            Aujourd'hui
                           </span>
                         )}
                       </div>
