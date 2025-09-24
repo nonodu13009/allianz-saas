@@ -56,13 +56,15 @@ export function HomePage() {
                   Accéder à la plateforme
                 </Button>
               </Link>
-              <Button 
-                variant="ghost" 
-                size="lg" 
-                className="text-gray-700 dark:text-gray-300 px-8 py-4 text-lg hover:bg-white/10 backdrop-blur-sm"
-              >
-                En savoir plus
-              </Button>
+              <Link href="/about">
+                <Button 
+                  variant="ghost" 
+                  size="lg" 
+                  className="text-gray-700 dark:text-gray-300 px-8 py-4 text-lg hover:bg-white/10 backdrop-blur-sm"
+                >
+                  En savoir plus
+                </Button>
+              </Link>
             </div>
           </div>
 
