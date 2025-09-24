@@ -306,6 +306,7 @@ export async function getAllCommercialActivities(
 // Calculer les KPIs pour un mois donné
 export function calculateKPIs(activities: CommercialActivity[]) {
   const totalContracts = activities.length;
+  const autoContracts = activities.filter(a => a.productType === 'auto_moto').length;
   const contractsOtherThanAuto = activities.filter(a => a.productType !== 'auto_moto').length;
   const totalCA = activities.reduce((sum, a) => sum + a.annualPremium, 0);
   const potentialCommissions = activities.reduce((sum, a) => sum + a.potentialCommission, 0);
@@ -315,7 +316,6 @@ export function calculateKPIs(activities: CommercialActivity[]) {
     ['m+3', 'preterme_auto', 'preterme_iard'].includes(a.actType)
   ).length;
   
-  const autoContracts = activities.filter(a => a.productType === 'auto_moto').length;
   const ratioOtherToAuto = autoContracts === 0 ? 100 : (contractsOtherThanAuto / autoContracts) * 100;
   
   // 3 conditions pour commissions réelles :
@@ -336,10 +336,11 @@ export function calculateKPIs(activities: CommercialActivity[]) {
   return {
     totalCA,
     totalContracts,
+    autoContracts, // Nouveau KPI
     contractsOtherThanAuto,
     potentialCommissions,
     realCommissions,
     ratioOtherToAuto,
-    totalProcessActs, // Changé de totalActs à totalProcessActs
+    totalProcessActs,
   };
 }

@@ -7,7 +7,7 @@ import { getCommercialActivitiesByMonth, calculateKPIs, CommercialActivity } fro
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, Euro, FileText, Car, Building2, TrendingUp, Cog, DollarSign, CheckCircle } from 'lucide-react';
 
 export function KPIsCards() {
   const { currentMonth, getCurrentMonthDisplay } = useNavigation();
@@ -115,12 +115,13 @@ export function KPIsCards() {
         </p>
       </div>
       
+      {/* Première ligne : CA du mois, Nombre total, Nombre auto, Nombre autre */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* CA du mois */}
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <Euro className="w-4 h-4 text-green-500" />
               CA du mois
             </CardTitle>
           </CardHeader>
@@ -135,8 +136,8 @@ export function KPIsCards() {
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              Nombre de contrats total
+              <FileText className="w-4 h-4 text-blue-500" />
+              Nombre total
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -146,46 +147,50 @@ export function KPIsCards() {
           </CardContent>
         </Card>
 
-        {/* Nombre de contrats autres qu'auto */}
+        {/* Nombre auto */}
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              Contrats autres qu'auto
+              <Car className="w-4 h-4 text-purple-500" />
+              Nombre auto
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-              {kpis.contractsOtherThanAuto}
+              {kpis.autoContracts}
             </div>
           </CardContent>
         </Card>
 
-        {/* Commissions potentielles */}
+        {/* Nombre autre */}
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              Commissions potentielles
+              <Building2 className="w-4 h-4 text-indigo-500" />
+              Nombre autre
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-              {formatCurrency(kpis.potentialCommissions)}
+            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+              {kpis.contractsOtherThanAuto}
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Deuxième ligne : Ratio, Nombre de process, Commissions potentielles, Commissions réelles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
         {/* Ratio autres/auto */}
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+              <TrendingUp className="w-4 h-4 text-orange-500" />
               Ratio autres/auto
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
               {formatPercentage(kpis.ratioOtherToAuto)}
             </div>
           </CardContent>
@@ -195,7 +200,7 @@ export function KPIsCards() {
         <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+              <Cog className="w-4 h-4 text-teal-500" />
               Nombre de process
             </CardTitle>
           </CardHeader>
@@ -206,11 +211,26 @@ export function KPIsCards() {
           </CardContent>
         </Card>
 
+        {/* Commissions potentielles */}
+        <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-yellow-500" />
+              Commissions potentielles
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+              {formatCurrency(kpis.potentialCommissions)}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Commissions réelles avec effet hover explicatif */}
         <Card className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
               Commissions réelles
               <TooltipProvider>
                 <Tooltip>
