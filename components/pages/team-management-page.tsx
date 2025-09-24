@@ -471,9 +471,9 @@ export function TeamManagementPage() {
               Changer tous les mots de passe
             </DialogTitle>
             <DialogDescription>
-              Ceci changera le mot de passe pour tous les utilisateurs de la collection Firestore.
+              Ceci synchronisera le mot de passe pour tous les utilisateurs dans Firebase Auth ET Firestore.
               <br />
-              <strong>Note :</strong> Cela ne modifiera pas les mots de passe Firebase Auth automatiquement.
+              <strong>✅ Sécurisé :</strong> Les connexions ne seront plus cassées après le changement.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -528,31 +528,45 @@ export function TeamManagementPage() {
               onClick={async () => {
                 if (!newPassword) return;
                 
-                    try {
-                      // Mettre à jour tous les utilisateurs avec le nouveau mot de passe
-                      for (const user of users) {
-                        if (user.uid) {
-                          await updateUserData(user.uid, { 
-                            password: newPassword,
-                            updatedAt: new Date()
-                          });
-                        }
-                      }
-                      
-                      setShowChangePasswordDialog(false);
-                      setNewPassword('');
-                      
-                      // Mettre à jour le mot de passe par défaut dans le formulaire
-                      setFormData(prev => ({ ...prev, password: newPassword }));
-                    } catch (error) {
-                      console.error('Erreur lors du changement de mot de passe:', error);
-                    }
+                try {
+                  // Appeler l'API pour synchroniser Firebase Auth et Firestore
+                  const response = await fetch('/api/update-passwords', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      users: users.filter(user => user.uid), // Seulement les utilisateurs avec UID
+                      newPassword: newPassword
+                    }),
+                  });
+
+                  const result = await response.json();
+
+                  if (response.ok) {
+                    // Succès : rafraîchir les données utilisateur
+                    window.location.reload(); // Recharger pour voir les changements
+                    
+                    setShowChangePasswordDialog(false);
+                    setNewPassword('');
+                    
+                    // Mettre à jour le mot de passe par défaut dans le formulaire
+                    setFormData(prev => ({ ...prev, password: newPassword }));
+                    
+                    alert(`✅ Synchronisation réussie !\n${result.summary.success} utilisateurs mis à jour avec succès.`);
+                  } else {
+                    throw new Error(result.error || 'Erreur lors de la synchronisation');
+                  }
+                } catch (error: any) {
+                  console.error('Erreur lors du changement de mot de passe:', error);
+                  alert(`❌ Erreur lors de la synchronisation : ${error.message}`);
+                }
               }}
               disabled={!newPassword}
               className="bg-orange-600 hover:bg-orange-700"
             >
               <Key className="mr-2 h-4 w-4" />
-              Changer pour tous ({users.length} utilisateurs)
+              Synchroniser Auth + Firestore ({users.filter(u => u.uid).length} utilisateurs)
             </Button>
           </div>
         </DialogContent>
