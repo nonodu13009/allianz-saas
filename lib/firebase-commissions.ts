@@ -114,13 +114,13 @@ export const getCommissions = async (options?: {
   total: number;
 }> => {
   try {
-    const { limit = 100, startAfter, year } = options || {};
+    const { limit: limitValue = 100, startAfter, year } = options || {};
     
     let q = query(
       collection(db, 'commissions'),
       orderBy('year', 'desc'),
       orderBy('month', 'desc'),
-      limit(limit)
+      limit(limitValue)
     );
     
     if (startAfter) {
@@ -129,7 +129,7 @@ export const getCommissions = async (options?: {
         orderBy('year', 'desc'),
         orderBy('month', 'desc'),
         startAfter(startAfter),
-        limit(limit)
+        limit(limitValue)
       );
     }
     
@@ -138,7 +138,7 @@ export const getCommissions = async (options?: {
         collection(db, 'commissions'),
         where('year', '==', year),
         orderBy('month', 'desc'),
-        limit(limit)
+        limit(limitValue)
       );
     }
     
@@ -154,7 +154,7 @@ export const getCommissions = async (options?: {
     });
     
     const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-    const hasMore = querySnapshot.docs.length === limit;
+    const hasMore = querySnapshot.docs.length === limitValue;
     
     // Compter le total
     const countSnapshot = await getDocs(collection(db, 'commissions'));

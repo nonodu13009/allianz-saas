@@ -206,12 +206,12 @@ export const getUsers = async (options?: {
   total: number;
 }> => {
   const operation = createFirebaseOperation(async () => {
-    const { limit = 50, startAfter, searchTerm } = options || {};
+    const { limit: limitValue = 50, startAfter, searchTerm } = options || {};
     
     let q = query(
       collection(db, 'users'),
       orderBy('createdAt', 'desc'),
-      limit(limit)
+      limit(limitValue)
     );
     
     if (startAfter) {
@@ -219,7 +219,7 @@ export const getUsers = async (options?: {
         collection(db, 'users'),
         orderBy('createdAt', 'desc'),
         startAfter(startAfter),
-        limit(limit)
+        limit(limitValue)
       );
     }
     
@@ -243,7 +243,7 @@ export const getUsers = async (options?: {
     }
     
     const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-    const hasMore = querySnapshot.docs.length === limit;
+    const hasMore = querySnapshot.docs.length === limitValue;
     
     // Compter le total (requête séparée pour éviter de charger toutes les données)
     const countSnapshot = await getDocs(collection(db, 'users'));
