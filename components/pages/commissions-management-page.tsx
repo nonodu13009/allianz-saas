@@ -82,7 +82,7 @@ export function CommissionsManagementPage() {
         getCommissions(),
         getAvailableYears()
       ]);
-      setCommissions(commissionsData);
+      setCommissions(commissionsData.commissions);
       setAvailableYears(years);
       if (years.length > 0 && !selectedYear) {
         setSelectedYear(years[0]);
@@ -290,7 +290,7 @@ export function CommissionsManagementPage() {
   
   // Calculer le nombre de mois réellement remplis (avec des données non nulles)
   const getFilledMonthsCount = (commissions: CommissionData[], field: keyof CommissionData) => {
-    return commissions.filter(c => c[field] > 0).length;
+    return commissions.filter(c => (c[field] as number) > 0).length;
   };
   
   // Calculer les moyennes et extrapolations intelligentes
@@ -353,7 +353,15 @@ export function CommissionsManagementPage() {
             <BarChart3 className="mr-2 h-4 w-4" />
             {showAnalysis ? 'Masquer Analyse' : 'Analyse'}
           </Button>
-          <Dialog open={isCreateDialogOpen || !!editingCommission} onOpenChange={isEdit ? setEditingCommission : setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen || !!editingCommission} onOpenChange={(open) => {
+            if (!open) {
+              if (isEdit) {
+                setEditingCommission(null);
+              } else {
+                setIsCreateDialogOpen(false);
+              }
+            }
+          }}>
             <DialogTrigger asChild>
               <Button onClick={() => {
                 resetForm();

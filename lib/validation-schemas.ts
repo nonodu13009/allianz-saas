@@ -95,7 +95,7 @@ export function validateQueryParams(schema: z.ZodSchema, searchParams: URLSearch
 } {
   const params: any = {};
   
-  for (const [key, value] of searchParams.entries()) {
+  for (const [key, value] of Array.from(searchParams.entries())) {
     // Convertir les valeurs numériques
     if (key === 'limit' || key === 'year') {
       params[key] = parseInt(value, 10);

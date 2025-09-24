@@ -50,7 +50,7 @@ export function calculatePotentialCommission(
   annualPremium: number
 ): number {
   // Si pas de produit (M+3, Préterme Auto, Préterme IARD), pas de commission
-  if (!productType || productType === '') {
+  if (!productType) {
     return 0;
   }
   

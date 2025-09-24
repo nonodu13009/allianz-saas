@@ -155,7 +155,15 @@ export function TeamManagementPage() {
             <Key className="mr-2 h-4 w-4" />
             Changer tous les mots de passe
           </Button>
-          <Dialog open={isCreateDialogOpen || !!editingUser} onOpenChange={isEdit ? setEditingUser : setIsCreateDialogOpen}>
+          <Dialog open={isCreateDialogOpen || !!editingUser} onOpenChange={(open) => {
+            if (!open) {
+              if (isEdit) {
+                setEditingUser(null);
+              } else {
+                setIsCreateDialogOpen(false);
+              }
+            }
+          }}>
             <DialogTrigger asChild>
               <Button onClick={() => {
                 resetForm();

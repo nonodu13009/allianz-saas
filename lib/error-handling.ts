@@ -106,9 +106,9 @@ export async function withRetry<T>(
       const errorType = getFirebaseErrorType(error);
       
       console.error(`[${context}] Tentative ${attempt} échouée:`, {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         type: errorType,
-        code: error.code
+        code: error instanceof Error && 'code' in error ? error.code : undefined
       });
       
       // Si ce n'est pas la dernière tentative et que l'erreur est retryable
@@ -144,12 +144,12 @@ export async function withFallback<T>(
   try {
     return await withRetry(primaryOperation, {}, context);
   } catch (error) {
-    console.warn(`[${context}] Opération principale échouée, utilisation du fallback:`, error.message);
+    console.warn(`[${context}] Opération principale échouée, utilisation du fallback:`, error instanceof Error ? error.message : String(error));
     
     try {
       return await withRetry(fallbackOperation, { maxRetries: 1 }, `${context}-fallback`);
     } catch (fallbackError) {
-      console.error(`[${context}] Fallback également échoué:`, fallbackError.message);
+      console.error(`[${context}] Fallback également échoué:`, fallbackError instanceof Error ? fallbackError.message : String(fallbackError));
       throw new Error(`[${context}] Opération principale et fallback ont échoué`);
     }
   }

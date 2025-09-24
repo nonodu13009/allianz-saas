@@ -181,7 +181,7 @@ export const getCommissionsByYear = async (year: number): Promise<CommissionData
   try {
     // Récupérer toutes les commissions et filtrer côté client pour éviter le besoin d'index
     const allCommissions = await getCommissions();
-    return allCommissions.filter(commission => commission.year === year);
+    return allCommissions.commissions.filter(commission => commission.year === year);
   } catch (error) {
     console.error('Erreur lors de la récupération des commissions par année:', error);
     return [];
@@ -191,7 +191,7 @@ export const getCommissionsByYear = async (year: number): Promise<CommissionData
 export const getAvailableYears = async (): Promise<number[]> => {
   try {
     const commissions = await getCommissions();
-    const years = [...new Set(commissions.map(c => c.year))];
+    const years = Array.from(new Set(commissions.commissions.map(c => c.year)));
     return years.sort((a, b) => b - a); // Plus récent en premier
   } catch (error) {
     console.error('Erreur lors de la récupération des années:', error);
@@ -262,7 +262,7 @@ export const defaultCommissionsData = {
 export const migrateCommissionsData = async () => {
   try {
     const existingCommissions = await getCommissions();
-    if (existingCommissions.length > 0) {
+    if (existingCommissions.commissions.length > 0) {
       console.log('Les données de commissions existent déjà');
       return;
     }

@@ -75,18 +75,20 @@ export function FiltersSystem({ children }: FiltersSystemProps) {
   };
 
   const addFilter = (type: 'actType' | 'productType' | 'company', value: string) => {
-    if (!filters[type].includes(value)) {
+    const currentFilters = filters[type] as string[];
+    if (!currentFilters.includes(value)) {
       setFiltersState({
         ...filters,
-        [type]: [...filters[type], value],
+        [type]: [...currentFilters, value],
       });
     }
   };
 
   const removeFilter = (type: 'actType' | 'productType' | 'company', value: string) => {
+    const currentFilters = filters[type] as string[];
     setFiltersState({
       ...filters,
-      [type]: filters[type].filter((item: string) => item !== value),
+      [type]: currentFilters.filter((item: string) => item !== value),
     });
   };
 

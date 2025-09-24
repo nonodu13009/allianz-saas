@@ -261,7 +261,7 @@ export function GestionFirebasePage() {
             <CardContent>
               <div className="space-y-3">
                 {results.map((result, index) => {
-                  let icon, badgeVariant, badgeText, iconColor;
+                  let icon, badgeVariant: "default" | "secondary" | "destructive" | "outline", badgeText, iconColor;
                   
                   if (result.success) {
                     if (result.action === 'already_exists') {
