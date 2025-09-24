@@ -20,7 +20,7 @@ export default function CommercialPage() {
       <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 shadow-sm">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard">
+            <Link href="/">
               <Button variant="outline" size="sm" className="gap-2 bg-white/50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600">
                 <ArrowLeft className="h-4 w-4" />
                 Retour au dashboard

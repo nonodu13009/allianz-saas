@@ -124,7 +124,7 @@ export function CommercialActivityPage() {
           <Link href="/">
             <Button variant="outline" size="sm" className="flex items-center">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour
+              Retour au dashboard
             </Button>
           </Link>
           <div>
