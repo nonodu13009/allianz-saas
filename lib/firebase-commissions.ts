@@ -103,9 +103,46 @@ export const deleteCommission = async (id: string) => {
   }
 };
 
-export const getCommissions = async (): Promise<CommissionData[]> => {
+export const getCommissions = async (options?: {
+  limit?: number;
+  startAfter?: any;
+  year?: number;
+}): Promise<{
+  commissions: CommissionData[];
+  lastDoc: any;
+  hasMore: boolean;
+  total: number;
+}> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'commissions'));
+    const { limit = 100, startAfter, year } = options || {};
+    
+    let q = query(
+      collection(db, 'commissions'),
+      orderBy('year', 'desc'),
+      orderBy('month', 'desc'),
+      limit(limit)
+    );
+    
+    if (startAfter) {
+      q = query(
+        collection(db, 'commissions'),
+        orderBy('year', 'desc'),
+        orderBy('month', 'desc'),
+        startAfter(startAfter),
+        limit(limit)
+      );
+    }
+    
+    if (year) {
+      q = query(
+        collection(db, 'commissions'),
+        where('year', '==', year),
+        orderBy('month', 'desc'),
+        limit(limit)
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
     const commissions: CommissionData[] = [];
     querySnapshot.forEach((doc) => {
       commissions.push({
@@ -115,10 +152,28 @@ export const getCommissions = async (): Promise<CommissionData[]> => {
         updatedAt: doc.data().updatedAt?.toDate(),
       } as CommissionData);
     });
-    return commissions.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month));
+    
+    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+    const hasMore = querySnapshot.docs.length === limit;
+    
+    // Compter le total
+    const countSnapshot = await getDocs(collection(db, 'commissions'));
+    const total = countSnapshot.size;
+    
+    return {
+      commissions: commissions.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month)),
+      lastDoc,
+      hasMore,
+      total
+    };
   } catch (error) {
     console.error('Erreur lors de la récupération des commissions:', error);
-    return [];
+    return {
+      commissions: [],
+      lastDoc: null,
+      hasMore: false,
+      total: 0
+    };
   }
 };
 

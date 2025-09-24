@@ -113,9 +113,8 @@ export async function createCommercialActivity(
 ): Promise<string> {
   try {
     const now = new Date();
-    // Le mois de navigation est septembre 2025 (contexte métier)
-    // Mais la date de saisie utilise la date système réelle
-    const month = '2025-09';
+    // Utiliser la date réelle du système pour le mois
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
     console.log('Firebase: Création d\'activité pour userId:', activity.userId, 'month:', month, 'dateCreated:', now);
     
@@ -134,10 +133,10 @@ export async function createCommercialActivity(
     const activityData: Omit<CommercialActivity, 'id'> = {
       ...activity,
       clientName: capitalizedClientName,
-      dateCreated: now, // Date système réelle (22 septembre 2024)
+      dateCreated: now, // Date système réelle
       potentialCommission,
       isCommissionReal: false, // Sera calculé lors du chargement des données
-      month, // '2025-09' (contexte métier)
+      month, // Date réelle du système
       year: now.getFullYear(), // Année de la date système
     };
     

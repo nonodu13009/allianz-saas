@@ -296,19 +296,20 @@ Module de saisie et de suivi de l'activité commerciale pour les utilisateurs ay
 
 **Architecture de navigation** :
 - **État global** : `currentMonth` dans le contexte React
-- **Format** : `YYYY-MM` (ex: "2025-09")
+- **Format** : `YYYY-MM` (ex: "2024-12" pour décembre 2024)
 - **Persistence** : localStorage pour conserver le mois sélectionné
 - **Synchronisation** : Tous les composants se mettent à jour automatiquement
+- **Date réelle** : Utilise la date système actuelle comme référence
 
 **Gestion des données par mois** :
-- **Requête Firestore** : `where('month', '==', '2025-09')`
+- **Requête Firestore** : `where('month', '==', currentMonth)` (date réelle)
 - **Cache local** : Stockage des données par mois dans le state
 - **Rechargement** : Automatique lors du changement de mois
 - **Optimisation** : Éviter les requêtes inutiles si données déjà en cache
 
 **Permanence des données** :
 - **Collection Firestore** : `commercial_activities`
-- **Champ mois** : `month: "2025-09"` dans chaque document
+- **Champ mois** : `month: currentMonth` (date réelle) dans chaque document
 - **Indexation** : Index composite sur `userId` + `month`
 - **Rétention** : Données conservées indéfiniment
 - **Sauvegarde** : Automatique à chaque création/modification
@@ -324,7 +325,7 @@ Module de saisie et de suivi de l'activité commerciale pour les utilisateurs ay
 **Contexte React** :
 ```typescript
 interface NavigationContext {
-  currentMonth: string; // "2025-09"
+  currentMonth: string; // "2024-12" (date réelle)
   setCurrentMonth: (month: string) => void;
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;

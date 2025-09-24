@@ -24,6 +24,7 @@ export function UsersProvider({ children }: UsersProviderProps) {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previousUsers, setPreviousUsers] = useState<UserData[]>([]);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -42,10 +43,25 @@ export function UsersProvider({ children }: UsersProviderProps) {
   const addUser = async (userData: any) => {
     setLoading(true);
     setError(null);
+    
+    // Sauvegarder l'état précédent pour rollback
+    setPreviousUsers([...users]);
+    
     try {
-      await createUser(userData);
-      await loadUsers(); // Recharger après ajout
+      const newUserId = await createUser(userData);
+      
+      // Mise à jour optimiste : ajouter l'utilisateur localement
+      const newUser: UserData = {
+        uid: newUserId,
+        ...userData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      setUsers(prev => [newUser, ...prev]);
+      
     } catch (err) {
+      // Rollback en cas d'erreur
+      setUsers(previousUsers);
       setError(err instanceof Error ? err.message : 'Erreur lors de la création de l\'utilisateur');
       console.error('Erreur lors de la création de l\'utilisateur:', err);
       throw err;
@@ -57,10 +73,23 @@ export function UsersProvider({ children }: UsersProviderProps) {
   const updateUserData = async (uid: string, data: Partial<UserData>) => {
     setLoading(true);
     setError(null);
+    
+    // Sauvegarder l'état précédent pour rollback
+    setPreviousUsers([...users]);
+    
     try {
       await updateUser(uid, data);
-      await loadUsers(); // Recharger après mise à jour
+      
+      // Mise à jour optimiste : modifier l'utilisateur localement
+      setUsers(prev => prev.map(user => 
+        user.uid === uid 
+          ? { ...user, ...data, updatedAt: new Date() }
+          : user
+      ));
+      
     } catch (err) {
+      // Rollback en cas d'erreur
+      setUsers(previousUsers);
       setError(err instanceof Error ? err.message : 'Erreur lors de la mise à jour de l\'utilisateur');
       console.error('Erreur lors de la mise à jour de l\'utilisateur:', err);
       throw err;
@@ -72,10 +101,19 @@ export function UsersProvider({ children }: UsersProviderProps) {
   const removeUser = async (uid: string) => {
     setLoading(true);
     setError(null);
+    
+    // Sauvegarder l'état précédent pour rollback
+    setPreviousUsers([...users]);
+    
     try {
       await deleteUser(uid);
-      await loadUsers(); // Recharger après suppression
+      
+      // Mise à jour optimiste : supprimer l'utilisateur localement
+      setUsers(prev => prev.filter(user => user.uid !== uid));
+      
     } catch (err) {
+      // Rollback en cas d'erreur
+      setUsers(previousUsers);
       setError(err instanceof Error ? err.message : 'Erreur lors de la suppression de l\'utilisateur');
       console.error('Erreur lors de la suppression de l\'utilisateur:', err);
       throw err;

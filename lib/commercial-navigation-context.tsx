@@ -27,8 +27,9 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Initialisation du mois actuel au chargement
   useEffect(() => {
     const initializeMonth = () => {
-      // Nous sommes en septembre 2025 selon le contexte métier
-      const currentMonthString = '2025-09';
+      // Utiliser la date réelle du système
+      const now = new Date();
+      const currentMonthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       // Vérifier s'il y a un mois sauvegardé dans localStorage
       const savedMonth = localStorage.getItem('commercial-current-month');
@@ -91,21 +92,23 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     setTimeout(() => setIsLoading(false), 300);
   };
 
-  // Retour au mois actuel (septembre 2025)
+  // Retour au mois actuel (date réelle)
   const goToCurrentMonth = () => {
     if (isLoading) return;
     
     setIsLoading(true);
-    const currentMonthString = '2025-09'; // Septembre 2025
+    const now = new Date();
+    const currentMonthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     setCurrentMonth(currentMonthString);
     
     // Simuler un délai de chargement pour l'UX
     setTimeout(() => setIsLoading(false), 300);
   };
 
-  // Vérifier si le mois donné est le mois actuel (septembre 2025)
+  // Vérifier si le mois donné est le mois actuel (date réelle)
   const isCurrentMonth = (month: string) => {
-    const currentMonthString = '2025-09'; // Septembre 2025
+    const now = new Date();
+    const currentMonthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     return month === currentMonthString;
   };
 

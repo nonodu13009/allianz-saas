@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { bulkPasswordUpdateSchema, validateData } from '@/lib/validation-schemas';
+import { apiLogger, measurePerformance } from '@/lib/logger';
 
 // Initialiser Firebase Admin SDK
 if (!getApps().length) {
@@ -28,15 +30,27 @@ const adminAuth = getAuth();
 const adminDb = getFirestore();
 
 export async function POST(request: NextRequest) {
-  try {
-    const { users, newPassword } = await request.json();
-
-    if (!users || !Array.isArray(users) || !newPassword) {
-      return NextResponse.json(
-        { error: 'Données manquantes: users (array) et newPassword requis' },
-        { status: 400 }
-      );
-    }
+  return measurePerformance(async () => {
+    try {
+      apiLogger.info('Début de la synchronisation des mots de passe');
+      
+      const body = await request.json();
+      
+      // Valider les données d'entrée
+      const validation = validateData(bulkPasswordUpdateSchema, body);
+      if (!validation.success) {
+        apiLogger.warn('Validation échouée', { errors: validation.errors });
+        return NextResponse.json(
+          { 
+            error: 'Données invalides',
+            details: validation.errors 
+          },
+          { status: 400 }
+        );
+      }
+      
+      const { users, newPassword } = validation.data!;
+      apiLogger.info(`Synchronisation de ${users.length} utilisateurs`);
 
     const results = [];
 
@@ -72,28 +86,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
 
-    return NextResponse.json({
-      success: true,
-      message: `Synchronisation terminée: ${successCount} succès, ${failureCount} échecs`,
-      results,
-      summary: {
+      apiLogger.info('Synchronisation terminée', {
         total: users.length,
         success: successCount,
         failures: failureCount
-      }
-    });
+      });
 
-  } catch (error: any) {
-    console.error('Erreur API update-passwords:', error);
-    return NextResponse.json(
-      { 
-        error: 'Erreur serveur lors de la synchronisation des mots de passe',
-        details: error.message 
-      },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({
+        success: true,
+        message: `Synchronisation terminée: ${successCount} succès, ${failureCount} échecs`,
+        results,
+        summary: {
+          total: users.length,
+          success: successCount,
+          failures: failureCount
+        }
+      });
+
+    } catch (error: any) {
+      apiLogger.error('Erreur API update-passwords', error);
+      return NextResponse.json(
+        { 
+          error: 'Erreur serveur lors de la synchronisation des mots de passe',
+          details: error.message 
+        },
+        { status: 500 }
+      );
+    }
+  }, 'bulk-password-update');
 }

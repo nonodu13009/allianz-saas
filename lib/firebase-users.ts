@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from './firebase';
+import { withRetry, createFirebaseOperation } from './error-handling';
 
 export interface UserData {
   uid?: string;
@@ -193,22 +194,70 @@ export const createUser = async (userData: {
   }
 };
 
-// Fonction pour récupérer les utilisateurs avec tri
-export const getUsers = async (): Promise<UserData[]> => {
-  try {
-    const querySnapshot = await getDocs(
-      query(collection(db, 'users'), orderBy('createdAt', 'desc'))
+// Fonction pour récupérer les utilisateurs avec tri et pagination
+export const getUsers = async (options?: {
+  limit?: number;
+  startAfter?: any;
+  searchTerm?: string;
+}): Promise<{
+  users: UserData[];
+  lastDoc: any;
+  hasMore: boolean;
+  total: number;
+}> => {
+  const operation = createFirebaseOperation(async () => {
+    const { limit = 50, startAfter, searchTerm } = options || {};
+    
+    let q = query(
+      collection(db, 'users'),
+      orderBy('createdAt', 'desc'),
+      limit(limit)
     );
-    return querySnapshot.docs.map(doc => ({
+    
+    if (startAfter) {
+      q = query(
+        collection(db, 'users'),
+        orderBy('createdAt', 'desc'),
+        startAfter(startAfter),
+        limit(limit)
+      );
+    }
+    
+    const querySnapshot = await getDocs(q);
+    const users = querySnapshot.docs.map(doc => ({
       uid: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     } as UserData));
-  } catch (error) {
-    console.error('Error getting users:', error);
-    throw error;
-  }
+    
+    // Filtrer côté client si searchTerm fourni
+    let filteredUsers = users;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filteredUsers = users.filter(user => 
+        user.email.toLowerCase().includes(term) ||
+        user.prenom?.toLowerCase().includes(term) ||
+        user.nom?.toLowerCase().includes(term)
+      );
+    }
+    
+    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+    const hasMore = querySnapshot.docs.length === limit;
+    
+    // Compter le total (requête séparée pour éviter de charger toutes les données)
+    const countSnapshot = await getDocs(collection(db, 'users'));
+    const total = countSnapshot.size;
+    
+    return {
+      users: filteredUsers,
+      lastDoc,
+      hasMore,
+      total
+    };
+  }, 'getUsers');
+  
+  return operation();
 };
 
 // Fonction pour mettre à jour un utilisateur
