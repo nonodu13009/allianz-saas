@@ -181,10 +181,28 @@ Module de saisie et de suivi de l'activité commerciale pour les utilisateurs ay
 - **Commissions réelles** : Carte avec badge "✓ Réelles", icône info plus visible
 - **Transition** : Animation douce lors du passage potentiel → réel
 
-### Tableau des saisies
-- **Affichage** : Toutes les entrées saisies
+### Tableau des saisies - CRUD COMPLET
+- **Affichage** : Toutes les entrées saisies du mois sélectionné
 - **Tri** : Possibilité de classer A-Z ou Z-A dans toutes les colonnes
 - **Filtrage** : Impact sur timeline et tableau
+- **Actions CRUD** :
+  - **Création** : Via les boutons de saisie d'actes (AN, M+3, Préterme Auto, Préterme IARD)
+  - **Lecture** : Affichage de toutes les données dans le tableau
+  - **Modification** : Clic sur une ligne pour éditer l'acte
+  - **Suppression** : Bouton de suppression avec confirmation
+
+**Interface de modification** :
+- **Modal d'édition** : S'ouvre au clic sur une ligne du tableau
+- **Pré-remplissage** : Toutes les données existantes sont chargées
+- **Validation** : Même validation que lors de la création
+- **Sauvegarde** : Mise à jour en base de données
+- **Annulation** : Retour au tableau sans modification
+
+**Interface de suppression** :
+- **Confirmation** : Dialog de confirmation avant suppression
+- **Message** : "Êtes-vous sûr de vouloir supprimer cet acte ?"
+- **Irréversible** : La suppression est définitive
+- **Mise à jour** : KPIs et timeline se mettent à jour automatiquement
 
 ### Saisie des actes commerciaux - INTERFACE PRINCIPALE
 
@@ -422,6 +440,14 @@ interface CommercialActivity {
 - **Boutons** : Flèches gauche/droite pour mois précédent/suivant
 - **Affichage** : Mois et année en français (ex: "septembre 2025")
 - **Bouton retour** : "Retour au mois actuel" sous le mois affiché
+
+**Système de verrouillage des mois** :
+- **Cadenas vert ouvert** : Indicateur visuel du statut du mois
+- **Mois déverrouillé** : Cadenas vert ouvert - modifications autorisées
+- **Mois verrouillé** : Cadenas fermé - modifications bloquées
+- **Gestion admin** : Fonctionnalité réservée aux administrateurs
+- **Blocage/Déblocage** : Possibilité de verrouiller/déverrouiller un mois
+- **Impact** : Empêche les modifications une fois le mois verrouillé
 
 **Fonctionnement** :
 - **Chargement automatique** : Les données se rechargent à chaque changement de mois

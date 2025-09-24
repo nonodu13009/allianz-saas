@@ -4,12 +4,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@/lib/commercial-navigation-context';
 import { useAuth } from '@/components/providers';
 import { useFilters } from './filters-system';
-import { getCommercialActivitiesByMonth, CommercialActivity } from '@/lib/firebase-commercial';
+import { getCommercialActivitiesByMonth, CommercialActivity, updateCommercialActivity, deleteCommercialActivity } from '@/lib/firebase-commercial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowUpDown, ArrowUp, ArrowDown, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -24,6 +29,10 @@ export function DataTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('dateCreated');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [editingActivity, setEditingActivity] = useState<CommercialActivity | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<CommercialActivity | null>(null);
 
   // Charger les données du mois sélectionné
   useEffect(() => {
@@ -116,6 +125,63 @@ export function DataTable() {
     } else {
       setSortField(field);
       setSortDirection('asc');
+    }
+  };
+
+  // Fonctions de gestion CRUD
+  const handleEdit = (activity: CommercialActivity) => {
+    setEditingActivity(activity);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (activity: CommercialActivity) => {
+    setActivityToDelete(activity);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleUpdateActivity = async (updatedActivity: CommercialActivity) => {
+    if (!updatedActivity.id) return;
+    
+    try {
+      await updateCommercialActivity(updatedActivity.id, updatedActivity);
+      
+      // Mettre à jour la liste locale
+      setActivities(prev => 
+        prev.map(activity => 
+          activity.id === updatedActivity.id ? updatedActivity : activity
+        )
+      );
+      
+      setIsEditDialogOpen(false);
+      setEditingActivity(null);
+      
+      // Déclencher un événement pour mettre à jour les KPIs
+      window.dispatchEvent(new CustomEvent('commercialActivityUpdated'));
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!activityToDelete?.id) return;
+    
+    try {
+      await deleteCommercialActivity(activityToDelete.id);
+      
+      // Mettre à jour la liste locale
+      setActivities(prev => 
+        prev.filter(activity => activity.id !== activityToDelete.id)
+      );
+      
+      setIsDeleteDialogOpen(false);
+      setActivityToDelete(null);
+      
+      // Déclencher un événement pour mettre à jour les KPIs
+      window.dispatchEvent(new CustomEvent('commercialActivityDeleted'));
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
     }
   };
 
@@ -296,6 +362,9 @@ export function DataTable() {
                       Commission (AN uniquement) {getSortIcon('potentialCommission')}
                     </Button>
                   </TableHead>
+                  <TableHead className="text-center">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -349,6 +418,51 @@ export function DataTable() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(activity)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog open={isDeleteDialogOpen && activityToDelete?.id === activity.id} onOpenChange={setIsDeleteDialogOpen}>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(activity)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir supprimer cet acte ? Cette action est irréversible.
+                                <br />
+                                <strong>Client:</strong> {activity.clientName}
+                                <br />
+                                <strong>Type:</strong> {getActTypeLabel(activity.actType)}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleConfirmDelete}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Supprimer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -356,6 +470,176 @@ export function DataTable() {
           </div>
         )}
       </CardContent>
+
+      {/* Modal d'édition */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifier l'activité commerciale</DialogTitle>
+          </DialogHeader>
+          {editingActivity && (
+            <EditActivityForm
+              activity={editingActivity}
+              onSave={handleUpdateActivity}
+              onCancel={() => setIsEditDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
+  );
+}
+
+// Composant de formulaire d'édition
+function EditActivityForm({ 
+  activity, 
+  onSave, 
+  onCancel 
+}: { 
+  activity: CommercialActivity; 
+  onSave: (activity: CommercialActivity) => void; 
+  onCancel: () => void; 
+}) {
+  const [formData, setFormData] = useState({
+    clientName: activity.clientName,
+    contractNumber: activity.contractNumber,
+    effectDate: format(new Date(activity.effectDate), 'yyyy-MM-dd'),
+    actType: activity.actType,
+    productType: activity.productType,
+    company: activity.company,
+    annualPremium: activity.annualPremium.toString(),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const updatedActivity: CommercialActivity = {
+      ...activity,
+      clientName: formData.clientName.toUpperCase(),
+      contractNumber: formData.contractNumber,
+      effectDate: new Date(formData.effectDate),
+      actType: formData.actType as CommercialActivity['actType'],
+      productType: formData.productType as CommercialActivity['productType'],
+      company: formData.company as CommercialActivity['company'],
+      annualPremium: parseFloat(formData.annualPremium) || 0,
+    };
+
+    onSave(updatedActivity);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="clientName">Nom du client</Label>
+          <Input
+            id="clientName"
+            value={formData.clientName}
+            onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="contractNumber">Numéro de contrat</Label>
+          <Input
+            id="contractNumber"
+            value={formData.contractNumber}
+            onChange={(e) => setFormData(prev => ({ ...prev, contractNumber: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="effectDate">Date d'effet</Label>
+          <Input
+            id="effectDate"
+            type="date"
+            value={formData.effectDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, effectDate: e.target.value }))}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="actType">Type d'acte</Label>
+          <Select
+            value={formData.actType}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, actType: value as CommercialActivity['actType'] }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="an">Affaire Nouvelle</SelectItem>
+              <SelectItem value="m+3">M+3</SelectItem>
+              <SelectItem value="preterme_auto">Préterme Auto</SelectItem>
+              <SelectItem value="preterme_iard">Préterme IARD</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="productType">Type de produit</Label>
+          <Select
+            value={formData.productType}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, productType: value as CommercialActivity['productType'] }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto_moto">Auto/Moto</SelectItem>
+              <SelectItem value="iard_part">IARD Particulier</SelectItem>
+              <SelectItem value="iard_pro">IARD Professionnel</SelectItem>
+              <SelectItem value="pj">Protection Juridique</SelectItem>
+              <SelectItem value="gav">GAV</SelectItem>
+              <SelectItem value="sante_prevoyance">Santé/Prévoyance</SelectItem>
+              <SelectItem value="nop50eur">NOP 50€</SelectItem>
+              <SelectItem value="vie_pp">Vie PP</SelectItem>
+              <SelectItem value="vie_pu">Vie PU</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="company">Compagnie</Label>
+          <Select
+            value={formData.company}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, company: value as CommercialActivity['company'] }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="allianz">Allianz</SelectItem>
+              <SelectItem value="unim_uniced">Unim/Uniced</SelectItem>
+              <SelectItem value="courtage">Courtage</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="annualPremium">Prime annuelle (€)</Label>
+        <Input
+          id="annualPremium"
+          type="number"
+          value={formData.annualPremium}
+          onChange={(e) => setFormData(prev => ({ ...prev, annualPremium: e.target.value }))}
+          min="0"
+          step="0.01"
+        />
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Annuler
+        </Button>
+        <Button type="submit">
+          Sauvegarder
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

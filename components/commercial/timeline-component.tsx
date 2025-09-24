@@ -52,10 +52,10 @@ export function TimelineComponent() {
     loadMonthData();
   }, [currentMonth, user?.id]);
 
-  // Écouter les événements de création d'activité pour recharger les données
+  // Écouter les événements de création, mise à jour et suppression d'activité pour recharger les données
   useEffect(() => {
-    const handleActivityCreated = () => {
-      console.log('Timeline: Nouvelle activité créée, rechargement des données...');
+    const handleActivityChange = () => {
+      console.log('Timeline: Activité modifiée, rechargement des données...');
       // Recharger les données
       const loadMonthData = async () => {
         if (!user?.id) return;
@@ -74,10 +74,14 @@ export function TimelineComponent() {
       loadMonthData();
     };
 
-    window.addEventListener('commercialActivityCreated', handleActivityCreated);
+    window.addEventListener('commercialActivityCreated', handleActivityChange);
+    window.addEventListener('commercialActivityUpdated', handleActivityChange);
+    window.addEventListener('commercialActivityDeleted', handleActivityChange);
     
     return () => {
-      window.removeEventListener('commercialActivityCreated', handleActivityCreated);
+      window.removeEventListener('commercialActivityCreated', handleActivityChange);
+      window.removeEventListener('commercialActivityUpdated', handleActivityChange);
+      window.removeEventListener('commercialActivityDeleted', handleActivityChange);
     };
   }, [currentMonth, user?.id]);
 
