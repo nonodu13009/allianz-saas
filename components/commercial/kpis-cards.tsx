@@ -292,7 +292,7 @@ export function KPIsCards() {
                     <span className="font-medium text-slate-700 dark:text-slate-300">Ratio</span>
                   </div>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    <strong>≥ 200%</strong> autres/auto<br/>
+                    <strong>≥ 100%</strong> autres/auto<br/>
                     <span className="text-xs text-slate-500">(contrats autres ÷ contrats auto)</span>
                   </p>
                 </div>

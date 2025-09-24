@@ -84,7 +84,7 @@ export function calculateIsCommissionReal(
   
   if (processCount < 15) return false;
   
-  // Condition 2: Ratio contrats autres / contrats auto ≥ 200%
+  // Condition 2: Ratio contrats autres / contrats auto ≥ 100%
   const autoContracts = activities.filter(activity => 
     activity.productType === 'auto_moto'
   ).length;
@@ -94,7 +94,7 @@ export function calculateIsCommissionReal(
   ).length;
   
   const ratio = autoContracts === 0 ? 100 : (otherContracts / autoContracts) * 100;
-  if (ratio < 200) return false; // Changé de 100% à 200%
+  if (ratio < 100) return false;
   
   // Condition 3: Commissions potentielles ≥ 200 €
   const totalPotentialCommissions = activities.reduce(
@@ -320,10 +320,10 @@ export function calculateKPIs(activities: CommercialActivity[]) {
   
   // 3 conditions pour commissions réelles :
   // 1. Commissions potentielles >= 200€
-  // 2. Ratio >= 200% (autres/auto)
+  // 2. Ratio >= 100% (autres/auto)
   // 3. Nombre de process >= 15
   const isCommissionReal = potentialCommissions >= 200 && 
-                         ratioOtherToAuto >= 200 && 
+                         ratioOtherToAuto >= 100 && 
                          processCount >= 15;
   
   const realCommissions = isCommissionReal ? potentialCommissions : 0;
