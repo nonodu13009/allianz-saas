@@ -227,7 +227,7 @@ export function KPIsCards() {
         </Card>
 
         {/* Commissions réelles avec effet hover explicatif */}
-        <Card className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+        <Card className="relative bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-500" />
@@ -235,13 +235,17 @@ export function KPIsCards() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Info 
-                      className="h-4 w-4 text-slate-400 hover:text-blue-600 cursor-help transition-colors"
-                      onMouseEnter={() => setShowCommissionTooltip(true)}
-                      onMouseLeave={() => setShowCommissionTooltip(false)}
-                    />
+                    <div className="relative">
+                      <Info 
+                        className="h-5 w-5 text-blue-500 hover:text-blue-700 cursor-help transition-all duration-200 hover:scale-110 group-hover:text-blue-600"
+                        onMouseEnter={() => setShowCommissionTooltip(true)}
+                        onMouseLeave={() => setShowCommissionTooltip(false)}
+                      />
+                      {/* Indicateur visuel */}
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xl">
+                  <TooltipContent side="top" className="max-w-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xl z-50">
                     <div className="space-y-3">
                       <p className="font-semibold text-slate-900 dark:text-slate-100">Comment passer de commissions potentielles à réelles ?</p>
                       <p className="text-sm text-slate-600 dark:text-slate-400">Les commissions deviennent réelles lorsque 3 conditions sont remplies :</p>
@@ -275,6 +279,11 @@ export function KPIsCards() {
                   ✓ Réelles
                 </Badge>
               )}
+            </div>
+            {/* Indication visuelle qu'il y a des informations */}
+            <div className="mt-2 text-xs text-blue-500 dark:text-blue-400 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+              <Info className="w-3 h-3" />
+              <span>Survolez l'icône pour voir les conditions</span>
             </div>
           </CardContent>
         </Card>
