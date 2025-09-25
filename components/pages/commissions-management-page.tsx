@@ -623,7 +623,8 @@ export function CommissionsManagementPage() {
                                         </TableHead>
                                       ))}
                                       <TableHead className="text-center font-semibold">Total</TableHead>
-                                      <TableHead className="text-center font-semibold">Moyenne</TableHead> {/* Force reload */}
+                                      <TableHead className="text-center font-semibold">Moyenne</TableHead>
+                                      <TableHead className="text-center font-semibold">Extrapolation</TableHead> {/* Force reload */}
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -637,6 +638,12 @@ export function CommissionsManagementPage() {
                                       // Calcul de la moyenne basée sur les mois complets (valeurs > 0)
                                       const completeMonths = monthlyValues.filter(value => value > 0);
                                       const average = completeMonths.length > 0 ? total / completeMonths.length : 0;
+                                      
+                                      // Calcul de l'extrapolation annuelle (moyenne × 12)
+                                      const extrapolation = average * 12;
+                                      
+                                      // Déterminer si l'année est complète (tous les mois ont des données)
+                                      const isYearComplete = completeMonths.length === 12;
                                       
                                       return (
                                         <TableRow key={type.key}>
@@ -671,6 +678,20 @@ export function CommissionsManagementPage() {
                                                 </div>
                                                 <div className="text-xs text-gray-500">
                                                   sur {completeMonths.length} mois
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {extrapolation > 0 ? (
+                                              <div>
+                                                <div className={`font-bold text-lg ${isYearComplete ? 'text-gray-500' : 'text-orange-600 dark:text-orange-400'}`}>
+                                                  {formatCurrency(extrapolation)}
+                                                </div>
+                                                <div className={`text-xs ${isYearComplete ? 'text-gray-400' : 'text-orange-500 dark:text-orange-300'}`}>
+                                                  {isYearComplete ? 'Année complète' : `Proj. sur ${completeMonths.length} mois`}
                                                 </div>
                                               </div>
                                             ) : (
