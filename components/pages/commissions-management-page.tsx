@@ -78,16 +78,14 @@ export function CommissionsManagementPage() {
   const [analysisPoste, setAnalysisPoste] = useState<string>('total_commissions');
   const [showMonthModal, setShowMonthModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [monthFormData, setMonthFormData] = useState({
+  const [monthFormData, setMonthFormData] = useState<Record<string, string>>({
     commissions_iard: '',
     commissions_vie: '',
     commissions_courtage: '',
     profits_exceptionnels: '',
     charges_agence: '',
     prelevements_julien: '',
-    prelevements_jean_michel: '',
-    // Champs dynamiques pour autres administrateurs
-    [key: string]: string
+    prelevements_jean_michel: ''
   });
 
   const loadData = async () => {
