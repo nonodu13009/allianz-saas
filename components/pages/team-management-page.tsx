@@ -14,6 +14,8 @@ import { UserData, roleMapping } from '@/lib/firebase-users';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Sidebar } from '@/components/dashboard/sidebar';
+import { Header } from '@/components/dashboard/header';
 import Link from 'next/link';
 
 export function TeamManagementPage() {
@@ -36,7 +38,6 @@ export function TeamManagementPage() {
   const [newPassword, setNewPassword] = useState('');
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
 
-
   const handleCreateUser = async () => {
     try {
       const userData = {
@@ -52,14 +53,9 @@ export function TeamManagementPage() {
   };
 
   const handleUpdateUser = async () => {
-    if (!editingUser || !editingUser.uid) return;
-    
+    if (!editingUser) return;
     try {
-      const updateData = {
-        ...formData,
-        etp: formData.etp ? parseFloat(formData.etp) : 1
-      };
-      await updateUserData(editingUser.uid, updateData);
+      await updateUserData(editingUser.id, formData);
       setEditingUser(null);
       resetForm();
     } catch (error) {
@@ -67,16 +63,15 @@ export function TeamManagementPage() {
     }
   };
 
-  const handleDeleteUser = async (uid: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
-    
-    try {
-      await removeUser(uid);
-    } catch (error) {
-      console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+      try {
+        await removeUser(userId);
+      } catch (error) {
+        console.error('Erreur lors de la suppression de l\'utilisateur:', error);
+      }
     }
   };
-
 
   const resetForm = () => {
     setFormData({
@@ -91,494 +86,375 @@ export function TeamManagementPage() {
     });
   };
 
-  const openEditDialog = (user: UserData) => {
-    setEditingUser(user);
+  const filteredUsers = users.filter(user => 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditUser = (user: UserData) => {
     setFormData({
-      email: user.email,
-      password: 'allianz', // Mot de passe par défaut
+      email: user.email || '',
+      password: '',
       prenom: user.prenom || '',
       nom: user.nom || '',
       role: user.role || '',
       role_front: user.role_front || '',
-      etp: user.etp ? user.etp.toString() : '',
+      etp: user.etp?.toString() || '',
       genre: user.genre || ''
     });
+    setEditingUser(user);
   };
 
-  const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user.prenom && user.prenom.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (user.nom && user.nom.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const handleChangeAllPasswords = async () => {
+    if (!newPassword) {
+      alert('Veuillez saisir un nouveau mot de passe');
+      return;
+    }
+    
+    try {
+      for (const user of users) {
+        await updateUserData(user.id, { password: newPassword });
+      }
+      setShowChangePasswordDialog(false);
+      setNewPassword('');
+      alert('Tous les mots de passe ont été mis à jour');
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des mots de passe:', error);
+    }
+  };
 
-  const totalUsers = users.length;
-  const completeProfiles = users.filter(u => u.prenom && u.nom && u.role).length;
-  const pendingProfiles = totalUsers - completeProfiles;
+  if (!user || user.role !== 'administrateur') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex">
+          <Sidebar />
+          <div className="flex-1 ml-64">
+            <Header />
+            <main className="p-6">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Accès Refusé</h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+                  </p>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isEdit = !!editingUser;
 
   return (
-    <div className="flex-1 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Link href="/">
-            <Button variant="outline" size="sm" className="flex items-center">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour
-            </Button>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestion d'équipe</h1>
-        </div>
-        <div className="flex space-x-2">
-          <Button 
-            onClick={() => setShowPasswords(!showPasswords)} 
-            variant="outline"
-            className={showPasswords ? "bg-green-50 border-green-200 text-green-700" : ""}
-          >
-            {showPasswords ? (
-              <>
-                <EyeOff className="mr-2 h-4 w-4" />
-                Masquer mots de passe
-              </>
-            ) : (
-              <>
-                <Eye className="mr-2 h-4 w-4" />
-                Afficher mots de passe
-              </>
-            )}
-          </Button>
-          <Button 
-            onClick={() => setShowChangePasswordDialog(true)}
-            variant="outline"
-            className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
-          >
-            <Key className="mr-2 h-4 w-4" />
-            Changer tous les mots de passe
-          </Button>
-          <Dialog open={isCreateDialogOpen || !!editingUser} onOpenChange={(open) => {
-            if (!open) {
-              if (isEdit) {
-                setEditingUser(null);
-              } else {
-                setIsCreateDialogOpen(false);
-              }
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                resetForm();
-                setIsCreateDialogOpen(true);
-              }}>
-                <UserPlus className="mr-2 h-4 w-4" /> Nouvel utilisateur
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-              <DialogHeader>
-                <DialogTitle>{isEdit ? 'Modifier l\'utilisateur' : 'Créer un nouvel utilisateur'}</DialogTitle>
-                <DialogDescription>
-                  {isEdit ? 'Mettez à jour les informations de l\'utilisateur.' : 'Remplissez les informations pour créer un nouveau compte utilisateur.'}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      required
-                      readOnly={isEdit}
-                      className={isEdit ? "bg-gray-100 dark:bg-gray-700" : ""}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password">Mot de passe *</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPasswords ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="allianz (mot de passe par défaut)"
-                        required
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPasswords(!showPasswords)}
-                      >
-                        {showPasswords ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex">
+        <Sidebar />
+        <div className="flex-1 ml-64">
+          <Header />
+          <main className="p-6">
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white mb-6">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold">
+                  Gestion d'équipe
+                </h1>
+                <p className="text-blue-100 text-lg">
+                  Administration des utilisateurs et permissions
+                </p>
+                <p className="text-blue-200">
+                  Gérez votre équipe et configurez les accès
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Membres de l'équipe</h2>
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={() => setShowPasswords(!showPasswords)} 
+                    variant="outline"
+                    className={showPasswords ? "bg-green-50 border-green-200 text-green-700" : ""}
+                  >
+                    {showPasswords ? (
+                      <>
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Masquer mots de passe
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Afficher mots de passe
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={() => setShowChangePasswordDialog(true)}
+                    variant="outline"
+                    className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
+                  >
+                    <Key className="mr-2 h-4 w-4" />
+                    Changer tous les mots de passe
+                  </Button>
+                  <Dialog open={isCreateDialogOpen || !!editingUser} onOpenChange={(open) => {
+                    if (!open) {
+                      setIsCreateDialogOpen(false);
+                      setEditingUser(null);
+                      resetForm();
+                    }
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter un utilisateur
                       </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {isEdit ? 'Modifier l\'utilisateur' : 'Ajouter un nouvel utilisateur'}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {isEdit ? 'Modifiez les informations de l\'utilisateur' : 'Remplissez les informations pour créer un nouvel utilisateur'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleFormChange('email', e.target.value)}
+                            placeholder="email@allianz.fr"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="password">Mot de passe</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={formData.password}
+                            onChange={(e) => handleFormChange('password', e.target.value)}
+                            placeholder="Mot de passe"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="prenom">Prénom</Label>
+                          <Input
+                            id="prenom"
+                            value={formData.prenom}
+                            onChange={(e) => handleFormChange('prenom', e.target.value)}
+                            placeholder="Prénom"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="nom">Nom</Label>
+                          <Input
+                            id="nom"
+                            value={formData.nom}
+                            onChange={(e) => handleFormChange('nom', e.target.value)}
+                            placeholder="Nom"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">Rôle</Label>
+                          <Select value={formData.role} onValueChange={(value) => handleFormChange('role', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner un rôle" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(roleMapping).map(([key, value]) => (
+                                <SelectItem key={key} value={key}>
+                                  {value}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role_front">Rôle Front</Label>
+                          <Input
+                            id="role_front"
+                            value={formData.role_front}
+                            onChange={(e) => handleFormChange('role_front', e.target.value)}
+                            placeholder="Rôle front"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="etp">ETP</Label>
+                          <Input
+                            id="etp"
+                            type="number"
+                            step="0.1"
+                            value={formData.etp}
+                            onChange={(e) => handleFormChange('etp', e.target.value)}
+                            placeholder="1.0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="genre">Genre</Label>
+                          <Select value={formData.genre} onValueChange={(value) => handleFormChange('genre', value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionner un genre" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="M">Masculin</SelectItem>
+                              <SelectItem value="F">Féminin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button variant="outline" onClick={() => {
+                          setIsCreateDialogOpen(false);
+                          setEditingUser(null);
+                          resetForm();
+                        }}>
+                          Annuler
+                        </Button>
+                        <Button onClick={isEdit ? handleUpdateUser : handleCreateUser}>
+                          {isEdit ? 'Modifier' : 'Créer'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Rechercher un utilisateur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Tableau des utilisateurs */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Utilisateurs ({filteredUsers.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex justify-center py-8">
+                      <RefreshCw className="h-6 w-6 animate-spin" />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Mot de passe par défaut : <span className="font-mono bg-gray-100 px-1 rounded">allianz</span>
-                    </p>
-                  </div>
-                </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Nom complet</TableHead>
+                          <TableHead>Rôle</TableHead>
+                          <TableHead>ETP</TableHead>
+                          <TableHead>Genre</TableHead>
+                          {showPasswords && <TableHead>Mot de passe</TableHead>}
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.email}</TableCell>
+                            <TableCell>{user.prenom} {user.nom}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {roleMapping[user.role as keyof typeof roleMapping] || user.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{user.etp || 'N/A'}</TableCell>
+                            <TableCell>{user.genre || 'N/A'}</TableCell>
+                            {showPasswords && (
+                              <TableCell className="font-mono text-sm">
+                                {user.password || 'allianz'}
+                              </TableCell>
+                            )}
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="prenom">Prénom *</Label>
-                    <Input
-                      id="prenom"
-                      value={formData.prenom}
-                      onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                      required
-                    />
+              {/* Dialog pour changer tous les mots de passe */}
+              <Dialog open={showChangePasswordDialog} onOpenChange={setShowChangePasswordDialog}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Changer tous les mots de passe</DialogTitle>
+                    <DialogDescription>
+                      Cette action changera le mot de passe de tous les utilisateurs.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Nouveau mot de passe"
+                      />
+                    </div>
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Cette action est irréversible. Tous les utilisateurs devront utiliser le nouveau mot de passe.
+                      </AlertDescription>
+                    </Alert>
                   </div>
-                  <div>
-                    <Label htmlFor="nom">Nom *</Label>
-                    <Input
-                      id="nom"
-                      value={formData.nom}
-                      onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                      required
-                    />
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowChangePasswordDialog(false)}>
+                      Annuler
+                    </Button>
+                    <Button onClick={handleChangeAllPasswords}>
+                      Changer tous les mots de passe
+                    </Button>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="role">Rôle *</Label>
-                    <Select value={formData.role} onValueChange={(value) => {
-                      setFormData({ 
-                        ...formData, 
-                        role: value,
-                        role_front: roleMapping[value as keyof typeof roleMapping]
-                      });
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un rôle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="administrateur">Agent Général</SelectItem>
-                        <SelectItem value="cdc_commercial">CDC Commercial</SelectItem>
-                        <SelectItem value="cdc_sante_coll">CDC Santé Collective</SelectItem>
-                        <SelectItem value="cdc_sante_ind">CDC Santé Individuel</SelectItem>
-                        <SelectItem value="cdc_sinistre">CDC Sinistre</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="role_front">Rôle front (automatique)</Label>
-                    <Input
-                      id="role_front"
-                      value={formData.role_front}
-                      readOnly
-                      className="bg-gray-50 dark:bg-gray-800"
-                      placeholder="Sélectionnez d'abord un rôle"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Ce champ est automatiquement rempli selon le rôle sélectionné
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="etp">ETP</Label>
-                    <Input
-                      id="etp"
-                      type="number"
-                      step="0.1"
-                      value={formData.etp}
-                      onChange={(e) => setFormData({ ...formData, etp: e.target.value })}
-                      placeholder="Ex: 0.8"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="genre">Genre</Label>
-                    <Select value={formData.genre} onValueChange={(value) => setFormData({ ...formData, genre: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner le genre" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Homme">Homme</SelectItem>
-                        <SelectItem value="Femme">Femme</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => {
-                  isEdit ? setEditingUser(null) : setIsCreateDialogOpen(false);
-                  resetForm();
-                }}>
-                  Annuler
-                </Button>
-                <Button onClick={isEdit ? handleUpdateUser : handleCreateUser}>
-                  {isEdit ? 'Sauvegarder les modifications' : 'Créer l\'utilisateur'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </main>
         </div>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-white dark:bg-gray-800 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Utilisateurs</CardTitle>
-            <Users className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-gray-500">Utilisateurs enregistrés</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white dark:bg-gray-800 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profils Complets</CardTitle>
-            <UserPlus className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completeProfiles}</div>
-            <p className="text-xs text-gray-500">Informations complètes</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-white dark:bg-gray-800 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profils en Attente</CardTitle>
-            <UserPlus className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingProfiles}</div>
-            <p className="text-xs text-gray-500">Informations à compléter</p>
-          </CardContent>
-        </Card>
-      </div>
-
-
-      {/* User Table */}
-      <Card className="bg-white dark:bg-gray-800 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Liste des utilisateurs
-            <div className="relative ml-auto flex-1 md:grow-0">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Rechercher un utilisateur..."
-                className="w-full rounded-lg bg-gray-100 pl-8 md:w-[300px] dark:bg-gray-700 dark:text-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-              Chargement des utilisateurs...
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead>ETP</TableHead>
-                  <TableHead>Genre</TableHead>
-                  <TableHead>Mot de passe</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.uid || user.email}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {user.prenom && user.nom 
-                            ? `${user.prenom} ${user.nom}` 
-                            : user.email
-                          }
-                        </div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{user.role || 'Non défini'}</div>
-                        {user.role_front && (
-                          <div className="text-sm text-gray-500">{user.role_front}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.etp || '-'}</TableCell>
-                    <TableCell>{user.genre || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Key className="h-4 w-4 text-gray-400" />
-                        <span className={`font-mono text-sm ${showPasswords ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-                          {showPasswords ? 'allianz' : '••••••••'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        user.prenom && user.nom && user.role 
-                          ? 'default' 
-                          : 'secondary'
-                      }>
-                        {user.prenom && user.nom && user.role 
-                          ? 'Complet' 
-                          : 'Incomplet'
-                        }
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {user.uid && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.uid!)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialog pour changer tous les mots de passe */}
-      <Dialog open={showChangePasswordDialog} onOpenChange={setShowChangePasswordDialog}>
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Key className="mr-2 h-5 w-5 text-orange-600" />
-              Changer tous les mots de passe
-            </DialogTitle>
-            <DialogDescription>
-              Ceci synchronisera le mot de passe pour tous les utilisateurs dans Firebase Auth ET Firestore.
-              <br />
-              <strong>✅ Sécurisé :</strong> Les connexions ne seront plus cassées après le changement.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <Label htmlFor="newPassword">Nouveau mot de passe *</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showPasswords ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Entrez le nouveau mot de passe"
-                  required
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPasswords(!showPasswords)}
-                >
-                  {showPasswords ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Mot de passe actuel : <span className="font-mono bg-gray-100 px-1 rounded">allianz</span>
-              </p>
-            </div>
-            
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Attention :</strong> Cette action affectera {users.length} utilisateur(s). 
-                Assurez-vous que le nouveau mot de passe est sécurisé.
-              </AlertDescription>
-            </Alert>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => {
-              setShowChangePasswordDialog(false);
-              setNewPassword('');
-            }}>
-              Annuler
-            </Button>
-            <Button 
-              onClick={async () => {
-                if (!newPassword) return;
-                
-                try {
-                  // Appeler l'API pour synchroniser Firebase Auth et Firestore
-                  const response = await fetch('/api/update-passwords', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      users: users.filter(user => user.uid), // Seulement les utilisateurs avec UID
-                      newPassword: newPassword
-                    }),
-                  });
-
-                  const result = await response.json();
-
-                  if (response.ok) {
-                    // Succès : rafraîchir les données utilisateur
-                    window.location.reload(); // Recharger pour voir les changements
-                    
-                    setShowChangePasswordDialog(false);
-                    setNewPassword('');
-                    
-                    // Mettre à jour le mot de passe par défaut dans le formulaire
-                    setFormData(prev => ({ ...prev, password: newPassword }));
-                    
-                    alert(`✅ Synchronisation réussie !\n${result.summary.success} utilisateurs mis à jour avec succès.`);
-                  } else {
-                    throw new Error(result.error || 'Erreur lors de la synchronisation');
-                  }
-                } catch (error: any) {
-                  console.error('Erreur lors du changement de mot de passe:', error);
-                  alert(`❌ Erreur lors de la synchronisation : ${error.message}`);
-                }
-              }}
-              disabled={!newPassword}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              <Key className="mr-2 h-4 w-4" />
-              Synchroniser Auth + Firestore ({users.filter(u => u.uid).length} utilisateurs)
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
