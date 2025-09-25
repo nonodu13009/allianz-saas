@@ -78,7 +78,6 @@ export function CommissionsManagementPage() {
   const [analysisPoste, setAnalysisPoste] = useState<string>('total_commissions');
   const [showMonthModal, setShowMonthModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<number>(0);
   const [monthFormData, setMonthFormData] = useState({
     commissions_iard: '',
     commissions_vie: '',
