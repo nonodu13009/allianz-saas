@@ -44,6 +44,16 @@ const MONTHS = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
 ];
 
+// Fonction utilitaire pour formater uniformément les montants
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(value)); // S'assurer que c'est un entier
+};
+
 export function CommissionsManagementPage() {
   const { user } = useAuth();
   const [commissions, setCommissions] = useState<CommissionData[]>([]);
@@ -438,12 +448,7 @@ export function CommissionsManagementPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-green-600">
-                        {new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(totals.totalCommissions)}
+                        {formatCurrency(totals.totalCommissions)}
                       </div>
                     </CardContent>
                   </Card>
@@ -456,12 +461,7 @@ export function CommissionsManagementPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-blue-600">
-                        {new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(totals.totalProfitsExceptionnels)}
+                        {formatCurrency(totals.totalProfitsExceptionnels)}
                       </div>
                     </CardContent>
                   </Card>
@@ -474,12 +474,7 @@ export function CommissionsManagementPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-red-600">
-                        {new Intl.NumberFormat('fr-FR', {
-                          style: 'currency',
-                          currency: 'EUR',
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(totals.totalChargesAgence)}
+                        {formatCurrency(totals.totalChargesAgence)}
                       </div>
                     </CardContent>
                   </Card>
@@ -576,12 +571,7 @@ export function CommissionsManagementPage() {
                                             <TableCell key={index} className="text-center">
                                               {value > 0 ? (
                                                 <span className="font-medium">
-                                                  {new Intl.NumberFormat('fr-FR', {
-                                                    style: 'currency',
-                                                    currency: 'EUR',
-                                                    minimumFractionDigits: 0,
-                                                    maximumFractionDigits: 0,
-                                                  }).format(value)}
+                                                  {formatCurrency(value)}
                                                 </span>
                                               ) : (
                                                 <span className="text-gray-400">-</span>
@@ -589,23 +579,13 @@ export function CommissionsManagementPage() {
                                             </TableCell>
                                           ))}
                                           <TableCell className="text-center font-bold">
-                                            {new Intl.NumberFormat('fr-FR', {
-                                              style: 'currency',
-                                              currency: 'EUR',
-                                              minimumFractionDigits: 0,
-                                              maximumFractionDigits: 0,
-                                            }).format(total)}
+                                            {formatCurrency(total)}
                                           </TableCell>
                                           <TableCell className="text-center">
                                             {average > 0 ? (
                                               <div>
                                                 <div className="font-bold text-lg">
-                                                  {new Intl.NumberFormat('fr-FR', {
-                                                    style: 'currency',
-                                                    currency: 'EUR',
-                                                    minimumFractionDigits: 0,
-                                                    maximumFractionDigits: 0,
-                                                  }).format(average)}
+                                                  {formatCurrency(average)}
                                                 </div>
                                                 <div className="text-xs text-gray-500">
                                                   sur {completeMonths.length} mois
