@@ -1,61 +1,51 @@
 # Cahier des charges - Module CDC Santé Individuelle
 
 ## Vue d'ensemble
-Module de gestion et de suivi des activités santé individuelle pour les utilisateurs ayant le rôle `CDC_sante_ind`.
+Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ayant le rôle `CDC_sante_ind`.
 
 ## Accès et navigation
-- **Accès** : Bouton dans la sidebar pour les utilisateurs `CDC_sante_ind` (actuellement Kheira, d'autres utilisateurs pourront être ajoutés)
+- **Accès** : Bouton dans la sidebar pour les utilisateurs `CDC_sante_ind` (actuellement Kheira)
 - **Design** : Cohérence avec le design global de l'application
 - **Navigation** : 
   - Bouton retour vers le dashboard
-  - Navigation intuitive entre les différentes sections
+  - Navigation mensuelle avec système de verrouillage
 
 ## Utilisateurs concernés
 - **Actuel** : Kheira (rôle `CDC_sante_ind`)
 - **Évolution** : D'autres utilisateurs pourront être ajoutés selon les besoins de l'agence
 
-## Fonctionnalités principales
+## Fonctionnalité principale
 
-### 1. Gestion des contrats santé individuelle
-- **Saisie de nouveaux contrats** : Formulaire complet pour l'enregistrement des contrats santé
-- **Suivi des contrats existants** : Consultation et modification des contrats en cours
-- **Historique des modifications** : Traçabilité des changements apportés aux contrats
+### Saisie d'actes uniquement
+- **Objectif** : Permettre la saisie d'actes pour définir le CA brut, le CA pondéré et les commissions
+- **Pas de gestion des clients** : Focus uniquement sur la saisie d'actes
+- **Critère de déblocage** : Les commissions ne sont débloquées que si 4 révisions minimum dans le mois
+- **KPIs de suivi** : Indicateurs pour suivre l'activité et les commissions
 
-### 2. Suivi des commissions
-- **Calcul automatique** : Calcul des commissions selon les barèmes Allianz
-- **Suivi mensuel** : Tableau de bord des commissions par mois
-- **Historique** : Consultation des commissions passées
+## Données à saisir par acte
 
-### 3. Gestion des clients
-- **Base de données clients** : Fiche client complète avec historique
-- **Communication** : Suivi des échanges avec les clients
-- **Renouvellements** : Alertes et gestion des échéances
-
-### 4. Reporting et analytics
-- **Tableaux de bord** : KPIs spécifiques à la santé individuelle
-- **Rapports mensuels** : Génération automatique des rapports d'activité
-- **Analyses de performance** : Suivi des objectifs et indicateurs
-
-## Données à saisir
-
-### Informations contrat
-- **Numéro de contrat** : Identifiant unique du contrat
-- **Nom du client** : Capitalisation automatique, gestion des noms composés
-- **Date de souscription** : Date de signature du contrat
+### Informations de base
+- **Type d'acte** : Sélection parmi les 5 types disponibles
+- **Nom du client** : Saisie libre (capitalisation automatique)
+- **Numéro de contrat** : Identifiant du contrat
 - **Date d'effet** : Date de début de couverture
-- **Date d'échéance** : Date de fin de contrat (si applicable)
+- **Prime annuelle** : Montant de la prime en euros (saisie manuelle, entiers avec séparateurs de milliers)
+- **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte (entiers avec séparateurs de milliers, affichage temps réel)
+- **Date de saisie** : Automatique (date du jour), ne peut pas être modifiée
 
-### Informations produit
-- **Type de garantie** : Hospitalisation, médecine de ville, dentaire, optique, etc.
-- **Niveau de garantie** : Standard, Confort, Premium
-- **Franchise** : Montant de la franchise applicable
-- **Taux de remboursement** : Pourcentage de remboursement
+## Format des montants
 
-### Informations financières
-- **Prime annuelle** : Montant de la prime
-- **Mode de paiement** : Mensuel, trimestriel, semestriel, annuel
-- **Commission** : Calcul automatique selon les barèmes
-- **Frais de gestion** : Frais applicables
+### Règle générale
+- **Tous les montants en euros** sont affichés en **entiers uniquement**
+- **Séparateurs de milliers** : Espaces ou points selon les préférences locales
+- **Exemples** : 1 500 €, 25 000 €, 150 000 €
+
+### Application
+- **Prime annuelle** : Saisie et affichage en entiers
+- **Prime pondérée** : Calcul et affichage en entiers (arrondi automatique)
+- **CA brut total** : Somme en entiers
+- **CA pondéré total** : Somme en entiers
+- **Commissions** : Calcul et affichage en entiers
 
 ## Interface utilisateur
 
@@ -96,11 +86,13 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
 - **Nom du client** : Saisie libre
 - **Numéro de contrat** : Saisie libre
 - **Date d'effet** : Date picker
-- **Prime annuelle** : Montant en euros
+- **Prime annuelle** : Montant en euros (saisie manuelle, entiers avec séparateurs de milliers)
+- **Date de saisie** : Automatique (date du jour), non modifiable
 
 #### Calcul automatique
-- **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte
+- **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte (entiers avec séparateurs de milliers)
 - **Formule** : Prime annuelle × Coefficient
+- **Affichage temps réel** : La prime pondérée s'affiche dès que le type d'acte et la prime annuelle sont renseignés
 
 #### Coefficients par type d'acte
 - **Affaire Nouvelle** : 100% (coefficient 1.0)
@@ -123,6 +115,14 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
 - **Seuil 4** : < 22.000 € → 4%
 - **Seuil 5** : ≥ 22.000 € → 6%
 
+#### Alertes de seuils de commissions
+- **Calcul automatique** : Montant manquant pour le seuil suivant
+- **Exemples d'alertes** :
+  - "Il manque 3 200€ pour atteindre le seuil 2% (14 000€)"
+  - "Il manque 1 500€ pour atteindre le seuil 4% (22 000€)"
+  - "Seuil 6% atteint ! (22 000€+)"
+- **Couleurs** : Rouge si loin, orange si proche, vert si atteint
+
 #### Critère de révision
 - **Seuil 3** : Critère de révision (indicateur spécial)
 
@@ -130,6 +130,7 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
 - **Condition obligatoire** : Au moins 4 révisions dans le mois
 - **Application** : Les commissions ne sont débloquées que si ce critère est respecté
 - **Comptage** : Seules les révisions comptent pour ce critère
+- **Impact** : Si moins de 4 révisions → Commission potentielle = 0€
 
 #### 3. KPIs (Indicateurs clés de performance)
 - **Affichage en cartes** : Design moderne avec icônes
@@ -144,10 +145,11 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
   - Nombre d'Adhésions salarié
   - Nombre de COURT -> AZ
   - Nombre d'AZ -> Courtage
-- **CA pondéré total** : Somme de tous les CA pondérés du mois
-- **Commission potentielle** : Calculée selon les tranches
-- **Commission réelle** : Débloquée si ≥ 4 révisions
-- **Critère révisions** : Nombre de révisions / 4 (objectif)
+- **CA brut total** : Somme de toutes les primes annuelles du mois (entiers avec séparateurs de milliers)
+- **CA pondéré total** : Somme de toutes les primes pondérées du mois (entiers avec séparateurs de milliers)
+- **Commission potentielle** : Calculée selon les tranches (entiers avec séparateurs de milliers)
+- **Commission réelle** : Débloquée si ≥ 4 révisions, sinon 0€ (entiers avec séparateurs de milliers)
+- **Critère révisions** : Nombre de révisions / 4 (objectif) avec indicateur visuel
 
 #### 4. Tableau récapitulatif
 - **Données saisies** : Affichage de tous les actes saisis du mois sélectionné
@@ -157,64 +159,124 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
   - Nom du client
   - Numéro de contrat
   - Date d'effet
-  - Prime annuelle
-  - Prime pondérée (calculée automatiquement)
-  - Commission (selon les tranches)
-- **Tri et filtrage** : Fonctionnalités de recherche
+  - Date de saisie (automatique)
+  - Prime annuelle (CA brut - saisie manuelle, entiers avec séparateurs de milliers)
+  - Prime pondérée (CA pondéré - calculée automatiquement, entiers avec séparateurs de milliers)
+  - Commission (selon les tranches, entiers avec séparateurs de milliers)
+- **Tri et filtrage** : Fonctionnalités de recherche par type d'acte
 - **Actions** : Modification/suppression des entrées
 
-### Navigation
-- **Menu latéral** : Accès aux différentes sections
-- **Breadcrumb** : Indication de la position dans l'application
-- **Recherche** : Fonction de recherche globale
+### Confirmations et alertes CRUD
 
-### Responsive design
-- **Mobile** : Interface adaptée aux écrans mobiles
-- **Tablette** : Optimisation pour les tablettes
-- **Desktop** : Interface complète sur ordinateur
+#### Design cohérent
+- **Style uniforme** : Cohérence avec le design global de l'application
+- **Couleurs** : Utilisation de la palette de couleurs existante
+- **Icônes** : Icônes modernes et non dépassées
+- **Animations** : Transitions fluides et professionnelles
 
-## Sécurité et permissions
+#### Opérations avec confirmations
+- **Création d'acte** : 
+  - Confirmation de succès avec icône verte
+  - Message : "Acte créé avec succès"
+  - Auto-fermeture après 3 secondes
+- **Modification d'acte** :
+  - Confirmation de succès avec icône verte
+  - Message : "Acte modifié avec succès"
+  - Auto-fermeture après 3 secondes
+- **Suppression d'acte** :
+  - Modal de confirmation avec icône d'alerte orange
+  - Message : "Êtes-vous sûr de vouloir supprimer cet acte ?"
+  - Boutons : "Annuler" (gris) et "Supprimer" (rouge)
+  - Confirmation de suppression avec icône verte
 
-### Accès restreint
-- **Authentification** : Connexion obligatoire
-- **Autorisation** : Vérification du rôle `CDC_sante_ind`
-- **Session** : Gestion sécurisée des sessions utilisateur
+#### Alertes d'erreur
+- **Erreur de saisie** :
+  - Alertes en rouge avec icône d'erreur
+  - Messages clairs et explicites
+  - Positionnement cohérent (toast ou inline)
+- **Erreur de validation** :
+  - Validation en temps réel
+  - Messages d'erreur sous les champs concernés
+  - Style cohérent avec le reste de l'interface
 
-### Protection des données
-- **Chiffrement** : Données sensibles chiffrées
-- **Sauvegarde** : Sauvegardes automatiques régulières
-- **Audit** : Traçabilité des accès et modifications
+#### Notifications système
+- **Sauvegarde automatique** : Indicateur discret de sauvegarde
+- **Connexion perdue** : Alerte de reconnexion
+- **Synchronisation** : Indicateur de synchronisation des données
 
-## Intégrations
+#### Alertes de seuils
+- **Seuils de commissions** :
+  - Indication du montant manquant pour atteindre le seuil suivant
+  - Exemple : "Il manque 2 500€ pour atteindre le seuil 4% (22 000€)"
+  - Couleur : Orange pour proximité, vert pour atteint
+- **Critère des 4 révisions** :
+  - Compteur en temps réel : "3/4 révisions" avec barre de progression
+  - Alerte si < 4 révisions : "Il manque X révisions pour débloquer les commissions"
+  - Indicateur visuel : Rouge si < 4, orange si = 3, vert si ≥ 4
+- **Objectifs mensuels** :
+  - Alertes de proximité des seuils importants
+  - Suggestions d'actions pour optimiser les commissions
 
-### Système Allianz
-- **API** : Connexion avec les systèmes Allianz
-- **Synchronisation** : Mise à jour automatique des données
-- **Validation** : Vérification des informations avec les systèmes centraux
+## Résumé des fonctionnalités
 
-### Outils externes
-- **Email** : Envoi automatique de notifications
-- **SMS** : Alertes par SMS (si configuré)
-- **Export** : Export des données vers Excel/PDF
+### Ce qui est inclus
+- ✅ **Saisie d'actes** : 5 types d'actes avec modal de saisie
+- ✅ **Navigation mensuelle** : Sélecteur de mois avec système de verrouillage
+- ✅ **Calculs automatiques** : CA brut, CA pondéré, commissions
+- ✅ **KPIs de suivi** : Indicateurs temps réel avec critère des 4 révisions
+- ✅ **Tableau récapitulatif** : Affichage de tous les actes du mois
+- ✅ **Critère de déblocage** : Commissions débloquées uniquement si ≥ 4 révisions
+- ✅ **Confirmations et alertes** : Design cohérent pour toutes les opérations CRUD
+- ✅ **Alertes de seuils** : Indications des montants manquants pour les seuils de commissions et révisions
 
-## Évolutions prévues
+### Ce qui n'est PAS inclus
+- ❌ **Gestion des clients** : Pas de base de données clients
+- ❌ **Historique des contrats** : Pas de suivi des modifications
+- ❌ **Communication clients** : Pas de suivi des échanges
+- ❌ **Renouvellements** : Pas de gestion des échéances
+- ❌ **Intégrations externes** : Pas de connexion API Allianz
+- ❌ **Export/Reporting** : Pas de génération de rapports
 
-### Phase 1 (Actuelle)
-- Interface de base
-- Gestion des contrats
-- Calcul des commissions
+## Règles de validation
 
-### Phase 2 (À venir)
-- **Module admin** : Gestion des verrouillages de mois
-- **Système de permissions** : Contrôle d'accès avancé
-- Analytics avancés
-- Intégrations supplémentaires
-- Automatisations
+### Validation des données
+- **Nom du client** : Obligatoire, minimum 2 caractères
+- **Numéro de contrat** : Obligatoire, format libre
+- **Date d'effet** : Obligatoire, ne peut pas être dans le futur
+- **Prime annuelle** : Obligatoire, minimum 1€, maximum 1 000 000€
+- **Types d'actes** : Sélection obligatoire parmi les 5 types
 
-### Phase 3 (Future)
-- IA et prédictions
-- Optimisations avancées
-- Nouvelles fonctionnalités
+### Contraintes métier
+- **Unicité** : Pas de doublons sur le même mois (même client + même contrat)
+- **Cohérence** : La date d'effet doit être dans le mois sélectionné
+- **Limites** : Maximum 1000 actes par mois par utilisateur
+
+## Gestion des erreurs
+
+### Erreurs de saisie
+- **Champs obligatoires** : Validation en temps réel
+- **Format des montants** : Validation numérique uniquement
+- **Dates** : Validation du format et de la cohérence
+- **Doublons** : Détection automatique des doublons
+
+### Erreurs système
+- **Connexion perdue** : Sauvegarde locale et synchronisation différée
+- **Erreur de calcul** : Recalcul automatique des KPIs
+- **Erreur de sauvegarde** : Retry automatique avec notification
+
+## Performance et accessibilité
+
+### Performance
+- **Temps de chargement** : < 2 secondes pour l'affichage initial
+- **Calculs en temps réel** : Mise à jour instantanée des KPIs
+- **Optimisation** : Pagination du tableau si > 100 actes
+- **Cache** : Mise en cache des données pour navigation rapide entre mois
+
+### Accessibilité
+- **Navigation clavier** : Support complet de la navigation au clavier
+- **Contraste** : Respect des standards WCAG 2.1 AA
+- **Lecteurs d'écran** : Labels et descriptions appropriés
+- **Responsive** : Adaptation mobile et tablette
 
 ## Support et maintenance
 
@@ -223,13 +285,8 @@ Module de gestion et de suivi des activités santé individuelle pour les utilis
 - **Téléphone** : +33 6 08 18 33 38
 - **Disponibilité** : Du lundi au vendredi, 9h-18h
 
-### Formation
-- **Documentation** : Guides utilisateur disponibles
-- **Support** : Assistance personnalisée
-- **Évolution** : Formation aux nouvelles fonctionnalités
-
 ---
 
-*Document créé le : $(date)*  
-*Version : 1.0*  
-*Dernière mise à jour : $(date)*
+*Document créé le : Décembre 2024*  
+*Version : 2.0 - Simplifié*  
+*Dernière mise à jour : Décembre 2024*
