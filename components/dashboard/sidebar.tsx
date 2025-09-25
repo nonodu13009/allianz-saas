@@ -18,8 +18,8 @@ import {
   Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const navigationItems = {
       administrateur: [
@@ -75,11 +75,19 @@ const navigationItems = {
 
 export function Sidebar() {
   const { user, logout } = useAuth();
-  const [activeItem, setActiveItem] = useState('Tableau de bord');
+  const pathname = usePathname();
 
   if (!user) return null;
 
   const items = navigationItems[user.role as keyof typeof navigationItems] || [];
+
+  // Fonction pour déterminer si un item est actif
+  const isItemActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(href);
+  };
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
@@ -118,7 +126,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         {items.map((item) => {
-          const isActive = activeItem === item.label;
+          const isActive = item.href !== '#' ? isItemActive(item.href) : false;
           
           if (item.href && item.href !== '#') {
             return (
@@ -131,7 +139,6 @@ export function Sidebar() {
                       ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
                       : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   )}
-                  onClick={() => setActiveItem(item.label)}
                 >
                   <item.icon className={cn(
                     "h-5 w-5",
@@ -152,7 +159,6 @@ export function Sidebar() {
                     ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg"
                     : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 )}
-                onClick={() => setActiveItem(item.label)}
               >
                 <item.icon className={cn(
                   "h-5 w-5",
