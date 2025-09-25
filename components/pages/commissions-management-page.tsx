@@ -78,6 +78,7 @@ export function CommissionsManagementPage() {
   const [analysisPoste, setAnalysisPoste] = useState<string>('total_commissions');
   const [showMonthModal, setShowMonthModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<number>(0);
   const [monthFormData, setMonthFormData] = useState({
     commissions_iard: '',
     commissions_vie: '',
@@ -227,6 +228,39 @@ export function CommissionsManagementPage() {
     }
   };
 
+  const handleCellClick = (year: number, month: string) => {
+    // Chercher les données existantes pour ce mois/année
+    const existingCommission = commissions.find(c => c.year === year && c.month === month);
+    
+    if (existingCommission) {
+      // Remplir le formulaire avec les données existantes
+      setMonthFormData({
+        commissions_iard: existingCommission.commissions_iard.toString(),
+        commissions_vie: existingCommission.commissions_vie.toString(),
+        commissions_courtage: existingCommission.commissions_courtage.toString(),
+        profits_exceptionnels: existingCommission.profits_exceptionnels.toString(),
+        charges_agence: existingCommission.charges_agence.toString(),
+        prelevements_julien: existingCommission.prelevements_julien.toString(),
+        prelevements_jean_michel: existingCommission.prelevements_jean_michel.toString()
+      });
+    } else {
+      // Vider le formulaire pour nouvelle entrée
+      setMonthFormData({
+        commissions_iard: '',
+        commissions_vie: '',
+        commissions_courtage: '',
+        profits_exceptionnels: '',
+        charges_agence: '',
+        prelevements_julien: '',
+        prelevements_jean_michel: ''
+      });
+    }
+    
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    setShowMonthModal(true);
+  };
+
   const handleEdit = (commission: CommissionData) => {
     setFormData({
       year: commission.year,
@@ -306,47 +340,56 @@ export function CommissionsManagementPage() {
                     Recharger
                   </Button>
                 </div>
-                <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-                  if (!open) {
-                    setIsCreateDialogOpen(false);
-                    resetForm();
-                  }
-                }}>
+                {/* Modale de modification mensuelle */}
+                <Dialog open={showMonthModal} onOpenChange={setShowMonthModal}>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingCommission ? 'Modifier l\'entrée' : 'Ajouter une nouvelle entrée'}
+                        {selectedMonth && selectedYear ? 
+                          `Modifier ${selectedMonth} ${selectedYear}` : 
+                          'Ajouter des données'
+                        }
                       </DialogTitle>
                       <DialogDescription>
-                        {editingCommission ? 'Modifiez les informations de l\'entrée' : 'Remplissez les informations pour créer une nouvelle entrée'}
+                        {selectedMonth && selectedYear ? 
+                          `Modifiez les données pour ${selectedMonth} ${selectedYear}` : 
+                          'Remplissez les informations pour ce mois'
+                        }
                       </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="year">Année</Label>
-                          <Input
-                            id="year"
-                            type="number"
-                            value={formData.year}
-                            onChange={handleFormChange}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="month">Mois</Label>
-                          <Select value={formData.month} onValueChange={(value) => setFormData(prev => ({ ...prev, month: value }))}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un mois" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {MONTHS.map((month, index) => (
-                                <SelectItem key={index} value={month}>{month}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      setLoading(true);
+                      try {
+                        const commissionData = {
+                          year: selectedYear,
+                          month: selectedMonth,
+                          commissions_iard: parseFloat(monthFormData.commissions_iard) || 0,
+                          commissions_vie: parseFloat(monthFormData.commissions_vie) || 0,
+                          commissions_courtage: parseFloat(monthFormData.commissions_courtage) || 0,
+                          profits_exceptionnels: parseFloat(monthFormData.profits_exceptionnels) || 0,
+                          charges_agence: parseFloat(monthFormData.charges_agence) || 0,
+                          prelevements_julien: parseFloat(monthFormData.prelevements_julien) || 0,
+                          prelevements_jean_michel: parseFloat(monthFormData.prelevements_jean_michel) || 0
+                        };
+
+                        // Chercher si une entrée existe déjà
+                        const existingCommission = commissions.find(c => c.year === selectedYear && c.month === selectedMonth);
+                        
+                        if (existingCommission?.id) {
+                          await updateCommission(existingCommission.id, commissionData);
+                        } else {
+                          await createCommission(commissionData);
+                        }
+
+                        await loadData();
+                        setShowMonthModal(false);
+                      } catch (error) {
+                        console.error('Erreur lors de la soumission:', error);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="commissions_iard">Commissions IARD</Label>
@@ -354,8 +397,9 @@ export function CommissionsManagementPage() {
                             id="commissions_iard"
                             type="number"
                             step="0.01"
-                            value={formData.commissions_iard}
-                            onChange={handleFormChange}
+                            value={monthFormData.commissions_iard}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_iard: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -364,8 +408,9 @@ export function CommissionsManagementPage() {
                             id="commissions_vie"
                             type="number"
                             step="0.01"
-                            value={formData.commissions_vie}
-                            onChange={handleFormChange}
+                            value={monthFormData.commissions_vie}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_vie: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -374,8 +419,9 @@ export function CommissionsManagementPage() {
                             id="commissions_courtage"
                             type="number"
                             step="0.01"
-                            value={formData.commissions_courtage}
-                            onChange={handleFormChange}
+                            value={monthFormData.commissions_courtage}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_courtage: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -384,8 +430,9 @@ export function CommissionsManagementPage() {
                             id="profits_exceptionnels"
                             type="number"
                             step="0.01"
-                            value={formData.profits_exceptionnels}
-                            onChange={handleFormChange}
+                            value={monthFormData.profits_exceptionnels}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, profits_exceptionnels: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -394,8 +441,9 @@ export function CommissionsManagementPage() {
                             id="charges_agence"
                             type="number"
                             step="0.01"
-                            value={formData.charges_agence}
-                            onChange={handleFormChange}
+                            value={monthFormData.charges_agence}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, charges_agence: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -404,8 +452,9 @@ export function CommissionsManagementPage() {
                             id="prelevements_julien"
                             type="number"
                             step="0.01"
-                            value={formData.prelevements_julien}
-                            onChange={handleFormChange}
+                            value={monthFormData.prelevements_julien}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_julien: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                         <div className="space-y-2">
@@ -414,21 +463,19 @@ export function CommissionsManagementPage() {
                             id="prelevements_jean_michel"
                             type="number"
                             step="0.01"
-                            value={formData.prelevements_jean_michel}
-                            onChange={handleFormChange}
+                            value={monthFormData.prelevements_jean_michel}
+                            onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_jean_michel: e.target.value }))}
+                            placeholder="0"
                           />
                         </div>
                       </div>
                       <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => {
-                          setIsCreateDialogOpen(false);
-                          resetForm();
-                        }}>
+                        <Button type="button" variant="outline" onClick={() => setShowMonthModal(false)}>
                           Annuler
                         </Button>
                         <Button type="submit" disabled={loading}>
                           {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          {editingCommission ? 'Modifier' : 'Créer'}
+                          Sauvegarder
                         </Button>
                       </div>
                     </form>
@@ -568,13 +615,19 @@ export function CommissionsManagementPage() {
                                             {type.label}
                                           </TableCell>
                                           {monthlyValues.map((value, index) => (
-                                            <TableCell key={index} className="text-center">
+                                            <TableCell 
+                                              key={index} 
+                                              className="text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                              onClick={() => handleCellClick(year, months[index])}
+                                            >
                                               {value > 0 ? (
                                                 <span className="font-medium">
                                                   {formatCurrency(value)}
                                                 </span>
                                               ) : (
-                                                <span className="text-gray-400">-</span>
+                                                <span className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                                  Cliquer pour ajouter
+                                                </span>
                                               )}
                                             </TableCell>
                                           ))}
@@ -613,10 +666,6 @@ export function CommissionsManagementPage() {
                         </CardHeader>
                         <CardContent>
                           <div className="flex space-x-4">
-                            <Button onClick={() => setIsCreateDialogOpen(true)}>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Ajouter une entrée
-                            </Button>
                             <Button onClick={handleMigrateData} variant="outline">
                               <RefreshCw className="mr-2 h-4 w-4" />
                               Charger les données par défaut
