@@ -24,7 +24,7 @@ const dashboardData = {
       { icon: Users, label: 'Équipe', value: '12', change: '+2 ce mois', color: 'text-blue-600 dark:text-blue-400' },
       { icon: TrendingUp, label: 'CA Total', value: '1.2M€', change: '+15%', color: 'text-green-600 dark:text-green-400' },
       { icon: DollarSign, label: 'Ratio Commissions/ETP', value: 'Calculé dynamiquement', change: 'Proj. année en cours', color: 'text-purple-600 dark:text-purple-400' },
-      { icon: Shield, label: 'Satisfaction', value: '94%', change: '+2%', color: 'text-indigo-600 dark:text-indigo-400' },
+      { icon: TrendingUp, label: 'Commissions Extrapolées', value: 'Calculé dynamiquement', change: 'Proj. année en cours', color: 'text-indigo-600 dark:text-indigo-400' },
     ],
     cards: [
       {
@@ -227,10 +227,15 @@ export function DashboardContent() {
 
             {/* Autres stats pour administrateur */}
             {data.stats.slice(2).map((stat, index) => {
-              // Calcul dynamique pour le KPI Ratio Commissions/ETP
+              // Calcul dynamique pour les KPIs spéciaux
               const isRatioKPI = stat.label === 'Ratio Commissions/ETP';
-              const displayValue = isRatioKPI ? 
-                (loading || commissionsLoading ? '...' : 
+              const isCommissionsKPI = stat.label === 'Commissions Extrapolées';
+              
+              let displayValue = stat.value;
+              let displayChange = stat.change;
+              
+              if (isRatioKPI) {
+                displayValue = loading || commissionsLoading ? '...' : 
                   (() => {
                     const etpTotal = users.reduce((sum, u) => sum + (u.etp || 0), 0);
                     const ratio = etpTotal > 0 ? extrapolatedCommissions / etpTotal : 0;
@@ -240,14 +245,26 @@ export function DashboardContent() {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     }).format(Math.round(ratio));
-                  })()
-                ) : stat.value;
-              
-              const displayChange = isRatioKPI ?
-                (loading || commissionsLoading ? 'Chargement...' : 
+                  })();
+                
+                displayChange = loading || commissionsLoading ? 'Chargement...' : 
                   commissionsError ? 'Erreur' :
-                  `Proj. ${currentYear} (${completeMonths} mois)`
-                ) : stat.change;
+                  `Proj. ${currentYear} (${completeMonths} mois)`;
+              }
+              
+              if (isCommissionsKPI) {
+                displayValue = loading || commissionsLoading ? '...' : 
+                  new Intl.NumberFormat('fr-FR', {
+                    style: 'currency',
+                    currency: 'EUR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  }).format(Math.round(extrapolatedCommissions));
+                
+                displayChange = loading || commissionsLoading ? 'Chargement...' : 
+                  commissionsError ? 'Erreur' :
+                  `Proj. ${currentYear} (${completeMonths} mois complets)`;
+              }
 
               return (
                 <Card key={index + 2} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">

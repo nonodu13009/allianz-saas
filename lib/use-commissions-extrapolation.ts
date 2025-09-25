@@ -41,20 +41,28 @@ export function useCommissionsExtrapolation(): ExtrapolationData {
           return;
         }
 
-        // Calculer les commissions totales par mois
-        const monthlyCommissions = yearCommissions.map(commission => {
-          return commission.commissions_iard + commission.commissions_vie + 
-                 commission.commissions_courtage + commission.profits_exceptionnels;
+        // Calculer les commissions totales et résultats par mois
+        const monthlyData = yearCommissions.map(commission => {
+          const commissions = commission.commissions_iard + commission.commissions_vie + 
+                            commission.commissions_courtage + commission.profits_exceptionnels;
+          const resultat = commissions - commission.charges_agence;
+          return {
+            commissions,
+            resultat,
+            month: commission.month
+          };
         });
 
         // Total des commissions actuelles
-        const totalCommissions = monthlyCommissions.reduce((sum, value) => sum + value, 0);
+        const totalCommissions = monthlyData.reduce((sum, data) => sum + data.commissions, 0);
         
-        // Mois complets (avec des commissions > 0)
-        const completeMonths = monthlyCommissions.filter(value => value > 0).length;
+        // Mois complets : mois avec un résultat (positif ou négatif, mais pas 0)
+        const completeMonthsData = monthlyData.filter(data => data.resultat !== 0);
+        const completeMonths = completeMonthsData.length;
         
         // Calcul de l'extrapolation : moyenne des mois complets × 12
-        const averageCommissions = completeMonths > 0 ? totalCommissions / completeMonths : 0;
+        const averageCommissions = completeMonths > 0 ? 
+          completeMonthsData.reduce((sum, data) => sum + data.commissions, 0) / completeMonths : 0;
         const extrapolatedCommissions = averageCommissions * 12;
 
         setData({
