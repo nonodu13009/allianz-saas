@@ -28,44 +28,37 @@ export interface CommissionYear {
 }
 
 // Calculs automatiques
-export const calculateTotals = (data: CommissionData) => {
-  const total_commissions = data.commissions_iard + data.commissions_vie + data.commissions_courtage + data.profits_exceptionnels;
-  const total_prelevements = data.prelevements_julien + data.prelevements_jean_michel;
-  const resultat = total_commissions - data.charges_agence;
-  
-  return {
-    total_commissions,
-    total_prelevements,
-    resultat
-  };
-};
-
-export const calculateYearTotals = (months: CommissionData[]) => {
-  const totals = months.reduce((acc, month) => {
-    const monthTotals = calculateTotals(month);
+export const calculateTotals = (data: CommissionData[]) => {
+  const totals = data.reduce((acc, item) => {
+    const total_commissions = item.commissions_iard + item.commissions_vie + item.commissions_courtage + item.profits_exceptionnels;
+    const total_prelevements = item.prelevements_julien + item.prelevements_jean_michel;
+    const resultat = total_commissions - item.charges_agence;
+    
     return {
-      total_commissions: acc.total_commissions + monthTotals.total_commissions,
-      total_charges: acc.total_charges + month.charges_agence,
-      total_prelevements: acc.total_prelevements + monthTotals.total_prelevements,
-      total_resultat: acc.total_resultat + monthTotals.resultat
+      total_commissions: acc.total_commissions + total_commissions,
+      total_prelevements: acc.total_prelevements + total_prelevements,
+      total_charges: acc.total_charges + item.charges_agence,
+      total_resultat: acc.total_resultat + resultat
     };
   }, {
     total_commissions: 0,
-    total_charges: 0,
     total_prelevements: 0,
+    total_charges: 0,
     total_resultat: 0
   });
-
+  
   return totals;
+};
+
+export const calculateYearTotals = (months: CommissionData[]) => {
+  return calculateTotals(months);
 };
 
 // Fonctions CRUD
 export const createCommission = async (data: CommissionData) => {
   try {
-    const totals = calculateTotals(data);
     const commissionDoc = {
       ...data,
-      ...totals,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -80,10 +73,8 @@ export const createCommission = async (data: CommissionData) => {
 
 export const updateCommission = async (id: string, data: Partial<CommissionData>) => {
   try {
-    const totals = calculateTotals(data as CommissionData);
     const updateData = {
       ...data,
-      ...totals,
       updatedAt: new Date()
     };
 

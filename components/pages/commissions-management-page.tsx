@@ -35,7 +35,8 @@ import {
   updateCommission,
   deleteCommission,
   calculateTotals,
-  calculateYearTotals
+  calculateYearTotals,
+  migrateCommissionsData
 } from '@/lib/firebase-commissions';
 
 const MONTHS = [
@@ -80,10 +81,16 @@ export function CommissionsManagementPage() {
   const loadData = async () => {
     setLoading(true);
     try {
+      console.log('Chargement des données de commissions...');
       const [commissionsData, years] = await Promise.all([
         getCommissions(),
         getAvailableYears()
       ]);
+      console.log('Données chargées:', { 
+        commissionsCount: commissionsData.commissions.length, 
+        years: years,
+        commissions: commissionsData.commissions 
+      });
       setCommissions(commissionsData.commissions);
       setAvailableYears(years);
       if (years.length > 0 && !selectedYear) {
@@ -192,6 +199,20 @@ export function CommissionsManagementPage() {
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  const handleMigrateData = async () => {
+    setLoading(true);
+    try {
+      console.log('Migration des données de commissions...');
+      await migrateCommissionsData();
+      console.log('Migration terminée, rechargement des données...');
+      await loadData();
+    } catch (error) {
+      console.error('Erreur lors de la migration:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -478,6 +499,26 @@ export function CommissionsManagementPage() {
                   {loading ? (
                     <div className="flex justify-center py-8">
                       <RefreshCw className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : commissions.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Aucune commission trouvée
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Il n'y a actuellement aucune donnée de commission dans la base de données.
+                      </p>
+                      <div className="space-x-4">
+                        <Button onClick={() => setIsCreateDialogOpen(true)}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Ajouter la première commission
+                        </Button>
+                        <Button onClick={handleMigrateData} variant="outline">
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Charger les données par défaut
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Table>
