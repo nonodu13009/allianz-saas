@@ -552,6 +552,7 @@ export function CommissionsManagementPage() {
                                         </TableHead>
                                       ))}
                                       <TableHead className="text-center font-semibold">Total</TableHead>
+                                      <TableHead className="text-center font-semibold">Moyenne</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -561,6 +562,10 @@ export function CommissionsManagementPage() {
                                         return commission ? commission[type.key as keyof CommissionData] as number : 0;
                                       });
                                       const total = monthlyValues.reduce((sum, value) => sum + value, 0);
+                                      
+                                      // Calcul de la moyenne basée sur les mois complets (valeurs > 0)
+                                      const completeMonths = monthlyValues.filter(value => value > 0);
+                                      const average = completeMonths.length > 0 ? total / completeMonths.length : 0;
                                       
                                       return (
                                         <TableRow key={type.key}>
@@ -590,6 +595,25 @@ export function CommissionsManagementPage() {
                                               minimumFractionDigits: 0,
                                               maximumFractionDigits: 0,
                                             }).format(total)}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {average > 0 ? (
+                                              <div>
+                                                <div className="font-bold text-lg">
+                                                  {new Intl.NumberFormat('fr-FR', {
+                                                    style: 'currency',
+                                                    currency: 'EUR',
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0,
+                                                  }).format(average)}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                  sur {completeMonths.length} mois
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
                                           </TableCell>
                                         </TableRow>
                                       );
