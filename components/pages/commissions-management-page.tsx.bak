@@ -552,7 +552,7 @@ export function CommissionsManagementPage() {
                                         </TableHead>
                                       ))}
                                       <TableHead className="text-center font-semibold">Total</TableHead>
-                                      <TableHead className="text-center font-semibold">Moyenne</TableHead> {/* Force reload */}
+                                      <TableHead className="text-center font-semibold">Moyenne</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>

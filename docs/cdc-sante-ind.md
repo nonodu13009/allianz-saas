@@ -40,12 +40,7 @@ Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ay
 - **Séparateurs de milliers** : Espaces ou points selon les préférences locales
 - **Exemples** : 1 500 €, 25 000 €, 150 000 €
 
-### Application
-- **Prime annuelle** : Saisie et affichage en entiers
-- **Prime pondérée** : Calcul et affichage en entiers (arrondi automatique)
-- **CA brut total** : Somme en entiers
-- **CA pondéré total** : Somme en entiers
-- **Commissions** : Calcul et affichage en entiers
+### Applicationimage.png
 
 ## Règles de design professionnel
 
