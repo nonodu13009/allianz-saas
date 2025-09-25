@@ -154,11 +154,11 @@ export const getCommissions = async (options?: {
     
     return {
       commissions: commissions.sort((a, b) => {
-        // Tri par année puis par mois
-        if (a.year !== b.year) return b.year - a.year; // Plus récent en premier
+        // Tri par année puis par mois - PLUS ANCIEN EN PREMIER
+        if (a.year !== b.year) return a.year - b.year; // Plus ancien en premier
         const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
+        return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month); // Plus ancien mois en premier
       }),
       lastDoc,
       hasMore,
@@ -190,7 +190,7 @@ export const getAvailableYears = async (): Promise<number[]> => {
   try {
     const commissions = await getCommissions();
     const years = Array.from(new Set(commissions.commissions.map(c => c.year)));
-    return years.sort((a, b) => b - a); // Plus récent en premier
+    return years.sort((a, b) => a - b); // Plus ancien en premier
   } catch (error) {
     console.error('Erreur lors de la récupération des années:', error);
     return [];
