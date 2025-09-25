@@ -11,9 +11,11 @@ import {
   Shield,
   Target,
   Clock,
-  UserCheck
+  UserCheck,
+  DollarSign
 } from 'lucide-react';
 import { useUsers } from '@/lib/users-context';
+import { useCommissionsExtrapolation } from '@/lib/use-commissions-extrapolation';
 
 const dashboardData = {
   administrateur: {
@@ -136,6 +138,13 @@ const dashboardData = {
 export function DashboardContent() {
   const { user } = useAuth();
   const { users, loading } = useUsers();
+  const { 
+    extrapolatedCommissions, 
+    completeMonths, 
+    currentYear, 
+    isLoading: commissionsLoading, 
+    error: commissionsError 
+  } = useCommissionsExtrapolation();
 
   if (!user) return null;
 
@@ -211,6 +220,42 @@ export function DashboardContent() {
                   </div>
                   <div className="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 group-hover:scale-110 transition-transform">
                     <UserCheck className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* KPI Ratio Commissions/ETP */}
+            <Card className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Ratio Commissions/ETP
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {loading || commissionsLoading ? '...' : 
+                        (() => {
+                          const etpTotal = users.reduce((sum, u) => sum + (u.etp || 0), 0);
+                          const ratio = etpTotal > 0 ? extrapolatedCommissions / etpTotal : 0;
+                          return new Intl.NumberFormat('fr-FR', {
+                            style: 'currency',
+                            currency: 'EUR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(Math.round(ratio));
+                        })()
+                      }
+                    </p>
+                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                      {loading || commissionsLoading ? 'Chargement...' : 
+                        commissionsError ? 'Erreur' :
+                        `Proj. ${currentYear} (${completeMonths} mois)`
+                      }
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 group-hover:scale-110 transition-transform">
+                    <DollarSign className="h-6 w-6 text-white" />
                   </div>
                 </div>
               </CardContent>
