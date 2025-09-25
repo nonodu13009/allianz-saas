@@ -41,23 +41,40 @@ export function useCommissionsExtrapolation(): ExtrapolationData {
           return;
         }
 
-        // Calculer les commissions totales et résultats par mois
-        const monthlyData = yearCommissions.map(commission => {
+        // Créer un tableau pour tous les mois de l'année (1-12)
+        const allMonths = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                          'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        
+        // Calculer les commissions totales et résultats par mois de l'année en cours
+        const monthlyData = allMonths.map(month => {
+          const commission = yearCommissions.find(c => c.month === month);
+          if (!commission) {
+            return {
+              commissions: 0,
+              resultat: 0,
+              month,
+              hasData: false
+            };
+          }
+          
           const commissions = commission.commissions_iard + commission.commissions_vie + 
                             commission.commissions_courtage + commission.profits_exceptionnels;
           const resultat = commissions - commission.charges_agence;
           return {
             commissions,
             resultat,
-            month: commission.month
+            month,
+            hasData: true
           };
         });
 
-        // Total des commissions actuelles
-        const totalCommissions = monthlyData.reduce((sum, data) => sum + data.commissions, 0);
+        // Total des commissions actuelles (tous les mois avec données)
+        const totalCommissions = monthlyData
+          .filter(data => data.hasData)
+          .reduce((sum, data) => sum + data.commissions, 0);
         
         // Mois complets : mois avec un résultat (positif ou négatif, mais pas 0)
-        const completeMonthsData = monthlyData.filter(data => data.resultat !== 0);
+        const completeMonthsData = monthlyData.filter(data => data.hasData && data.resultat !== 0);
         const completeMonths = completeMonthsData.length;
         
         // Calcul de l'extrapolation : moyenne des mois complets × 12
