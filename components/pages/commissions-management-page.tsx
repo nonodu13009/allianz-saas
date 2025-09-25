@@ -302,12 +302,6 @@ export function CommissionsManagementPage() {
                     resetForm();
                   }
                 }}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Ajouter une entrée
-                    </Button>
-                  </DialogTrigger>
                   <DialogContent className="max-w-2xl">
                     <DialogHeader>
                       <DialogTitle>
@@ -493,14 +487,7 @@ export function CommissionsManagementPage() {
               )}
 
               {/* Tableau des commissions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    Commissions {selectedYear && `- ${selectedYear}`}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div>
                   {loading ? (
                     <div className="flex justify-center py-8">
                       <RefreshCw className="h-6 w-6 animate-spin" />
@@ -526,110 +513,116 @@ export function CommissionsManagementPage() {
                       </div>
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Année</TableHead>
-                          <TableHead>Mois</TableHead>
-                          <TableHead>Commissions IARD</TableHead>
-                          <TableHead>Commissions Vie</TableHead>
-                          <TableHead>Commissions Courtage</TableHead>
-                          <TableHead>Profits Exceptionnels</TableHead>
-                          <TableHead>Charges Agence</TableHead>
-                          <TableHead>Prélèvements Julien</TableHead>
-                          <TableHead>Prélèvements Jean-Michel</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {commissions.map((commission) => (
-                          <TableRow key={commission.id}>
-                            <TableCell>{commission.year}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{commission.month}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.commissions_iard)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.commissions_vie)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.commissions_courtage)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.profits_exceptionnels)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.charges_agence)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.prelevements_julien)}
-                            </TableCell>
-                            <TableCell>
-                              {new Intl.NumberFormat('fr-FR', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }).format(commission.prelevements_jean_michel)}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEdit(commission)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDelete(commission.id)}
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                    <div className="space-y-6">
+                      {/* Tableau pivoté par année */}
+                      {availableYears.map(year => {
+                        const yearCommissions = commissions.filter(c => c.year === year);
+                        if (yearCommissions.length === 0) return null;
+                        
+                        const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                        
+                        const commissionTypes = [
+                          { key: 'commissions_iard', label: 'Commissions IARD', color: 'text-blue-600' },
+                          { key: 'commissions_vie', label: 'Commissions Vie', color: 'text-green-600' },
+                          { key: 'commissions_courtage', label: 'Commissions Courtage', color: 'text-purple-600' },
+                          { key: 'profits_exceptionnels', label: 'Profits Exceptionnels', color: 'text-orange-600' },
+                          { key: 'charges_agence', label: 'Charges Agence', color: 'text-red-600' },
+                          { key: 'prelevements_julien', label: 'Prélèvements Julien', color: 'text-indigo-600' },
+                          { key: 'prelevements_jean_michel', label: 'Prélèvements Jean-Michel', color: 'text-pink-600' }
+                        ];
+                        
+                        return (
+                          <Card key={year}>
+                            <CardHeader>
+                              <CardTitle className="flex items-center gap-2">
+                                <Calendar className="h-5 w-5" />
+                                Commissions {year}
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="font-semibold">Type</TableHead>
+                                      {months.map(month => (
+                                        <TableHead key={month} className="text-center font-medium">
+                                          {month}
+                                        </TableHead>
+                                      ))}
+                                      <TableHead className="text-center font-semibold">Total</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {commissionTypes.map(type => {
+                                      const monthlyValues = months.map(month => {
+                                        const commission = yearCommissions.find(c => c.month === month);
+                                        return commission ? commission[type.key as keyof CommissionData] as number : 0;
+                                      });
+                                      const total = monthlyValues.reduce((sum, value) => sum + value, 0);
+                                      
+                                      return (
+                                        <TableRow key={type.key}>
+                                          <TableCell className={`font-medium ${type.color}`}>
+                                            {type.label}
+                                          </TableCell>
+                                          {monthlyValues.map((value, index) => (
+                                            <TableCell key={index} className="text-center">
+                                              {value > 0 ? (
+                                                <span className="font-medium">
+                                                  {new Intl.NumberFormat('fr-FR', {
+                                                    style: 'currency',
+                                                    currency: 'EUR',
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0,
+                                                  }).format(value)}
+                                                </span>
+                                              ) : (
+                                                <span className="text-gray-400">-</span>
+                                              )}
+                                            </TableCell>
+                                          ))}
+                                          <TableCell className="text-center font-bold">
+                                            {new Intl.NumberFormat('fr-FR', {
+                                              style: 'currency',
+                                              currency: 'EUR',
+                                              minimumFractionDigits: 0,
+                                              maximumFractionDigits: 0,
+                                            }).format(total)}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                  </TableBody>
+                                </Table>
                               </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                      
+                      {/* Actions globales */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex space-x-4">
+                            <Button onClick={() => setIsCreateDialogOpen(true)}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Ajouter une entrée
+                            </Button>
+                            <Button onClick={handleMigrateData} variant="outline">
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Charger les données par défaut
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
-                </CardContent>
-              </Card>
+              </div>
             </div>
           </main>
         </div>
