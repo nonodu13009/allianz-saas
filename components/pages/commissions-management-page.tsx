@@ -116,6 +116,7 @@ export function CommissionsManagementPage() {
   };
 
   useEffect(() => {
+    console.log('Initialisation de la page commissions...');
     loadData();
   }, []);
 
@@ -289,6 +290,10 @@ export function CommissionsManagementPage() {
                   <Button onClick={() => setShowAnalysis(!showAnalysis)} variant="outline">
                     <BarChart3 className="mr-2 h-4 w-4" />
                     {showAnalysis ? 'Masquer' : 'Afficher'} l'analyse
+                  </Button>
+                  <Button onClick={loadData} variant="outline" disabled={loading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    Recharger
                   </Button>
                 </div>
                 <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {

@@ -105,42 +105,41 @@ export const getCommissions = async (options?: {
   total: number;
 }> => {
   try {
+    console.log('🔍 Récupération des commissions depuis Firebase...');
     const { limit: limitValue = 100, startAfter, year } = options || {};
     
-    let q = query(
-      collection(db, 'commissions'),
-      orderBy('year', 'desc'),
-      orderBy('month', 'desc'),
-      limit(limitValue)
-    );
+    // Essayer d'abord une requête simple sans tri pour éviter les erreurs d'index
+    let q = query(collection(db, 'commissions'), limit(limitValue));
     
     if (startAfter) {
-      q = query(
-        collection(db, 'commissions'),
-        orderBy('year', 'desc'),
-        orderBy('month', 'desc'),
-        startAfter(startAfter),
-        limit(limitValue)
-      );
+      q = query(collection(db, 'commissions'), startAfter(startAfter), limit(limitValue));
     }
     
     if (year) {
-      q = query(
-        collection(db, 'commissions'),
-        where('year', '==', year),
-        orderBy('month', 'desc'),
-        limit(limitValue)
-      );
+      q = query(collection(db, 'commissions'), where('year', '==', year), limit(limitValue));
     }
     
     const querySnapshot = await getDocs(q);
+    console.log(`📊 ${querySnapshot.docs.length} documents trouvés`);
+    
     const commissions: CommissionData[] = [];
     querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      console.log(`📄 Document ${doc.id}:`, data);
+      
       commissions.push({
         id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate(),
+        year: data.year || 0,
+        month: data.month || '',
+        commissions_iard: data.commissions_iard || 0,
+        commissions_vie: data.commissions_vie || 0,
+        commissions_courtage: data.commissions_courtage || 0,
+        profits_exceptionnels: data.profits_exceptionnels || 0,
+        charges_agence: data.charges_agence || 0,
+        prelevements_julien: data.prelevements_julien || 0,
+        prelevements_jean_michel: data.prelevements_jean_michel || 0,
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
       } as CommissionData);
     });
     
@@ -151,14 +150,22 @@ export const getCommissions = async (options?: {
     const countSnapshot = await getDocs(collection(db, 'commissions'));
     const total = countSnapshot.size;
     
+    console.log(`✅ ${commissions.length} commissions chargées sur ${total} total`);
+    
     return {
-      commissions: commissions.sort((a, b) => a.year - b.year || a.month.localeCompare(b.month)),
+      commissions: commissions.sort((a, b) => {
+        // Tri par année puis par mois
+        if (a.year !== b.year) return b.year - a.year; // Plus récent en premier
+        const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                          'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
+      }),
       lastDoc,
       hasMore,
       total
     };
   } catch (error) {
-    console.error('Erreur lors de la récupération des commissions:', error);
+    console.error('❌ Erreur lors de la récupération des commissions:', error);
     return {
       commissions: [],
       lastDoc: null,
