@@ -701,6 +701,149 @@ export function CommissionsManagementPage() {
                                         </TableRow>
                                       );
                                     })}
+                                    
+                                    {/* Ligne Total des commissions */}
+                                    {(() => {
+                                      const commissionsIard = commissionTypes.find(t => t.key === 'commissions_iard');
+                                      const commissionsVie = commissionTypes.find(t => t.key === 'commissions_vie');
+                                      const commissionsCourtage = commissionTypes.find(t => t.key === 'commissions_courtage');
+                                      const profitsExceptionnels = commissionTypes.find(t => t.key === 'profits_exceptionnels');
+                                      
+                                      if (!commissionsIard || !commissionsVie || !commissionsCourtage || !profitsExceptionnels) return null;
+                                      
+                                      const monthlyCommissionsTotal = months.map(month => {
+                                        const commission = yearCommissions.find(c => c.month === month);
+                                        if (!commission) return 0;
+                                        return commission.commissions_iard + commission.commissions_vie + 
+                                               commission.commissions_courtage + commission.profits_exceptionnels;
+                                      });
+                                      
+                                      const totalCommissions = monthlyCommissionsTotal.reduce((sum, value) => sum + value, 0);
+                                      const completeMonthsCommissions = monthlyCommissionsTotal.filter(value => value > 0);
+                                      const averageCommissions = completeMonthsCommissions.length > 0 ? totalCommissions / completeMonthsCommissions.length : 0;
+                                      const extrapolationCommissions = averageCommissions * 12;
+                                      const isYearCompleteCommissions = completeMonthsCommissions.length === 12;
+                                      
+                                      return (
+                                        <TableRow className="bg-green-50 dark:bg-green-900/20 border-t-2 border-green-200 dark:border-green-700">
+                                          <TableCell className="font-bold text-green-700 dark:text-green-300">
+                                            Total des commissions
+                                          </TableCell>
+                                          {monthlyCommissionsTotal.map((value, index) => (
+                                            <TableCell key={index} className="text-center font-bold text-green-700 dark:text-green-300">
+                                              {value > 0 ? formatCurrency(value) : '-'}
+                                            </TableCell>
+                                          ))}
+                                          <TableCell className="text-center font-bold text-green-700 dark:text-green-300">
+                                            {formatCurrency(totalCommissions)}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {averageCommissions > 0 ? (
+                                              <div>
+                                                <div className="font-bold text-lg text-green-700 dark:text-green-300">
+                                                  {formatCurrency(averageCommissions)}
+                                                </div>
+                                                <div className="text-xs text-green-600 dark:text-green-400">
+                                                  sur {completeMonthsCommissions.length} mois
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {extrapolationCommissions > 0 ? (
+                                              <div>
+                                                <div className={`font-bold text-lg ${isYearCompleteCommissions ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                                                  {formatCurrency(extrapolationCommissions)}
+                                                </div>
+                                                <div className={`text-xs ${isYearCompleteCommissions ? 'text-green-500 dark:text-green-300' : 'text-orange-500 dark:text-orange-300'}`}>
+                                                  {isYearCompleteCommissions ? 'Année complète' : `Proj. sur ${completeMonthsCommissions.length} mois`}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })()}
+                                    
+                                    {/* Ligne Résultat */}
+                                    {(() => {
+                                      const chargesAgence = commissionTypes.find(t => t.key === 'charges_agence');
+                                      if (!chargesAgence) return null;
+                                      
+                                      const monthlyCharges = months.map(month => {
+                                        const commission = yearCommissions.find(c => c.month === month);
+                                        return commission ? commission.charges_agence : 0;
+                                      });
+                                      
+                                      const monthlyCommissionsTotal = months.map(month => {
+                                        const commission = yearCommissions.find(c => c.month === month);
+                                        if (!commission) return 0;
+                                        return commission.commissions_iard + commission.commissions_vie + 
+                                               commission.commissions_courtage + commission.profits_exceptionnels;
+                                      });
+                                      
+                                      const monthlyResult = months.map((_, index) => {
+                                        return monthlyCommissionsTotal[index] - monthlyCharges[index];
+                                      });
+                                      
+                                      const totalResult = monthlyResult.reduce((sum, value) => sum + value, 0);
+                                      const completeMonthsResult = monthlyResult.filter(value => value !== 0);
+                                      const averageResult = completeMonthsResult.length > 0 ? totalResult / completeMonthsResult.length : 0;
+                                      const extrapolationResult = averageResult * 12;
+                                      const isYearCompleteResult = completeMonthsResult.length === 12;
+                                      
+                                      return (
+                                        <TableRow className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
+                                          <TableCell className="font-bold text-blue-700 dark:text-blue-300">
+                                            Résultat
+                                          </TableCell>
+                                          {monthlyResult.map((value, index) => (
+                                            <TableCell key={index} className="text-center font-bold">
+                                              <span className={value >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-red-600 dark:text-red-400'}>
+                                                {value !== 0 ? formatCurrency(value) : '-'}
+                                              </span>
+                                            </TableCell>
+                                          ))}
+                                          <TableCell className="text-center font-bold">
+                                            <span className={totalResult >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-red-600 dark:text-red-400'}>
+                                              {formatCurrency(totalResult)}
+                                            </span>
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {averageResult !== 0 ? (
+                                              <div>
+                                                <div className={`font-bold text-lg ${averageResult >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-red-600 dark:text-red-400'}`}>
+                                                  {formatCurrency(averageResult)}
+                                                </div>
+                                                <div className="text-xs text-blue-600 dark:text-blue-400">
+                                                  sur {completeMonthsResult.length} mois
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </TableCell>
+                                          <TableCell className="text-center">
+                                            {extrapolationResult !== 0 ? (
+                                              <div>
+                                                <div className={`font-bold text-lg ${extrapolationResult >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                  {formatCurrency(extrapolationResult)}
+                                                </div>
+                                                <div className={`text-xs ${isYearCompleteResult ? 'text-blue-500 dark:text-blue-300' : 'text-orange-500 dark:text-orange-300'}`}>
+                                                  {isYearCompleteResult ? 'Année complète' : `Proj. sur ${completeMonthsResult.length} mois`}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-gray-400">-</span>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      );
+                                    })()}
                                   </TableBody>
                                 </Table>
                               </div>
