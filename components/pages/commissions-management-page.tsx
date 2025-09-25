@@ -341,15 +341,15 @@ export function CommissionsManagementPage() {
                 </div>
                 {/* Modale de modification mensuelle */}
                 <Dialog open={showMonthModal} onOpenChange={setShowMonthModal}>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>
+                  <DialogContent className="max-w-2xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 shadow-2xl">
+                    <DialogHeader className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
                         {selectedMonth && selectedYear ? 
                           `Modifier ${selectedMonth} ${selectedYear}` : 
                           'Ajouter des données'
                         }
                       </DialogTitle>
-                      <DialogDescription>
+                      <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
                         {selectedMonth && selectedYear ? 
                           `Modifiez les données pour ${selectedMonth} ${selectedYear}` : 
                           'Remplissez les informations pour ce mois'
@@ -389,9 +389,11 @@ export function CommissionsManagementPage() {
                         setLoading(false);
                       }
                     }} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="commissions_iard">Commissions IARD</Label>
+                      <div className="grid grid-cols-2 gap-6 py-4">
+                        <div className="space-y-3">
+                          <Label htmlFor="commissions_iard" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Commissions IARD
+                          </Label>
                           <Input
                             id="commissions_iard"
                             type="number"
@@ -399,10 +401,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.commissions_iard}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_iard: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="commissions_vie">Commissions Vie</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="commissions_vie" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Commissions Vie
+                          </Label>
                           <Input
                             id="commissions_vie"
                             type="number"
@@ -410,10 +415,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.commissions_vie}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_vie: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="commissions_courtage">Commissions Courtage</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="commissions_courtage" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Commissions Courtage
+                          </Label>
                           <Input
                             id="commissions_courtage"
                             type="number"
@@ -421,10 +429,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.commissions_courtage}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_courtage: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="profits_exceptionnels">Profits Exceptionnels</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="profits_exceptionnels" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Profits Exceptionnels
+                          </Label>
                           <Input
                             id="profits_exceptionnels"
                             type="number"
@@ -432,10 +443,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.profits_exceptionnels}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, profits_exceptionnels: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="charges_agence">Charges Agence</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="charges_agence" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Charges Agence
+                          </Label>
                           <Input
                             id="charges_agence"
                             type="number"
@@ -443,10 +457,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.charges_agence}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, charges_agence: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="prelevements_julien">Prélèvements Julien</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="prelevements_julien" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Prélèvements Julien
+                          </Label>
                           <Input
                             id="prelevements_julien"
                             type="number"
@@ -454,10 +471,13 @@ export function CommissionsManagementPage() {
                             value={monthFormData.prelevements_julien}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_julien: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="prelevements_jean_michel">Prélèvements Jean-Michel</Label>
+                        <div className="space-y-3">
+                          <Label htmlFor="prelevements_jean_michel" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Prélèvements Jean-Michel
+                          </Label>
                           <Input
                             id="prelevements_jean_michel"
                             type="number"
@@ -465,14 +485,24 @@ export function CommissionsManagementPage() {
                             value={monthFormData.prelevements_jean_michel}
                             onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_jean_michel: e.target.value }))}
                             placeholder="0"
+                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
                       </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline" onClick={() => setShowMonthModal(false)}>
+                      <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setShowMonthModal(false)}
+                          className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                        >
                           Annuler
                         </Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button 
+                          type="submit" 
+                          disabled={loading}
+                          className="bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600 hover:border-blue-700 shadow-lg hover:shadow-xl transition-all"
+                        >
                           {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Sauvegarder
                         </Button>
