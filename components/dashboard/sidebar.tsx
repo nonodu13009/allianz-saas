@@ -44,6 +44,7 @@ const navigationItems = {
   ],
   cdc_sante_coll: [
     { icon: Home, label: 'Tableau de bord', href: '/', active: true },
+    { icon: Heart, label: 'Module Santé Collective', href: '/sante-collective', active: false },
     { icon: Users, label: 'Clients collectifs', href: '#', active: false },
     { icon: BarChart3, label: 'Mes performances', href: '#', active: false },
     { icon: FileText, label: 'Contrats santé', href: '#', active: false },

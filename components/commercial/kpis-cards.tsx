@@ -1,79 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigation } from '@/lib/commercial-navigation-context';
-import { useAuth } from '@/components/providers';
-import { getCommercialActivitiesByMonth, calculateKPIs, CommercialActivity } from '@/lib/firebase-commercial';
+import { useCommercialData } from '@/lib/commercial-data-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Info, Euro, FileText, Car, Building2, TrendingUp, Cog, DollarSign, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function KPIsCards() {
-  const { currentMonth, getCurrentMonthDisplay } = useNavigation();
-  const { user } = useAuth();
-  const [activities, setActivities] = useState<CommercialActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { getCurrentMonthDisplay } = useNavigation();
+  const { activities, isLoading, kpis } = useCommercialData();
   const [showPedagogicNote, setShowPedagogicNote] = useState(true);
 
-  // Charger les données du mois sélectionné
-  useEffect(() => {
-    const loadMonthData = async () => {
-      if (!user?.id) {
-        console.log('Pas d\'utilisateur connecté');
-        return;
-      }
-      
-      console.log('Chargement des données pour:', { userId: user.id, month: currentMonth });
-      setIsLoading(true);
-      try {
-        const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-        console.log('Activités chargées:', monthActivities);
-        setActivities(monthActivities);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMonthData();
-  }, [currentMonth, user?.id]);
-
-  // Écouter les événements de création, mise à jour et suppression d'activité pour recharger les données
-  useEffect(() => {
-    const handleActivityChange = () => {
-      console.log('KPIs: Activité modifiée, rechargement des données...');
-      // Recharger les données
-      const loadMonthData = async () => {
-        if (!user?.id) return;
-        
-        setIsLoading(true);
-        try {
-          const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-          setActivities(monthActivities);
-        } catch (error) {
-          console.error('Erreur lors du rechargement:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      loadMonthData();
-    };
-
-    window.addEventListener('commercialActivityCreated', handleActivityChange);
-    window.addEventListener('commercialActivityUpdated', handleActivityChange);
-    window.addEventListener('commercialActivityDeleted', handleActivityChange);
-    
-    return () => {
-      window.removeEventListener('commercialActivityCreated', handleActivityChange);
-      window.removeEventListener('commercialActivityUpdated', handleActivityChange);
-      window.removeEventListener('commercialActivityDeleted', handleActivityChange);
-    };
-  }, [currentMonth, user?.id]);
-
-  // Calculer les KPIs
-  const kpis = calculateKPIs(activities);
+  // Les KPIs sont maintenant fournis par le provider centralisé
 
   // Formater les montants en euros
   const formatCurrency = (amount: number) => {

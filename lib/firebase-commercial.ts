@@ -12,6 +12,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { logDatabaseInfo, logDatabaseError } from '@/lib/logger';
 
 // Interface pour les activités commerciales
 export interface CommercialActivity {
@@ -116,7 +117,7 @@ export async function createCommercialActivity(
     // Utiliser la date réelle du système pour le mois
     const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
-    console.log('Firebase: Création d\'activité pour userId:', activity.userId, 'month:', month, 'dateCreated:', now);
+    logDatabaseInfo(`Création d'activité pour ${month}`, 'FirebaseCommercial', { userId: activity.userId });
     
     // Calculer la commission potentielle (seulement pour les AN)
     const potentialCommission = activity.actType === 'an' 
@@ -140,7 +141,7 @@ export async function createCommercialActivity(
       year: now.getFullYear(), // Année de la date système
     };
     
-    console.log('Firebase: Données à sauvegarder:', activityData);
+    // Données prêtes pour sauvegarde
     
     const docRef = await addDoc(collection(db, 'commercial_activities'), {
       ...activityData,
@@ -148,10 +149,10 @@ export async function createCommercialActivity(
       effectDate: Timestamp.fromDate(activityData.effectDate),
     });
     
-    console.log('Firebase: Activité créée avec ID:', docRef.id);
+    logDatabaseInfo(`Activité créée avec ID: ${docRef.id}`, 'FirebaseCommercial');
     return docRef.id;
   } catch (error) {
-    console.error('Erreur lors de la création de l\'activité commerciale:', error);
+    logDatabaseError('Erreur lors de la création de l\'activité commerciale', 'FirebaseCommercial', error);
     throw error;
   }
 }
@@ -211,7 +212,7 @@ export async function getCommercialActivitiesByMonth(
   month: string
 ): Promise<CommercialActivity[]> {
   try {
-    console.log('Firebase: Requête pour userId:', userId, 'month:', month);
+    logDatabaseInfo(`Requête pour ${month}`, 'FirebaseCommercial', { userId });
     
     const q = query(
       collection(db, 'commercial_activities'),
@@ -220,13 +221,13 @@ export async function getCommercialActivitiesByMonth(
     );
     
     const querySnapshot = await getDocs(q);
-    console.log('Firebase: Nombre de documents trouvés:', querySnapshot.size);
+    logDatabaseInfo(`${querySnapshot.size} documents trouvés`, 'FirebaseCommercial');
     
     const activities: CommercialActivity[] = [];
     
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-      console.log('Firebase: Document trouvé:', doc.id, data);
+      // Document traité
       activities.push({
         id: doc.id,
         userId: data.userId,
@@ -254,10 +255,10 @@ export async function getCommercialActivitiesByMonth(
       activity.isCommissionReal = isCommissionReal;
     });
     
-    console.log('Firebase: Activités finales:', activities);
+    logDatabaseInfo(`${activities.length} activités finales`, 'FirebaseCommercial');
     return activities;
   } catch (error) {
-    console.error('Erreur lors de la récupération des activités commerciales:', error);
+    logDatabaseError('Erreur lors de la récupération des activités commerciales', 'FirebaseCommercial', error);
     throw error;
   }
 }

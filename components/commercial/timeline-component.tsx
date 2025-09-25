@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigation } from '@/lib/commercial-navigation-context';
-import { useAuth } from '@/components/providers';
+import { useCommercialData } from '@/lib/commercial-data-context';
 import { useFilters } from './filters-system';
-import { getCommercialActivitiesByMonth, CommercialActivity } from '@/lib/firebase-commercial';
+import { CommercialActivity } from '@/lib/firebase-commercial';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,68 +22,11 @@ interface DayData {
 
 export function TimelineComponent() {
   const { currentMonth, getCurrentMonthDisplay } = useNavigation();
-  const { user } = useAuth();
+  const { activities, isLoading } = useCommercialData();
   const { filters } = useFilters();
-  const [activities, setActivities] = useState<CommercialActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
 
-  // Charger les données du mois sélectionné
-  useEffect(() => {
-    const loadMonthData = async () => {
-      if (!user?.id) {
-        console.log('Timeline: Pas d\'utilisateur connecté');
-        return;
-      }
-      
-      console.log('Timeline: Chargement des données pour:', { userId: user.id, month: currentMonth });
-      setIsLoading(true);
-      try {
-        const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-        console.log('Timeline: Activités chargées:', monthActivities);
-        setActivities(monthActivities);
-      } catch (error) {
-        console.error('Timeline: Erreur lors du chargement des données:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMonthData();
-  }, [currentMonth, user?.id]);
-
-  // Écouter les événements de création, mise à jour et suppression d'activité pour recharger les données
-  useEffect(() => {
-    const handleActivityChange = () => {
-      console.log('Timeline: Activité modifiée, rechargement des données...');
-      // Recharger les données
-      const loadMonthData = async () => {
-        if (!user?.id) return;
-        
-        setIsLoading(true);
-        try {
-          const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-          setActivities(monthActivities);
-        } catch (error) {
-          console.error('Timeline: Erreur lors du rechargement:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      loadMonthData();
-    };
-
-    window.addEventListener('commercialActivityCreated', handleActivityChange);
-    window.addEventListener('commercialActivityUpdated', handleActivityChange);
-    window.addEventListener('commercialActivityDeleted', handleActivityChange);
-    
-    return () => {
-      window.removeEventListener('commercialActivityCreated', handleActivityChange);
-      window.removeEventListener('commercialActivityUpdated', handleActivityChange);
-      window.removeEventListener('commercialActivityDeleted', handleActivityChange);
-    };
-  }, [currentMonth, user?.id]);
+  // Les données sont maintenant fournies par le provider centralisé
 
   // Filtrer les activités selon les filtres actifs
   const filteredActivities = useMemo(() => {

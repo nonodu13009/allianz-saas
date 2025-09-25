@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigation } from '@/lib/commercial-navigation-context';
-import { useAuth } from '@/components/providers';
+import { useCommercialData } from '@/lib/commercial-data-context';
 import { useFilters } from './filters-system';
-import { getCommercialActivitiesByMonth, CommercialActivity, updateCommercialActivity, deleteCommercialActivity } from '@/lib/firebase-commercial';
+import { CommercialActivity, updateCommercialActivity, deleteCommercialActivity } from '@/lib/firebase-commercial';
+import { logBusinessInfo, logBusinessError } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,8 @@ type SortField = 'dateCreated' | 'clientName' | 'contractNumber' | 'effectDate' 
 type SortDirection = 'asc' | 'desc';
 
 export function DataTable() {
-  const { currentMonth } = useNavigation();
-  const { user } = useAuth();
+  const { activities, isLoading, updateActivity, removeActivity, forceRefresh } = useCommercialData();
   const { filters } = useFilters();
-  const [activities, setActivities] = useState<CommercialActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('dateCreated');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [editingActivity, setEditingActivity] = useState<CommercialActivity | null>(null);
@@ -34,53 +32,34 @@ export function DataTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState<CommercialActivity | null>(null);
 
-  // Charger les données du mois sélectionné
+  // Les données sont maintenant fournies par le provider centralisé
+
+  // Écouter les événements de mise à jour et suppression pour assurer la cohérence des montants
   useEffect(() => {
-    const loadMonthData = async () => {
-      if (!user?.id) return;
-      
-      setIsLoading(true);
-      try {
-        const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-        setActivities(monthActivities);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-      } finally {
-        setIsLoading(false);
-      }
+    const handleActivityUpdated = () => {
+      logBusinessInfo('Activité mise à jour détectée, rechargement pour cohérence des montants', 'DataTable');
+      // Rechargement complet pour s'assurer de la cohérence des commissions
+      setTimeout(async () => {
+        await forceRefresh();
+      }, 500);
     };
 
-    loadMonthData();
-  }, [currentMonth, user?.id]);
-
-  // Écouter les événements de création d'activité pour recharger les données
-  useEffect(() => {
-    const handleActivityCreated = () => {
-      console.log('DataTable: Nouvelle activité créée, rechargement des données...');
-      // Recharger les données
-      const loadMonthData = async () => {
-        if (!user?.id) return;
-        
-        setIsLoading(true);
-        try {
-          const monthActivities = await getCommercialActivitiesByMonth(user.id, currentMonth);
-          setActivities(monthActivities);
-        } catch (error) {
-          console.error('DataTable: Erreur lors du rechargement:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      loadMonthData();
+    const handleActivityDeleted = () => {
+      logBusinessInfo('Activité supprimée détectée, rechargement pour cohérence des montants', 'DataTable');
+      // Rechargement complet pour s'assurer de la cohérence des commissions
+      setTimeout(async () => {
+        await forceRefresh();
+      }, 500);
     };
 
-    window.addEventListener('commercialActivityCreated', handleActivityCreated);
+    window.addEventListener('commercialActivityUpdated', handleActivityUpdated);
+    window.addEventListener('commercialActivityDeleted', handleActivityDeleted);
     
     return () => {
-      window.removeEventListener('commercialActivityCreated', handleActivityCreated);
+      window.removeEventListener('commercialActivityUpdated', handleActivityUpdated);
+      window.removeEventListener('commercialActivityDeleted', handleActivityDeleted);
     };
-  }, [currentMonth, user?.id]);
+  }, [forceRefresh]);
 
   // Filtrer les activités selon les filtres actifs
   const filteredActivities = useMemo(() => {
@@ -145,21 +124,24 @@ export function DataTable() {
     try {
       await updateCommercialActivity(updatedActivity.id, updatedActivity);
       
-      // Mettre à jour la liste locale
-      setActivities(prev => 
-        prev.map(activity => 
-          activity.id === updatedActivity.id ? updatedActivity : activity
-        )
-      );
+      // Mettre à jour les données via le provider (optimisation locale)
+      updateActivity(updatedActivity);
       
       setIsEditDialogOpen(false);
       setEditingActivity(null);
       
-      // Déclencher un événement pour mettre à jour les KPIs
+      // Déclencher un événement pour mettre à jour les autres composants
       window.dispatchEvent(new CustomEvent('commercialActivityUpdated'));
       
+      // Rechargement complet pour s'assurer de la cohérence des commissions côté backend
+      // (délai pour laisser le temps au backend de traiter)
+      setTimeout(async () => {
+        logBusinessInfo('Rechargement complet après mise à jour pour cohérence des commissions', 'DataTable');
+        await forceRefresh();
+      }, 1000);
+      
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
+      logBusinessError('Erreur lors de la mise à jour', 'DataTable', error);
     }
   };
 
@@ -169,19 +151,24 @@ export function DataTable() {
     try {
       await deleteCommercialActivity(activityToDelete.id);
       
-      // Mettre à jour la liste locale
-      setActivities(prev => 
-        prev.filter(activity => activity.id !== activityToDelete.id)
-      );
+      // Mettre à jour les données via le provider (optimisation locale)
+      removeActivity(activityToDelete.id);
       
       setIsDeleteDialogOpen(false);
       setActivityToDelete(null);
       
-      // Déclencher un événement pour mettre à jour les KPIs
+      // Déclencher un événement pour mettre à jour les autres composants
       window.dispatchEvent(new CustomEvent('commercialActivityDeleted'));
       
+      // Rechargement complet pour s'assurer de la cohérence des commissions côté backend
+      // (délai pour laisser le temps au backend de traiter)
+      setTimeout(async () => {
+        logBusinessInfo('Rechargement complet après suppression pour cohérence des commissions', 'DataTable');
+        await forceRefresh();
+      }, 1000);
+      
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
+      logBusinessError('Erreur lors de la suppression', 'DataTable', error);
     }
   };
 
