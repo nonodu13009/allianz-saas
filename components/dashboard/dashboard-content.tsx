@@ -23,7 +23,7 @@ const dashboardData = {
     stats: [
       { icon: Users, label: 'Équipe', value: '12', change: '+2 ce mois', color: 'text-blue-600 dark:text-blue-400' },
       { icon: TrendingUp, label: 'CA Total', value: '1.2M€', change: '+15%', color: 'text-green-600 dark:text-green-400' },
-      { icon: FileText, label: 'Contrats', value: '2,847', change: '+23 cette semaine', color: 'text-purple-600 dark:text-purple-400' },
+      { icon: DollarSign, label: 'Ratio Commissions/ETP', value: 'Calculé dynamiquement', change: 'Proj. année en cours', color: 'text-purple-600 dark:text-purple-400' },
       { icon: Shield, label: 'Satisfaction', value: '94%', change: '+2%', color: 'text-indigo-600 dark:text-indigo-400' },
     ],
     cards: [
@@ -225,71 +225,59 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            {/* KPI Ratio Commissions/ETP */}
-            <Card className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Ratio Commissions/ETP
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {loading || commissionsLoading ? '...' : 
-                        (() => {
-                          const etpTotal = users.reduce((sum, u) => sum + (u.etp || 0), 0);
-                          const ratio = etpTotal > 0 ? extrapolatedCommissions / etpTotal : 0;
-                          return new Intl.NumberFormat('fr-FR', {
-                            style: 'currency',
-                            currency: 'EUR',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          }).format(Math.round(ratio));
-                        })()
-                      }
-                    </p>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                      {loading || commissionsLoading ? 'Chargement...' : 
-                        commissionsError ? 'Erreur' :
-                        `Proj. ${currentYear} (${completeMonths} mois)`
-                      }
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 group-hover:scale-110 transition-transform">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Autres stats pour administrateur */}
-            {data.stats.slice(2).map((stat, index) => (
-              <Card key={index + 2} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        {stat.label}
-                      </p>
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                        {stat.value}
-                      </p>
-                      <p className={`text-sm ${stat.color} font-medium`}>
-                        {stat.change}
-                      </p>
+            {data.stats.slice(2).map((stat, index) => {
+              // Calcul dynamique pour le KPI Ratio Commissions/ETP
+              const isRatioKPI = stat.label === 'Ratio Commissions/ETP';
+              const displayValue = isRatioKPI ? 
+                (loading || commissionsLoading ? '...' : 
+                  (() => {
+                    const etpTotal = users.reduce((sum, u) => sum + (u.etp || 0), 0);
+                    const ratio = etpTotal > 0 ? extrapolatedCommissions / etpTotal : 0;
+                    return new Intl.NumberFormat('fr-FR', {
+                      style: 'currency',
+                      currency: 'EUR',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(Math.round(ratio));
+                  })()
+                ) : stat.value;
+              
+              const displayChange = isRatioKPI ?
+                (loading || commissionsLoading ? 'Chargement...' : 
+                  commissionsError ? 'Erreur' :
+                  `Proj. ${currentYear} (${completeMonths} mois)`
+                ) : stat.change;
+
+              return (
+                <Card key={index + 2} className="relative overflow-hidden group hover:shadow-lg transition-all hover:-translate-y-1">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {stat.label}
+                        </p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                          {displayValue}
+                        </p>
+                        <p className={`text-sm ${stat.color} font-medium`}>
+                          {displayChange}
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-xl bg-gradient-to-r ${
+                        stat.color === 'text-blue-600 dark:text-blue-400' ? 'from-blue-500 to-blue-600' :
+                        stat.color === 'text-green-600 dark:text-green-400' ? 'from-green-500 to-green-600' :
+                        stat.color === 'text-purple-600 dark:text-purple-400' ? 'from-purple-500 to-purple-600' :
+                        stat.color === 'text-indigo-600 dark:text-indigo-400' ? 'from-indigo-500 to-indigo-600' :
+                        'from-orange-500 to-orange-600'
+                      } group-hover:scale-110 transition-transform`}>
+                        <stat.icon className="h-6 w-6 text-white" />
+                      </div>
                     </div>
-                    <div className={`p-3 rounded-xl bg-gradient-to-r ${
-                      stat.color === 'text-blue-600 dark:text-blue-400' ? 'from-blue-500 to-blue-600' :
-                      stat.color === 'text-green-600 dark:text-green-400' ? 'from-green-500 to-green-600' :
-                      stat.color === 'text-purple-600 dark:text-purple-400' ? 'from-purple-500 to-purple-600' :
-                      stat.color === 'text-indigo-600 dark:text-indigo-400' ? 'from-indigo-500 to-indigo-600' :
-                      'from-orange-500 to-orange-600'
-                    } group-hover:scale-110 transition-transform`}>
-                      <stat.icon className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </>
         ) : (
           data.stats.map((stat, index) => (
