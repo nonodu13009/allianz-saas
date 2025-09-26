@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { 
   Plus, 
   Edit, 
@@ -20,7 +22,9 @@ import {
   BarChart3, 
   RefreshCw,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  BarChart,
+  PieChart
 } from 'lucide-react';
 import { useAuth } from '@/components/providers';
 import { Sidebar } from '@/components/dashboard/sidebar';
@@ -42,6 +46,19 @@ import {
 const MONTHS = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+];
+
+// Métriques disponibles pour la comparaison d'années
+const COMPARISON_METRICS = [
+  { value: 'total_commissions', label: 'Total des commissions', color: '#3b82f6' },
+  { value: 'commissions_vie', label: 'Commissions Vie', color: '#10b981' },
+  { value: 'commissions_courtage', label: 'Commissions Courtage', color: '#8b5cf6' },
+  { value: 'commissions_iard', label: 'Commissions IARD', color: '#f59e0b' },
+  { value: 'profits_exceptionnels', label: 'Produits Exceptionnels', color: '#ef4444' },
+  { value: 'charges_agence', label: 'Charges Agence', color: '#6b7280' },
+  { value: 'resultat', label: 'Résultat', color: '#06b6d4' },
+  { value: 'prelevements_julien', label: 'Prélèvement Julien', color: '#84cc16' },
+  { value: 'prelevements_jean_michel', label: 'Prélèvement Jean-Michel', color: '#f97316' }
 ];
 
 // Fonction utilitaire pour formater uniformément les montants
@@ -87,6 +104,13 @@ export function CommissionsManagementPage() {
     prelevements_julien: '',
     prelevements_jean_michel: ''
   });
+
+  // États pour la comparaison d'années
+  const [showYearComparison, setShowYearComparison] = useState(false);
+  const [selectedYearsForComparison, setSelectedYearsForComparison] = useState<number[]>([]);
+  const [comparisonMetric, setComparisonMetric] = useState<string>('total_commissions');
+  const [yearComparisonData, setYearComparisonData] = useState<any[]>([]);
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   const loadData = async () => {
     setLoading(true);
@@ -137,6 +161,14 @@ export function CommissionsManagementPage() {
       loadData();
     }
   }, [selectedYear]);
+
+  // Recalculer les données de comparaison quand les années sélectionnées changent
+  useEffect(() => {
+    if (selectedYearsForComparison.length > 0 && showYearComparison) {
+      console.log('useEffect: Recalcul des données de comparaison pour les années:', selectedYearsForComparison);
+      calculateYearComparisonData();
+    }
+  }, [selectedYearsForComparison, showYearComparison]);
 
   if (!user || user.role !== 'administrateur') {
     return (
@@ -224,6 +256,85 @@ export function CommissionsManagementPage() {
       console.error('Erreur lors de la migration:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fonctions pour la comparaison d'années
+  const calculateYearComparisonData = async () => {
+    console.log('calculateYearComparisonData appelée avec années:', selectedYearsForComparison);
+    if (selectedYearsForComparison.length === 0) {
+      console.log('Aucune année sélectionnée, arrêt du calcul');
+      return;
+    }
+
+    const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    
+    // Créer un objet pour regrouper par mois
+    const monthlyData: { [key: string]: any } = {};
+    
+    // Initialiser tous les mois
+    monthOrder.forEach(month => {
+      monthlyData[month] = { month };
+    });
+    
+    for (const year of selectedYearsForComparison) {
+      try {
+        console.log(`Chargement des données pour l'année ${year}...`);
+        const yearCommissions = await getCommissionsByYear(year);
+        
+        if (!yearCommissions || !Array.isArray(yearCommissions)) {
+          console.error(`Données invalides pour ${year}:`, yearCommissions);
+          continue;
+        }
+        
+        // Ajouter les données de chaque mois pour cette année
+        yearCommissions.forEach(commission => {
+          const monthKey = commission.month;
+          if (monthlyData[monthKey]) {
+            monthlyData[monthKey][`year_${year}`] = {
+              total_commissions: commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels,
+              commissions_vie: commission.commissions_vie,
+              commissions_courtage: commission.commissions_courtage,
+              commissions_iard: commission.commissions_iard,
+              profits_exceptionnels: commission.profits_exceptionnels,
+              charges_agence: commission.charges_agence,
+              resultat: (commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels) - commission.charges_agence,
+              prelevements_julien: commission.prelevements_julien,
+              prelevements_jean_michel: commission.prelevements_jean_michel
+            };
+          }
+        });
+      } catch (error) {
+        console.error(`Erreur lors du chargement des données pour ${year}:`, error);
+      }
+    }
+    
+    // Convertir en tableau et trier par mois
+    const comparisonData = monthOrder.map(month => monthlyData[month]);
+    
+    console.log('Données de comparaison finales (regroupées par mois):', comparisonData);
+    setYearComparisonData(comparisonData);
+  };
+
+  const handleComparisonMetricChange = (metric: string) => {
+    setComparisonMetric(metric);
+  };
+
+  const toggleYearComparison = () => {
+    setShowYearComparison(!showYearComparison);
+    if (!showYearComparison && selectedYearsForComparison.length > 0) {
+      calculateYearComparisonData();
+    }
+  };
+
+  // Fonction pour déclencher le calcul quand on sélectionne des années
+  const handleYearSelectionChange = (years: number[]) => {
+    console.log('Sélection d\'années changée:', years);
+    setSelectedYearsForComparison(years);
+    if (years.length > 0 && showYearComparison) {
+      console.log('Déclenchement du calcul des données...');
+      calculateYearComparisonData();
     }
   };
 
@@ -341,11 +452,11 @@ export function CommissionsManagementPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={() => setShowAnalysis(!showAnalysis)} variant="outline">
+                  <Button onClick={toggleYearComparison} variant="outline">
                     <BarChart3 className="mr-2 h-4 w-4" />
-                    {showAnalysis ? 'Masquer' : 'Afficher'} l'analyse
+                    {showYearComparison ? 'Masquer' : 'Afficher'} l'analyse
                   </Button>
-                  <Button onClick={loadData} variant="outline" disabled={loading}>
+                  <Button onClick={() => selectedYear ? loadCommissionsByYear(selectedYear) : loadData()} variant="outline" disabled={loading}>
                     <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     Recharger
                   </Button>
@@ -617,6 +728,331 @@ export function CommissionsManagementPage() {
                 </div>
               )}
 
+              {/* Section de comparaison d'années */}
+              {showYearComparison && (
+                <div className="mb-8">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                    {/* Header avec gradient */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <BarChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analyse comparative</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Comparez les performances par mois et par année</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-6 space-y-8">
+                      {/* Sélection des années */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Années à comparer</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {availableYears.map(year => (
+                            <button
+                              key={year}
+                              onClick={() => {
+                                const newSelection = selectedYearsForComparison.includes(year)
+                                  ? selectedYearsForComparison.filter(y => y !== year)
+                                  : [...selectedYearsForComparison, year];
+                                handleYearSelectionChange(newSelection);
+                              }}
+                              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                selectedYearsForComparison.includes(year)
+                                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {year}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Métriques organisées */}
+                      <div className="space-y-6">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Métriques</h4>
+                        
+                        {/* Commissions */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Commissions</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { key: 'total_commissions', label: 'Total', color: 'blue', bgClass: 'bg-blue-500', shadowClass: 'shadow-blue-500/25' },
+                              { key: 'commissions_vie', label: 'Vie', color: 'emerald', bgClass: 'bg-emerald-500', shadowClass: 'shadow-emerald-500/25' },
+                              { key: 'commissions_courtage', label: 'Courtage', color: 'purple', bgClass: 'bg-purple-500', shadowClass: 'shadow-purple-500/25' },
+                              { key: 'commissions_iard', label: 'IARD', color: 'orange', bgClass: 'bg-orange-500', shadowClass: 'shadow-orange-500/25' },
+                              { key: 'profits_exceptionnels', label: 'Exceptionnels', color: 'red', bgClass: 'bg-red-500', shadowClass: 'shadow-red-500/25' }
+                            ].map(metric => (
+                              <button
+                                key={metric.key}
+                                onClick={() => handleComparisonMetricChange(metric.key)}
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                  comparisonMetric === metric.key
+                                    ? `${metric.bgClass} text-white shadow-md ${metric.shadowClass}`
+                                    : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                {metric.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Charges */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Charges</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleComparisonMetricChange('charges_agence')}
+                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                comparisonMetric === 'charges_agence'
+                                  ? 'bg-gray-500 text-white shadow-md shadow-gray-500/25'
+                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              Charges Agence
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Bénéfice */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Bénéfice</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleComparisonMetricChange('resultat')}
+                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                comparisonMetric === 'resultat'
+                                  ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/25'
+                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              Résultat
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Prélèvements */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Prélèvements</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleComparisonMetricChange('prelevements_julien')}
+                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                comparisonMetric === 'prelevements_julien'
+                                  ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
+                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              Julien
+                            </button>
+                            <button
+                              onClick={() => handleComparisonMetricChange('prelevements_jean_michel')}
+                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                                comparisonMetric === 'prelevements_jean_michel'
+                                  ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
+                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              Jean-Michel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Type de graphique */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Type de visualisation</h4>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setChartType('bar')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              chartType === 'bar'
+                                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            <BarChart className="h-4 w-4" />
+                            Histogramme
+                          </button>
+                          <button
+                            onClick={() => setChartType('line')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              chartType === 'line'
+                                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
+                                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                            Courbe
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+                      {/* Graphique de comparaison */}
+                      {selectedYearsForComparison.length > 0 && yearComparisonData.length > 0 && (
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                          {/* Header du graphique */}
+                          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Visualisation</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {COMPARISON_METRICS.find(m => m.value === comparisonMetric)?.label} • {selectedYearsForComparison.join(', ')}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {selectedYearsForComparison.map((year, index) => {
+                                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500', 'bg-red-500'];
+                                  return (
+                                    <div key={year} className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{year}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Zone du graphique */}
+                          <div className="p-6">
+                            <div className="h-80">
+                              {yearComparisonData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                  {chartType === 'bar' ? (
+                                    <RechartsBarChart data={yearComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                      <XAxis 
+                                        dataKey="month" 
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        axisLine={{ stroke: '#e5e7eb' }}
+                                      />
+                                      <YAxis 
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        tickFormatter={(value) => formatCurrency(value)}
+                                        axisLine={{ stroke: '#e5e7eb' }}
+                                      />
+                                      <ChartTooltip 
+                                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                        labelFormatter={(label) => `Mois: ${label}`}
+                                        contentStyle={{
+                                          backgroundColor: 'white',
+                                          border: '1px solid #e5e7eb',
+                                          borderRadius: '8px',
+                                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                        }}
+                                      />
+                                      {selectedYearsForComparison.map((year, index) => {
+                                        const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+                                        return (
+                                          <Bar 
+                                            key={year}
+                                            dataKey={`year_${year}.${comparisonMetric}`} 
+                                            fill={colors[index % colors.length]}
+                                            name={`${year}`}
+                                            radius={[4, 4, 0, 0]}
+                                          />
+                                        );
+                                      })}
+                                    </RechartsBarChart>
+                                  ) : (
+                                    <LineChart data={yearComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                      <XAxis 
+                                        dataKey="month" 
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        axisLine={{ stroke: '#e5e7eb' }}
+                                      />
+                                      <YAxis 
+                                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                                        tickFormatter={(value) => formatCurrency(value)}
+                                        axisLine={{ stroke: '#e5e7eb' }}
+                                      />
+                                      <ChartTooltip 
+                                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                        labelFormatter={(label) => `Mois: ${label}`}
+                                        contentStyle={{
+                                          backgroundColor: 'white',
+                                          border: '1px solid #e5e7eb',
+                                          borderRadius: '8px',
+                                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                        }}
+                                      />
+                                      {selectedYearsForComparison.map((year, index) => {
+                                        const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
+                                        return (
+                                          <Line 
+                                            key={year}
+                                            type="monotone"
+                                            dataKey={`year_${year}.${comparisonMetric}`} 
+                                            stroke={colors[index % colors.length]}
+                                            strokeWidth={3}
+                                            name={`${year}`}
+                                            dot={{ r: 5, fill: colors[index % colors.length] }}
+                                            activeDot={{ r: 7, stroke: colors[index % colors.length], strokeWidth: 2 }}
+                                          />
+                                        );
+                                      })}
+                                    </LineChart>
+                                  )}
+                                </ResponsiveContainer>
+                              ) : (
+                                <div className="flex items-center justify-center h-full text-gray-500">
+                                  Aucune donnée à afficher
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedYearsForComparison.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Sélectionnez au moins une année pour voir la comparaison</p>
+                          <Button 
+                            onClick={() => {
+                              console.log('Test: Années disponibles:', availableYears);
+                              console.log('Test: Données actuelles:', yearComparisonData);
+                              console.log('Test: État showYearComparison:', showYearComparison);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                          >
+                            Test Debug
+                          </Button>
+                        </div>
+                      )}
+
+                      {selectedYearsForComparison.length > 0 && yearComparisonData.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>Chargement des données...</p>
+                          <p className="text-sm mt-2">Années sélectionnées: {selectedYearsForComparison.join(', ')}</p>
+                        </div>
+                      )}
+
               {/* Tableau des commissions */}
               <div>
                   {loading ? (
@@ -851,21 +1287,6 @@ export function CommissionsManagementPage() {
                           </Card>
                         );
                       })}
-                      
-                      {/* Actions globales */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex space-x-4">
-                            <Button onClick={handleMigrateData} variant="outline">
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                              Charger les données par défaut
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
                     </div>
                   )}
               </div>
