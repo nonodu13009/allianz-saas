@@ -278,42 +278,11 @@ Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ay
 - **Seuil 4** : < 22.000 € → 4%
 - **Seuil 5** : ≥ 22.000 € → 6%
 
-#### Alertes de seuils de commissions
-- **Calcul automatique** : Montant manquant pour le seuil suivant
-- **Exemples d'alertes** :
-  - "Il manque 3 200€ pour atteindre le seuil 2% (14 000€)"
-  - "Il manque 1 500€ pour atteindre le seuil 4% (22 000€)"
-  - "Seuil 6% atteint ! (22 000€+)"
-- **Couleurs** : Rouge si loin, orange si proche, vert si atteint
-
-#### Critère de révision
-- **Seuil 3** : Critère de révision (indicateur spécial)
-
 #### Critère qualitatif pour débloquer les commissions
 - **Condition obligatoire** : Au moins 4 révisions dans le mois
 - **Application** : Les commissions ne sont débloquées que si ce critère est respecté
 - **Comptage** : Seules les révisions comptent pour ce critère
 - **Impact** : Si moins de 4 révisions → Commission potentielle = 0€
-
-#### 2. KPIs (Indicateurs clés de performance)
-- **Affichage en cartes** : Design moderne avec icônes
-- **Calculs automatiques** : Mise à jour en temps réel
-- **Format monétaire** : Séparateurs de milliers, entiers uniquement
-- **Position** : En haut de page, sous la navigation
-
-##### KPIs à afficher
-- **Total des actes** : Nombre total d'actes saisis dans le mois
-- **Répartition par type** :
-  - Nombre d'Affaires Nouvelles
-  - Nombre de Révisions
-  - Nombre d'Adhésions salarié
-  - Nombre de COURT -> AZ
-  - Nombre d'AZ -> Courtage
-- **CA brut total** : Somme de toutes les primes annuelles du mois (entiers avec séparateurs de milliers)
-- **CA pondéré total** : Somme de toutes les primes pondérées du mois (entiers avec séparateurs de milliers)
-- **Commission potentielle** : Calculée selon les tranches (entiers avec séparateurs de milliers)
-- **Commission réelle** : Débloquée si ≥ 4 révisions, sinon 0€ (entiers avec séparateurs de milliers)
-- **Critère révisions** : Nombre de révisions / 4 (objectif) avec indicateur visuel
 
 ### Confirmations et alertes CRUD
 
