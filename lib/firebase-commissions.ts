@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, startAfter, DocumentSnapshot, QueryDocumentSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 
 export interface CommissionData {
@@ -26,6 +26,48 @@ export interface CommissionYear {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+// Centralized pagination payload interface
+export interface PaginationPayload<T> {
+  data: T[];
+  lastDoc: QueryDocumentSnapshot | null;
+  hasMore: boolean;
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Centralized document mapping function
+export const mapCommissionDocument = (doc: QueryDocumentSnapshot): CommissionData => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    year: data.year || 0,
+    month: data.month || '',
+    commissions_iard: data.commissions_iard || 0,
+    commissions_vie: data.commissions_vie || 0,
+    commissions_courtage: data.commissions_courtage || 0,
+    profits_exceptionnels: data.profits_exceptionnels || 0,
+    charges_agence: data.charges_agence || 0,
+    prelevements_julien: data.prelevements_julien || 0,
+    prelevements_jean_michel: data.prelevements_jean_michel || 0,
+    createdAt: data.createdAt?.toDate(),
+    updatedAt: data.updatedAt?.toDate(),
+  } as CommissionData;
+};
+
+// Centralized sorting function
+export const sortCommissions = (commissions: CommissionData[]): CommissionData[] => {
+  const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  
+  return commissions.sort((a, b) => {
+    // Sort by year (most recent first)
+    if (a.year !== b.year) return b.year - a.year;
+    // Then by month order
+    return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
+  });
+};
 
 // Calculs automatiques
 export const calculateTotals = (data: CommissionData[]) => {
@@ -96,90 +138,90 @@ export const deleteCommission = async (id: string) => {
 
 export const getCommissions = async (options?: {
   limit?: number;
-  startAfter?: any;
+  startAfter?: QueryDocumentSnapshot;
   year?: number;
-}): Promise<{
-  commissions: CommissionData[];
-  lastDoc: any;
-  hasMore: boolean;
-  total: number;
-}> => {
+  page?: number;
+}): Promise<PaginationPayload<CommissionData>> => {
   try {
     console.log('🔍 Récupération des commissions depuis Firebase...');
-    const { limit: limitValue = 100, startAfter, year } = options || {};
+    const { limit: limitValue = 100, startAfter, year, page = 1 } = options || {};
     
-    // Essayer d'abord une requête simple sans tri pour éviter les erreurs d'index
-    let q = query(collection(db, 'commissions'), limit(limitValue));
+    // Build query with direct Firestore filtering
+    let q = query(collection(db, 'commissions'));
     
-    if (startAfter) {
-      q = query(collection(db, 'commissions'), startAfter(startAfter), limit(limitValue));
-    }
-    
+    // Add year filter if specified
     if (year) {
-      q = query(collection(db, 'commissions'), where('year', '==', year), limit(limitValue));
+      q = query(q, where('year', '==', year));
     }
+    
+    // Add ordering for consistent pagination
+    q = query(q, orderBy('year', 'desc'), orderBy('month', 'asc'));
+    
+    // Add pagination
+    if (startAfter) {
+      q = query(q, startAfter(startAfter));
+    }
+    
+    q = query(q, limit(limitValue));
     
     const querySnapshot = await getDocs(q);
     console.log(`📊 ${querySnapshot.docs.length} documents trouvés`);
     
-    const commissions: CommissionData[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      console.log(`📄 Document ${doc.id}:`, data);
-      
-      commissions.push({
-        id: doc.id,
-        year: data.year || 0,
-        month: data.month || '',
-        commissions_iard: data.commissions_iard || 0,
-        commissions_vie: data.commissions_vie || 0,
-        commissions_courtage: data.commissions_courtage || 0,
-        profits_exceptionnels: data.profits_exceptionnels || 0,
-        charges_agence: data.charges_agence || 0,
-        prelevements_julien: data.prelevements_julien || 0,
-        prelevements_jean_michel: data.prelevements_jean_michel || 0,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as CommissionData);
-    });
+    // Use centralized mapping function
+    const commissions = querySnapshot.docs.map(mapCommissionDocument);
     
-    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+    const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
     const hasMore = querySnapshot.docs.length === limitValue;
     
-    // Compter le total
-    const countSnapshot = await getDocs(collection(db, 'commissions'));
+    // Get total count with optimized query
+    const countQuery = year 
+      ? query(collection(db, 'commissions'), where('year', '==', year))
+      : collection(db, 'commissions');
+    const countSnapshot = await getDocs(countQuery);
     const total = countSnapshot.size;
     
     console.log(`✅ ${commissions.length} commissions chargées sur ${total} total`);
     
     return {
-      commissions: commissions.sort((a, b) => {
-        // Tri par année puis par mois
-        if (a.year !== b.year) return b.year - a.year; // Plus récent en premier
-        const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                          'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-        return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
-      }),
+      data: sortCommissions(commissions),
       lastDoc,
       hasMore,
-      total
+      total,
+      page,
+      limit: limitValue
     };
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des commissions:', error);
     return {
-      commissions: [],
+      data: [],
       lastDoc: null,
       hasMore: false,
-      total: 0
+      total: 0,
+      page: 1,
+      limit: 100
     };
   }
 };
 
 export const getCommissionsByYear = async (year: number): Promise<CommissionData[]> => {
   try {
-    // Récupérer toutes les commissions et filtrer côté client pour éviter le besoin d'index
-    const allCommissions = await getCommissions();
-    return allCommissions.commissions.filter(commission => commission.year === year);
+    console.log(`🔍 Récupération des commissions pour l'année ${year}...`);
+    
+    // Use direct Firestore query instead of client-side filtering
+    const q = query(
+      collection(db, 'commissions'),
+      where('year', '==', year),
+      orderBy('month', 'asc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    console.log(`📊 ${querySnapshot.docs.length} documents trouvés pour ${year}`);
+    
+    // Use centralized mapping function
+    const commissions = querySnapshot.docs.map(mapCommissionDocument);
+    
+    console.log(`✅ ${commissions.length} commissions chargées pour ${year}`);
+    return commissions;
   } catch (error) {
     console.error('Erreur lors de la récupération des commissions par année:', error);
     return [];
@@ -188,8 +230,20 @@ export const getCommissionsByYear = async (year: number): Promise<CommissionData
 
 export const getAvailableYears = async (): Promise<number[]> => {
   try {
-    const commissions = await getCommissions();
-    const years = Array.from(new Set(commissions.commissions.map(c => c.year)));
+    console.log('🔍 Récupération des années disponibles...');
+    
+    // Use direct Firestore query to get unique years
+    const q = query(
+      collection(db, 'commissions'),
+      orderBy('year', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const years = Array.from(new Set(
+      querySnapshot.docs.map(doc => doc.data().year).filter(year => year)
+    ));
+    
+    console.log(`✅ ${years.length} années trouvées:`, years);
     return years.sort((a, b) => b - a); // Plus récent en premier
   } catch (error) {
     console.error('Erreur lors de la récupération des années:', error);

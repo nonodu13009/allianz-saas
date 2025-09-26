@@ -40,7 +40,8 @@ import {
   deleteCommission,
   calculateTotals,
   calculateYearTotals,
-  migrateCommissionsData
+  migrateCommissionsData,
+  PaginationPayload
 } from '@/lib/firebase-commissions';
 
 const MONTHS = [
@@ -109,11 +110,16 @@ export function CommissionsManagementPage() {
         getAvailableYears()
       ]);
       console.log('Données chargées:', { 
-        commissionsCount: commissionsData.commissions.length, 
+        commissionsCount: commissionsData.data.length, 
         years: years,
-        commissions: commissionsData.commissions 
+        commissions: commissionsData.data,
+        pagination: {
+          total: commissionsData.total,
+          hasMore: commissionsData.hasMore,
+          page: commissionsData.page
+        }
       });
-      setCommissions(commissionsData.commissions);
+      setCommissions(commissionsData.data);
       setAvailableYears(years);
       if (years.length > 0 && !selectedYear) {
         setSelectedYear(years[0]);
@@ -416,30 +422,30 @@ export function CommissionsManagementPage() {
   // useEffect pour initialiser la section de comparaison
   useEffect(() => {
     // Vérifier que nous sommes côté client
-    if (typeof window === 'undefined') return;
-    
-    // Charger les données depuis le local storage
-    const savedYears = localStorage.getItem('comparisonYears');
-    const savedItem = localStorage.getItem('comparisonItem');
-    const savedChartType = localStorage.getItem('comparisonChartType');
-    const savedData = localStorage.getItem('comparisonData');
+    if (typeof window !== 'undefined') {
+      // Charger les données depuis le local storage
+      const savedYears = localStorage.getItem('comparisonYears');
+      const savedItem = localStorage.getItem('comparisonItem');
+      const savedChartType = localStorage.getItem('comparisonChartType');
+      const savedData = localStorage.getItem('comparisonData');
 
-    if (savedYears) {
-      setComparisonYears(JSON.parse(savedYears));
-    } else {
-      initializeComparisonYears();
-    }
+      if (savedYears) {
+        setComparisonYears(JSON.parse(savedYears));
+      } else {
+        initializeComparisonYears();
+      }
 
-    if (savedItem) {
-      setComparisonItem(savedItem);
-    }
+      if (savedItem) {
+        setComparisonItem(savedItem);
+      }
 
-    if (savedChartType) {
-      setComparisonChartType(savedChartType as 'bar' | 'line');
-    }
+      if (savedChartType) {
+        setComparisonChartType(savedChartType as 'bar' | 'line');
+      }
 
-    if (savedData) {
-      setComparisonData(JSON.parse(savedData));
+      if (savedData) {
+        setComparisonData(JSON.parse(savedData));
+      }
     }
   }, []);
 
