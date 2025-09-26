@@ -37,10 +37,65 @@ Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ay
 
 ### Règle générale
 - **Tous les montants en euros** sont affichés en **entiers uniquement**
-- **Séparateurs de milliers** : Espaces ou points selon les préférences locales
+- **Séparateurs de milliers** : Espaces selon le format français
+- **Symbole monétaire** : € placé après le montant avec un espace
 - **Exemples** : 1 500 €, 25 000 €, 150 000 €
 
-### Applicationimage.png
+### Application dans tous les écrans
+
+#### Écrans principaux
+- **KPIs** : Format monétaire avec séparateurs de milliers
+- **Tableau récapitulatif** : Colonnes Prime annuelle, Prime pondérée, Commission
+- **Timeline** : Tooltips avec montants formatés
+- **Navigation mensuelle** : Totaux mensuels formatés
+
+#### Modales de saisie
+- **Champs de saisie** : 
+  - **Saisie** : Format libre (ex: 1500, 25000)
+  - **Affichage** : Conversion automatique en format monétaire
+  - **Validation** : Accepte uniquement les nombres entiers
+- **Calculs automatiques** : Prime pondérée affichée en format monétaire
+- **Prévisualisation** : Montants calculés formatés avant validation
+
+#### Confirmations et alertes
+- **Messages de succès** : Montants formatés dans les confirmations
+- **Alertes de seuils** : Montants manquants formatés
+- **Erreurs de validation** : Montants dans les messages d'erreur
+
+#### Exports éventuels
+- **Format CSV** : Montants avec séparateurs de milliers (1 500 €)
+- **Format PDF** : Montants formatés selon les standards français
+- **Format Excel** : Colonnes monétaires avec formatage automatique
+- **Cohérence** : Même format que l'interface utilisateur
+
+### Spécifications techniques
+
+#### Formatage côté client
+```javascript
+// Fonction de formatage standard
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount));
+};
+```
+
+#### Validation des saisies
+- **Champs numériques** : Accepte uniquement les entiers
+- **Conversion automatique** : 1500 → 1 500 €
+- **Gestion des erreurs** : Messages clairs pour formats invalides
+
+#### Cohérence visuelle
+- **Police** : Monospace pour les montants (alignement des chiffres)
+- **Alignement** : À droite pour faciliter la comparaison
+- **Couleurs** : 
+  - Noir : Montants normaux
+  - Vert : Montants positifs (commissions débloquées)
+  - Rouge : Montants négatifs ou erreurs
+  - Orange : Alertes de seuils
 
 ## Règles de design professionnel
 
