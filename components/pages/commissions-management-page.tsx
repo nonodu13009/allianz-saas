@@ -48,18 +48,6 @@ const MONTHS = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
 ];
 
-// Métriques disponibles pour la comparaison d'années
-const COMPARISON_METRICS = [
-  { value: 'total_commissions', label: 'Total des commissions', color: '#3b82f6' },
-  { value: 'commissions_vie', label: 'Commissions Vie', color: '#10b981' },
-  { value: 'commissions_courtage', label: 'Commissions Courtage', color: '#8b5cf6' },
-  { value: 'commissions_iard', label: 'Commissions IARD', color: '#f59e0b' },
-  { value: 'profits_exceptionnels', label: 'Produits Exceptionnels', color: '#ef4444' },
-  { value: 'charges_agence', label: 'Charges Agence', color: '#6b7280' },
-  { value: 'resultat', label: 'Résultat', color: '#06b6d4' },
-  { value: 'prelevements_julien', label: 'Prélèvement Julien', color: '#84cc16' },
-  { value: 'prelevements_jean_michel', label: 'Prélèvement Jean-Michel', color: '#f97316' }
-];
 
 // Fonction utilitaire pour formater uniformément les montants
 const formatCurrency = (value: number): string => {
@@ -105,12 +93,12 @@ export function CommissionsManagementPage() {
     prelevements_jean_michel: ''
   });
 
-  // États pour la comparaison d'années
-  const [showYearComparison, setShowYearComparison] = useState(false);
-  const [selectedYearsForComparison, setSelectedYearsForComparison] = useState<number[]>([]);
-  const [comparisonMetric, setComparisonMetric] = useState<string>('total_commissions');
-  const [yearComparisonData, setYearComparisonData] = useState<any[]>([]);
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  // États pour la nouvelle section de comparaison indépendante
+  const [comparisonYears, setComparisonYears] = useState<number[]>([]);
+  const [comparisonItem, setComparisonItem] = useState<string>('total_commissions');
+  const [comparisonData, setComparisonData] = useState<any[]>([]);
+  const [comparisonChartType, setComparisonChartType] = useState<'bar' | 'line'>('bar');
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -161,14 +149,6 @@ export function CommissionsManagementPage() {
       loadData();
     }
   }, [selectedYear]);
-
-  // Recalculer les données de comparaison quand les années sélectionnées changent
-  useEffect(() => {
-    if (selectedYearsForComparison.length > 0 && showYearComparison) {
-      console.log('useEffect: Recalcul des données de comparaison pour les années:', selectedYearsForComparison);
-      calculateYearComparisonData();
-    }
-  }, [selectedYearsForComparison, showYearComparison]);
 
   if (!user || user.role !== 'administrateur') {
     return (
@@ -259,82 +239,102 @@ export function CommissionsManagementPage() {
     }
   };
 
-  // Fonctions pour la comparaison d'années
-  const calculateYearComparisonData = async () => {
-    console.log('calculateYearComparisonData appelée avec années:', selectedYearsForComparison);
-    if (selectedYearsForComparison.length === 0) {
-      console.log('Aucune année sélectionnée, arrêt du calcul');
-      return;
+  // Fonctions pour la nouvelle section de comparaison indépendante
+  const initializeComparisonYears = () => {
+    const currentYear = new Date().getFullYear();
+    const previousYear = currentYear - 1;
+    const defaultYears = [previousYear, currentYear];
+    setComparisonYears(defaultYears);
+    
+    // Sauvegarder en local storage seulement côté client
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonYears', JSON.stringify(defaultYears));
     }
+  };
 
-    const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+  const loadComparisonData = async () => {
+    setComparisonLoading(true);
+    try {
+      const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
                         'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    
-    // Créer un objet pour regrouper par mois
-    const monthlyData: { [key: string]: any } = {};
-    
-    // Initialiser tous les mois
-    monthOrder.forEach(month => {
-      monthlyData[month] = { month };
-    });
-    
-    for (const year of selectedYearsForComparison) {
-      try {
-        console.log(`Chargement des données pour l'année ${year}...`);
-        const yearCommissions = await getCommissionsByYear(year);
-        
-        if (!yearCommissions || !Array.isArray(yearCommissions)) {
-          console.error(`Données invalides pour ${year}:`, yearCommissions);
-          continue;
-        }
-        
-        // Ajouter les données de chaque mois pour cette année
-        yearCommissions.forEach(commission => {
-          const monthKey = commission.month;
-          if (monthlyData[monthKey]) {
-            monthlyData[monthKey][`year_${year}`] = {
-              total_commissions: commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels,
-              commissions_vie: commission.commissions_vie,
-              commissions_courtage: commission.commissions_courtage,
-              commissions_iard: commission.commissions_iard,
-              profits_exceptionnels: commission.profits_exceptionnels,
-              charges_agence: commission.charges_agence,
-              resultat: (commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels) - commission.charges_agence,
-              prelevements_julien: commission.prelevements_julien,
-              prelevements_jean_michel: commission.prelevements_jean_michel
-            };
+      
+      // Créer un objet pour regrouper par mois
+      const monthlyData: { [key: string]: any } = {};
+      
+      // Initialiser tous les mois
+      monthOrder.forEach(month => {
+        monthlyData[month] = { month };
+      });
+      
+      for (const year of comparisonYears) {
+        try {
+          const yearCommissions = await getCommissionsByYear(year);
+          
+          if (!yearCommissions || !Array.isArray(yearCommissions)) {
+            console.error(`Données invalides pour ${year}:`, yearCommissions);
+            continue;
           }
-        });
-      } catch (error) {
-        console.error(`Erreur lors du chargement des données pour ${year}:`, error);
+          
+          // Ajouter les données de chaque mois pour cette année
+          yearCommissions.forEach(commission => {
+            const monthKey = commission.month;
+            if (monthlyData[monthKey]) {
+              monthlyData[monthKey][`year_${year}`] = {
+                total_commissions: commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels,
+                commissions_vie: commission.commissions_vie,
+                commissions_courtage: commission.commissions_courtage,
+                commissions_iard: commission.commissions_iard,
+                profits_exceptionnels: commission.profits_exceptionnels,
+                charges_agence: commission.charges_agence,
+                resultat: (commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels) - commission.charges_agence,
+                prelevements_julien: commission.prelevements_julien,
+                prelevements_jean_michel: commission.prelevements_jean_michel
+              };
+            }
+          });
+        } catch (error) {
+          console.error(`Erreur lors du chargement des données pour ${year}:`, error);
+        }
       }
-    }
-    
-    // Convertir en tableau et trier par mois
-    const comparisonData = monthOrder.map(month => monthlyData[month]);
-    
-    console.log('Données de comparaison finales (regroupées par mois):', comparisonData);
-    setYearComparisonData(comparisonData);
-  };
-
-  const handleComparisonMetricChange = (metric: string) => {
-    setComparisonMetric(metric);
-  };
-
-  const toggleYearComparison = () => {
-    setShowYearComparison(!showYearComparison);
-    if (!showYearComparison && selectedYearsForComparison.length > 0) {
-      calculateYearComparisonData();
+      
+      // Convertir en tableau et trier par mois
+      const comparisonData = monthOrder.map(month => monthlyData[month]);
+      
+      setComparisonData(comparisonData);
+      
+      // Sauvegarder en local storage seulement côté client
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('comparisonData', JSON.stringify(comparisonData));
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des données de comparaison:', error);
+    } finally {
+      setComparisonLoading(false);
     }
   };
 
-  // Fonction pour déclencher le calcul quand on sélectionne des années
-  const handleYearSelectionChange = (years: number[]) => {
-    console.log('Sélection d\'années changée:', years);
-    setSelectedYearsForComparison(years);
-    if (years.length > 0 && showYearComparison) {
-      console.log('Déclenchement du calcul des données...');
-      calculateYearComparisonData();
+  const handleComparisonYearsChange = (years: number[]) => {
+    setComparisonYears(years);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonYears', JSON.stringify(years));
+    }
+    if (years.length > 0) {
+      loadComparisonData();
+    }
+  };
+
+  const handleComparisonItemChange = (item: string) => {
+    setComparisonItem(item);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonItem', item);
+    }
+  };
+
+  const handleComparisonChartTypeChange = (type: 'bar' | 'line') => {
+    setComparisonChartType(type);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonChartType', type);
     }
   };
 
@@ -413,8 +413,44 @@ export function CommissionsManagementPage() {
     setEditingCommission(null);
   };
 
+  // useEffect pour initialiser la section de comparaison
+  useEffect(() => {
+    // Vérifier que nous sommes côté client
+    if (typeof window === 'undefined') return;
+    
+    // Charger les données depuis le local storage
+    const savedYears = localStorage.getItem('comparisonYears');
+    const savedItem = localStorage.getItem('comparisonItem');
+    const savedChartType = localStorage.getItem('comparisonChartType');
+    const savedData = localStorage.getItem('comparisonData');
+
+    if (savedYears) {
+      setComparisonYears(JSON.parse(savedYears));
+    } else {
+      initializeComparisonYears();
+    }
+
+    if (savedItem) {
+      setComparisonItem(savedItem);
+    }
+
+    if (savedChartType) {
+      setComparisonChartType(savedChartType as 'bar' | 'line');
+    }
+
+    if (savedData) {
+      setComparisonData(JSON.parse(savedData));
+    }
+  }, []);
+
+  // useEffect pour charger les données quand les années changent
+  useEffect(() => {
+    if (comparisonYears.length > 0) {
+      loadComparisonData();
+    }
+  }, [comparisonYears]);
+
   const totals = calculateTotals(commissions);
-  const yearTotals = selectedYear ? calculateYearTotals(commissions, selectedYear) : null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -439,8 +475,7 @@ export function CommissionsManagementPage() {
             </div>
 
             <div className="space-y-6">
-              {/* Contrôles */}
-              <div className="flex items-center justify-between">
+              {/* Sélecteur d'année */}
                 <div className="flex items-center space-x-4">
                   <Select value={selectedYear?.toString() || ''} onValueChange={(value) => setSelectedYear(parseInt(value))}>
                     <SelectTrigger className="w-32">
@@ -452,606 +487,7 @@ export function CommissionsManagementPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={toggleYearComparison} variant="outline">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    {showYearComparison ? 'Masquer' : 'Afficher'} l'analyse
-                  </Button>
-                  <Button onClick={() => selectedYear ? loadCommissionsByYear(selectedYear) : loadData()} variant="outline" disabled={loading}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    Recharger
-                  </Button>
                 </div>
-                {/* Modale de modification mensuelle */}
-                <Dialog open={showMonthModal} onOpenChange={setShowMonthModal}>
-                  <DialogContent className="max-w-2xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 shadow-2xl">
-                    <DialogHeader className="pb-4 border-b border-gray-200 dark:border-gray-700">
-                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                        {selectedMonth && selectedYear ? 
-                          `Modifier ${selectedMonth} ${selectedYear}` : 
-                          'Ajouter des données'
-                        }
-                      </DialogTitle>
-                      <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
-                        {selectedMonth && selectedYear ? 
-                          `Modifiez les données pour ${selectedMonth} ${selectedYear}` : 
-                          'Remplissez les informations pour ce mois'
-                        }
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      setLoading(true);
-                      try {
-                        // Construction dynamique des données de commission
-                        const commissionData: any = {
-                          year: selectedYear,
-                          month: selectedMonth,
-                          commissions_iard: parseFloat(monthFormData.commissions_iard) || 0,
-                          commissions_vie: parseFloat(monthFormData.commissions_vie) || 0,
-                          commissions_courtage: parseFloat(monthFormData.commissions_courtage) || 0,
-                          profits_exceptionnels: parseFloat(monthFormData.profits_exceptionnels) || 0,
-                          charges_agence: parseFloat(monthFormData.charges_agence) || 0,
-                          prelevements_julien: parseFloat(monthFormData.prelevements_julien) || 0,
-                          prelevements_jean_michel: parseFloat(monthFormData.prelevements_jean_michel) || 0
-                        };
-
-                        // Ajouter les champs dynamiques des autres administrateurs
-                        Object.keys(monthFormData).forEach(key => {
-                          if (key.startsWith('prelevements_') && 
-                              key !== 'prelevements_julien' && 
-                              key !== 'prelevements_jean_michel') {
-                            commissionData[key] = parseFloat(monthFormData[key]) || 0;
-                          }
-                        });
-
-                        // Chercher si une entrée existe déjà
-                        const existingCommission = commissions.find(c => c.year === selectedYear && c.month === selectedMonth);
-                        
-                        if (existingCommission?.id) {
-                          await updateCommission(existingCommission.id, commissionData);
-                        } else {
-                          await createCommission(commissionData);
-                        }
-
-                        await loadData();
-                        setShowMonthModal(false);
-                      } catch (error) {
-                        console.error('Erreur lors de la soumission:', error);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-6 py-4">
-                        <div className="space-y-3">
-                          <Label htmlFor="commissions_iard" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Commissions IARD
-                          </Label>
-                          <Input
-                            id="commissions_iard"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.commissions_iard}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_iard: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="commissions_vie" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Commissions Vie
-                          </Label>
-                          <Input
-                            id="commissions_vie"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.commissions_vie}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_vie: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="commissions_courtage" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Commissions Courtage
-                          </Label>
-                          <Input
-                            id="commissions_courtage"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.commissions_courtage}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, commissions_courtage: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="profits_exceptionnels" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Profits Exceptionnels
-                          </Label>
-                          <Input
-                            id="profits_exceptionnels"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.profits_exceptionnels}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, profits_exceptionnels: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="charges_agence" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Charges Agence
-                          </Label>
-                          <Input
-                            id="charges_agence"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.charges_agence}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, charges_agence: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="prelevements_julien" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Prélèvements Julien
-                          </Label>
-                          <Input
-                            id="prelevements_julien"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.prelevements_julien}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_julien: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label htmlFor="prelevements_jean_michel" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            Prélèvements Jean-Michel
-                          </Label>
-                          <Input
-                            id="prelevements_jean_michel"
-                            type="number"
-                            step="0.01"
-                            value={monthFormData.prelevements_jean_michel}
-                            onChange={(e) => setMonthFormData(prev => ({ ...prev, prelevements_jean_michel: e.target.value }))}
-                            placeholder="0"
-                            className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        
-                        {/* Champs dynamiques pour autres administrateurs */}
-                        {(() => {
-                          // Extraire les administrateurs depuis les données existantes
-                          const getAdministratorsFromData = () => {
-                            const admins = new Set<string>();
-                            commissions.forEach(commission => {
-                              Object.keys(commission).forEach(key => {
-                                if (key.startsWith('prelevements_') && key !== 'prelevements_julien' && key !== 'prelevements_jean_michel') {
-                                  const adminName = key.replace('prelevements_', '').replace(/_/g, ' ');
-                                  admins.add(adminName);
-                                }
-                              });
-                            });
-                            return Array.from(admins).sort();
-                          };
-
-                          const administrators = getAdministratorsFromData();
-                          
-                          return administrators.map(admin => {
-                            const fieldKey = `prelevements_${admin.replace(/\s+/g, '_')}`;
-                            return (
-                              <div key={fieldKey} className="space-y-3">
-                                <Label htmlFor={fieldKey} className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                  Prélèvements {admin.charAt(0).toUpperCase() + admin.slice(1)}
-                                </Label>
-                                <Input
-                                  id={fieldKey}
-                                  type="number"
-                                  step="0.01"
-                                  value={monthFormData[fieldKey] || ''}
-                                  onChange={(e) => setMonthFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-                                  placeholder="0"
-                                  className="border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                />
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                      <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          onClick={() => setShowMonthModal(false)}
-                          className="border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        >
-                          Annuler
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          disabled={loading}
-                          className="bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600 hover:border-blue-700 shadow-lg hover:shadow-xl transition-all"
-                        >
-                          {loading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          Sauvegarder
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              {/* Analyse */}
-              {showAnalysis && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        Total Commissions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-green-600">
-                        {formatCurrency(totals.totalCommissions)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        Profits Exceptionnels
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-blue-600">
-                        {formatCurrency(totals.totalProfitsExceptionnels)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5" />
-                        Charges Agence
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-red-600">
-                        {formatCurrency(totals.totalChargesAgence)}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Section de comparaison d'années */}
-              {showYearComparison && (
-                <div className="mb-8">
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                    {/* Header avec gradient */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                          <BarChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analyse comparative</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Comparez les performances par mois et par année</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-6 space-y-8">
-                      {/* Sélection des années */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Années à comparer</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {availableYears.map(year => (
-                            <button
-                              key={year}
-                              onClick={() => {
-                                const newSelection = selectedYearsForComparison.includes(year)
-                                  ? selectedYearsForComparison.filter(y => y !== year)
-                                  : [...selectedYearsForComparison, year];
-                                handleYearSelectionChange(newSelection);
-                              }}
-                              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                                selectedYearsForComparison.includes(year)
-                                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              {year}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Métriques organisées */}
-                      <div className="space-y-6">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Métriques</h4>
-                        
-                        {/* Commissions */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Commissions</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {[
-                              { key: 'total_commissions', label: 'Total', color: 'blue', bgClass: 'bg-blue-500', shadowClass: 'shadow-blue-500/25' },
-                              { key: 'commissions_vie', label: 'Vie', color: 'emerald', bgClass: 'bg-emerald-500', shadowClass: 'shadow-emerald-500/25' },
-                              { key: 'commissions_courtage', label: 'Courtage', color: 'purple', bgClass: 'bg-purple-500', shadowClass: 'shadow-purple-500/25' },
-                              { key: 'commissions_iard', label: 'IARD', color: 'orange', bgClass: 'bg-orange-500', shadowClass: 'shadow-orange-500/25' },
-                              { key: 'profits_exceptionnels', label: 'Exceptionnels', color: 'red', bgClass: 'bg-red-500', shadowClass: 'shadow-red-500/25' }
-                            ].map(metric => (
-                              <button
-                                key={metric.key}
-                                onClick={() => handleComparisonMetricChange(metric.key)}
-                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                  comparisonMetric === metric.key
-                                    ? `${metric.bgClass} text-white shadow-md ${metric.shadowClass}`
-                                    : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                                }`}
-                              >
-                                {metric.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Charges */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Charges</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => handleComparisonMetricChange('charges_agence')}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                comparisonMetric === 'charges_agence'
-                                  ? 'bg-gray-500 text-white shadow-md shadow-gray-500/25'
-                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              Charges Agence
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Bénéfice */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Bénéfice</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => handleComparisonMetricChange('resultat')}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                comparisonMetric === 'resultat'
-                                  ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/25'
-                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              Résultat
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Prélèvements */}
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Prélèvements</span>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => handleComparisonMetricChange('prelevements_julien')}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                comparisonMetric === 'prelevements_julien'
-                                  ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
-                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              Julien
-                            </button>
-                            <button
-                              onClick={() => handleComparisonMetricChange('prelevements_jean_michel')}
-                              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                                comparisonMetric === 'prelevements_jean_michel'
-                                  ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
-                                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                              }`}
-                            >
-                              Jean-Michel
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Type de graphique */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">Type de visualisation</h4>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setChartType('bar')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              chartType === 'bar'
-                                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
-                                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            <BarChart className="h-4 w-4" />
-                            Histogramme
-                          </button>
-                          <button
-                            onClick={() => setChartType('line')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                              chartType === 'line'
-                                ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
-                                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            <TrendingUp className="h-4 w-4" />
-                            Courbe
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-                      {/* Graphique de comparaison */}
-                      {selectedYearsForComparison.length > 0 && yearComparisonData.length > 0 && (
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-                          {/* Header du graphique */}
-                          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Visualisation</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {COMPARISON_METRICS.find(m => m.value === comparisonMetric)?.label} • {selectedYearsForComparison.join(', ')}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {selectedYearsForComparison.map((year, index) => {
-                                  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500', 'bg-red-500'];
-                                  return (
-                                    <div key={year} className="flex items-center gap-2">
-                                      <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
-                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{year}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Zone du graphique */}
-                          <div className="p-6">
-                            <div className="h-80">
-                              {yearComparisonData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                  {chartType === 'bar' ? (
-                                    <RechartsBarChart data={yearComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                      <XAxis 
-                                        dataKey="month" 
-                                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                                        axisLine={{ stroke: '#e5e7eb' }}
-                                      />
-                                      <YAxis 
-                                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                                        tickFormatter={(value) => formatCurrency(value)}
-                                        axisLine={{ stroke: '#e5e7eb' }}
-                                      />
-                                      <ChartTooltip 
-                                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
-                                        labelFormatter={(label) => `Mois: ${label}`}
-                                        contentStyle={{
-                                          backgroundColor: 'white',
-                                          border: '1px solid #e5e7eb',
-                                          borderRadius: '8px',
-                                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                        }}
-                                      />
-                                      {selectedYearsForComparison.map((year, index) => {
-                                        const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
-                                        return (
-                                          <Bar 
-                                            key={year}
-                                            dataKey={`year_${year}.${comparisonMetric}`} 
-                                            fill={colors[index % colors.length]}
-                                            name={`${year}`}
-                                            radius={[4, 4, 0, 0]}
-                                          />
-                                        );
-                                      })}
-                                    </RechartsBarChart>
-                                  ) : (
-                                    <LineChart data={yearComparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                      <XAxis 
-                                        dataKey="month" 
-                                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                                        axisLine={{ stroke: '#e5e7eb' }}
-                                      />
-                                      <YAxis 
-                                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                                        tickFormatter={(value) => formatCurrency(value)}
-                                        axisLine={{ stroke: '#e5e7eb' }}
-                                      />
-                                      <ChartTooltip 
-                                        formatter={(value: number, name: string) => [formatCurrency(value), name]}
-                                        labelFormatter={(label) => `Mois: ${label}`}
-                                        contentStyle={{
-                                          backgroundColor: 'white',
-                                          border: '1px solid #e5e7eb',
-                                          borderRadius: '8px',
-                                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                                        }}
-                                      />
-                                      {selectedYearsForComparison.map((year, index) => {
-                                        const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444'];
-                                        return (
-                                          <Line 
-                                            key={year}
-                                            type="monotone"
-                                            dataKey={`year_${year}.${comparisonMetric}`} 
-                                            stroke={colors[index % colors.length]}
-                                            strokeWidth={3}
-                                            name={`${year}`}
-                                            dot={{ r: 5, fill: colors[index % colors.length] }}
-                                            activeDot={{ r: 7, stroke: colors[index % colors.length], strokeWidth: 2 }}
-                                          />
-                                        );
-                                      })}
-                                    </LineChart>
-                                  )}
-                                </ResponsiveContainer>
-                              ) : (
-                                <div className="flex items-center justify-center h-full text-gray-500">
-                                  Aucune donnée à afficher
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {selectedYearsForComparison.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Sélectionnez au moins une année pour voir la comparaison</p>
-                          <Button 
-                            onClick={() => {
-                              console.log('Test: Années disponibles:', availableYears);
-                              console.log('Test: Données actuelles:', yearComparisonData);
-                              console.log('Test: État showYearComparison:', showYearComparison);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="mt-4"
-                          >
-                            Test Debug
-                          </Button>
-                        </div>
-                      )}
-
-                      {selectedYearsForComparison.length > 0 && yearComparisonData.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                          <p>Chargement des données...</p>
-                          <p className="text-sm mt-2">Années sélectionnées: {selectedYearsForComparison.join(', ')}</p>
-                        </div>
-                      )}
 
               {/* Tableau des commissions */}
               <div>
@@ -1079,15 +515,10 @@ export function CommissionsManagementPage() {
                         </Button>
                       </div>
                     </div>
-                  ) : (
+                  ) : selectedYear ? (
                     <div className="space-y-6">
-                      {/* Tableau pivoté par année */}
-                      {availableYears.map(year => {
-                        const yearCommissions = commissions.filter(c => c.year === year);
-                        if (yearCommissions.length === 0) return null;
-                        
-                        const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                      {(() => {
+                        const yearCommissions = commissions.filter(c => c.year === selectedYear);
                         
                         // Extraction des administrateurs depuis les données
                         const getAdministrators = (commissions: CommissionData[]) => {
@@ -1108,39 +539,153 @@ export function CommissionsManagementPage() {
                         // Structure des lignes selon l'ordre demandé
                         const tableRows = [
                           // Lignes individuelles des commissions
-                          { key: 'commissions_iard', label: 'Commissions IARD', color: 'text-blue-600', type: 'commission' },
-                          { key: 'commissions_vie', label: 'Commissions Vie', color: 'text-green-600', type: 'commission' },
-                          { key: 'commissions_courtage', label: 'Commissions Courtage', color: 'text-purple-600', type: 'commission' },
-                          { key: 'profits_exceptionnels', label: 'Produits Exceptionnels', color: 'text-orange-600', type: 'commission' },
+                          {
+                            key: 'commissions_iard',
+                            label: 'Commissions IARD',
+                            type: 'data',
+                            color: 'text-blue-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.commissions_iard : 0;
+                            })
+                          },
+                          {
+                            key: 'commissions_vie',
+                            label: 'Commissions Vie',
+                            type: 'data',
+                            color: 'text-green-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.commissions_vie : 0;
+                            })
+                          },
+                          {
+                            key: 'commissions_courtage',
+                            label: 'Commissions Courtage',
+                            type: 'data',
+                            color: 'text-purple-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.commissions_courtage : 0;
+                            })
+                          },
+                          {
+                            key: 'profits_exceptionnels',
+                            label: 'Profits Exceptionnels',
+                            type: 'data',
+                            color: 'text-orange-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.profits_exceptionnels : 0;
+                            })
+                          },
                           
-                          // Ligne calculée : Total des commissions
-                          { key: 'total_commissions', label: 'Total des commissions', color: 'text-green-700', type: 'calculated', bgColor: 'bg-green-50 dark:bg-green-900/20', borderColor: 'border-green-200 dark:border-green-700' },
+                          // Ligne des totaux des commissions
+                          {
+                            key: 'total_commissions',
+                            label: 'Total Commissions',
+                            type: 'calculated',
+                            color: 'text-blue-800',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? 
+                                commission.commissions_iard + commission.commissions_vie + 
+                                commission.commissions_courtage + commission.profits_exceptionnels : 0;
+                            })
+                          },
                           
-                          // Ligne individuelle : Charges
-                          { key: 'charges_agence', label: 'Charges', color: 'text-red-600', type: 'charge' },
+                          // Ligne des charges
+                          {
+                            key: 'charges_agence',
+                            label: 'Charges Agence',
+                            type: 'data',
+                            color: 'text-red-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.charges_agence : 0;
+                            })
+                          },
                           
-                          // Ligne calculée : Résultat
-                          { key: 'resultat', label: 'Résultat', color: 'text-blue-700', type: 'calculated', bgColor: 'bg-blue-50 dark:bg-blue-900/20', borderColor: 'border-blue-200 dark:border-blue-700' },
+                          // Ligne du résultat
+                          {
+                            key: 'resultat',
+                            label: 'Résultat',
+                            type: 'calculated',
+                            color: 'text-green-800',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              if (!commission) return 0;
+                              const totalCommissions = commission.commissions_iard + commission.commissions_vie + 
+                                                     commission.commissions_courtage + commission.profits_exceptionnels;
+                              return totalCommissions - commission.charges_agence;
+                            })
+                          },
                           
-                          // Lignes des prélèvements administrateurs (ordre fixe puis dynamique)
-                          { key: 'prelevements_julien', label: 'Prélèvement Julien', color: 'text-indigo-600', type: 'prelevement' },
-                          { key: 'prelevements_jean_michel', label: 'Prélèvement Jean-Michel', color: 'text-pink-600', type: 'prelevement' },
+                          // Lignes des prélèvements
+                          {
+                            key: 'prelevements_julien',
+                            label: 'Prélèvements Julien',
+                            type: 'data',
+                            color: 'text-cyan-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.prelevements_julien : 0;
+                            })
+                          },
+                          {
+                            key: 'prelevements_jean_michel',
+                            label: 'Prélèvements Jean Michel',
+                            type: 'data',
+                            color: 'text-cyan-600',
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              return commission ? commission.prelevements_jean_michel : 0;
+                            })
+                          },
                           
                           // Lignes dynamiques des autres administrateurs
                           ...administrators.map(admin => ({
                             key: `prelevements_${admin.replace(/\s+/g, '_')}`,
-                            label: `Prélèvement ${admin.charAt(0).toUpperCase() + admin.slice(1)}`,
+                            label: `Prélèvements ${admin.charAt(0).toUpperCase() + admin.slice(1)}`,
+                            type: 'data',
                             color: 'text-cyan-600',
-                            type: 'prelevement'
+                            monthlyValues: Array.from({ length: 12 }, (_, index) => {
+                              const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                            'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                              const commission = yearCommissions.find(c => c.month === months[index]);
+                              const fieldKey = `prelevements_${admin.replace(/\s+/g, '_')}`;
+                              return commission ? (commission as any)[fieldKey] || 0 : 0;
+                            })
                           }))
                         ];
-                        
+
+                        const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
                         return (
-                          <Card key={year}>
+                          <Card key={selectedYear}>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
                                 <Calendar className="h-5 w-5" />
-                                Commissions {year}
+                                Commissions {selectedYear}
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -1148,135 +693,55 @@ export function CommissionsManagementPage() {
                                 <Table>
                                   <TableHeader>
                                     <TableRow>
-                                      <TableHead className="font-semibold">Type</TableHead>
+                                      <TableCell className="font-semibold">Type</TableCell>
                                       {months.map(month => (
-                                        <TableHead key={month} className="text-center font-medium">
+                                        <TableCell key={month} className="text-center font-medium min-w-[120px]">
                                           {month}
-                                        </TableHead>
+                                        </TableCell>
                                       ))}
-                                      <TableHead className="text-center font-semibold">Total</TableHead>
-                                      <TableHead className="text-center font-semibold">Moyenne</TableHead>
-                                      <TableHead className="text-center font-semibold">Extrapolation</TableHead> {/* Force reload */}
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
                                     {tableRows.map(row => {
-                                      // Calcul des valeurs selon le type de ligne
-                                      let monthlyValues: number[];
-                                      let total: number;
-                                      let completeMonths: number[];
-                                      let average: number;
-                                      let extrapolation: number;
-                                      let isYearComplete: boolean;
-
-                                      if (row.type === 'calculated') {
-                                        if (row.key === 'total_commissions') {
-                                          // Total des commissions = somme de toutes les commissions
-                                          monthlyValues = months.map(month => {
-                                            const commission = yearCommissions.find(c => c.month === month);
-                                            if (!commission) return 0;
-                                            return commission.commissions_iard + commission.commissions_vie + 
-                                                   commission.commissions_courtage + commission.profits_exceptionnels;
-                                          });
-                                        } else if (row.key === 'resultat') {
-                                          // Résultat = total commissions - charges
-                                          const monthlyCommissionsTotal = months.map(month => {
-                                            const commission = yearCommissions.find(c => c.month === month);
-                                            if (!commission) return 0;
-                                            return commission.commissions_iard + commission.commissions_vie + 
-                                                   commission.commissions_courtage + commission.profits_exceptionnels;
-                                          });
-                                          const monthlyCharges = months.map(month => {
-                                            const commission = yearCommissions.find(c => c.month === month);
-                                            return commission ? commission.charges_agence : 0;
-                                          });
-                                          monthlyValues = months.map((_, index) => {
-                                            return monthlyCommissionsTotal[index] - monthlyCharges[index];
-                                          });
-                                        } else {
-                                          monthlyValues = [];
-                                        }
-                                      } else {
-                                        // Lignes individuelles
-                                        monthlyValues = months.map(month => {
-                                          const commission = yearCommissions.find(c => c.month === month);
-                                          return commission ? commission[row.key as keyof CommissionData] as number : 0;
-                                        });
-                                      }
-
-                                      total = monthlyValues.reduce((sum, value) => sum + value, 0);
-                                      completeMonths = monthlyValues.filter(value => value > 0);
-                                      average = completeMonths.length > 0 ? total / completeMonths.length : 0;
-                                      extrapolation = average * 12;
-                                      isYearComplete = completeMonths.length === 12;
-
-                                      // Classes CSS selon le type
                                       const rowClasses = row.type === 'calculated' ? 
-                                        `${row.bgColor} border-t-2 ${row.borderColor}` : '';
-                                      
-                                      const cellClasses = row.type === 'calculated' ? 
-                                        `font-bold ${row.color} dark:text-opacity-90` : 
-                                        `font-medium ${row.color}`;
+                                        'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : 
+                                        'hover:bg-gray-50 dark:hover:bg-gray-800';
 
                                       return (
                                         <TableRow key={row.key} className={rowClasses}>
-                                          <TableCell className={cellClasses}>
+                                          <TableCell className={row.type === 'calculated' ? 
+                                            `font-bold ${row.color} dark:text-opacity-90` : 
+                                            `font-medium ${row.color}`}>
                                             {row.label}
                                           </TableCell>
-                                          {monthlyValues.map((value, index) => (
-                                            <TableCell 
-                                              key={index} 
-                                              className={`text-center ${row.type === 'calculated' ? 'font-bold' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors'}`}
-                                              onClick={row.type !== 'calculated' ? () => handleCellClick(year, months[index]) : undefined}
-                                            >
+                                          {row.monthlyValues.map((value, index) => (
+                                            <TableCell key={index} className="text-center">
                                               {value > 0 ? (
-                                                <span className={row.type === 'calculated' ? cellClasses : 'font-medium'}>
-                                                  {formatCurrency(value)}
-                                                </span>
+                                                <div className="space-y-1">
+                                                  <div className={`font-medium ${row.color}`}>
+                                                    {formatCurrency(value)}
+                                                  </div>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleCellClick(selectedYear!, months[index])}
+                                                    className="h-6 px-2 text-xs hover:bg-blue-100 dark:hover:bg-blue-900"
+                                                  >
+                                                    Modifier
+                                                  </Button>
+                                                </div>
                                               ) : (
-                                                row.type === 'calculated' ? (
-                                                  <span className="text-gray-400">-</span>
-                                                ) : (
-                                                  <span className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                                    Cliquer pour ajouter
-                                                  </span>
-                                                )
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => handleCellClick(selectedYear!, months[index])}
+                                                  className="h-8 px-3 text-xs border-dashed hover:bg-blue-50 dark:hover:bg-blue-900"
+                                                >
+                                                  Cliquer pour ajouter
+                                                </Button>
                                               )}
                                             </TableCell>
                                           ))}
-                                          <TableCell className={`text-center ${row.type === 'calculated' ? 'font-bold' : 'font-bold'}`}>
-                                            <span className={row.type === 'calculated' ? cellClasses : ''}>
-                                              {formatCurrency(total)}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className="text-center">
-                                            {average > 0 ? (
-                                              <div>
-                                                <div className={`font-bold text-lg ${row.type === 'calculated' ? cellClasses : ''}`}>
-                                                  {formatCurrency(average)}
-                                                </div>
-                                                <div className={`text-xs ${row.type === 'calculated' ? 'text-opacity-70' : 'text-gray-500'}`}>
-                                                  sur {completeMonths.length} mois
-                                                </div>
-                                              </div>
-                                            ) : (
-                                              <span className="text-gray-400">-</span>
-                                            )}
-                                          </TableCell>
-                                          <TableCell className="text-center">
-                                            {extrapolation > 0 ? (
-                                              <div>
-                                                <div className={`font-bold text-lg ${isYearComplete ? 'text-gray-500' : 'text-orange-600 dark:text-orange-400'}`}>
-                                                  {formatCurrency(extrapolation)}
-                                                </div>
-                                                <div className={`text-xs ${isYearComplete ? 'text-gray-400' : 'text-orange-500 dark:text-orange-300'}`}>
-                                                  {isYearComplete ? 'Année complète' : `Proj. sur ${completeMonths.length} mois`}
-                                                </div>
-                                              </div>
-                                            ) : (
-                                              <span className="text-gray-400">-</span>
-                                            )}
-                                          </TableCell>
                                         </TableRow>
                                       );
                                     })}
@@ -1286,9 +751,335 @@ export function CommissionsManagementPage() {
                             </CardContent>
                           </Card>
                         );
-                      })}
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Sélectionnez une année
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Choisissez une année dans le sélecteur ci-dessus pour afficher les données.
+                      </p>
                     </div>
                   )}
+              </div>
+
+              {/* Section de comparaison indépendante */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-white" />
+                    </div>
+                                              <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Comparaison d'années</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Outil indépendant de comparaison avec stockage local</p>
+                                                </div>
+                                                </div>
+                                              </div>
+
+                <div className="p-6 space-y-8">
+                  {/* Sélection des années */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Années à comparer</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {availableYears.map(year => (
+                        <button
+                          key={year}
+                          onClick={() => {
+                            const newYears = comparisonYears.includes(year)
+                              ? comparisonYears.filter(y => y !== year)
+                              : [...comparisonYears, year];
+                            handleComparisonYearsChange(newYears);
+                          }}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            comparisonYears.includes(year)
+                              ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sélection de l'item à comparer */}
+                  <div className="space-y-6">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Élément à comparer</h4>
+                    
+                    {/* Commissions */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Commissions</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { key: 'total_commissions', label: 'Total', color: 'blue', bgClass: 'bg-blue-500', shadowClass: 'shadow-blue-500/25' },
+                          { key: 'commissions_vie', label: 'Vie', color: 'emerald', bgClass: 'bg-emerald-500', shadowClass: 'shadow-emerald-500/25' },
+                          { key: 'commissions_courtage', label: 'Courtage', color: 'purple', bgClass: 'bg-purple-500', shadowClass: 'shadow-purple-500/25' },
+                          { key: 'commissions_iard', label: 'IARD', color: 'orange', bgClass: 'bg-orange-500', shadowClass: 'shadow-orange-500/25' },
+                          { key: 'profits_exceptionnels', label: 'Exceptionnels', color: 'red', bgClass: 'bg-red-500', shadowClass: 'shadow-red-500/25' }
+                        ].map(metric => (
+                          <button
+                            key={metric.key}
+                            onClick={() => handleComparisonItemChange(metric.key)}
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                              comparisonItem === metric.key
+                                ? `${metric.bgClass} text-white shadow-md ${metric.shadowClass}`
+                                : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            {metric.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Charges */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Charges</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleComparisonItemChange('charges_agence')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            comparisonItem === 'charges_agence'
+                              ? 'bg-gray-500 text-white shadow-md shadow-gray-500/25'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          Charges Agence
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bénéfice */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Bénéfice</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleComparisonItemChange('resultat')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            comparisonItem === 'resultat'
+                              ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/25'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          Résultat
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Prélèvements */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">Prélèvements</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleComparisonItemChange('prelevements_julien')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            comparisonItem === 'prelevements_julien'
+                              ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          Julien
+                        </button>
+                        <button
+                          onClick={() => handleComparisonItemChange('prelevements_jean_michel')}
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            comparisonItem === 'prelevements_jean_michel'
+                              ? 'bg-lime-500 text-white shadow-md shadow-lime-500/25'
+                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          Jean Michel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Type de graphique */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Type de visualisation</h4>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleComparisonChartTypeChange('bar')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          comparisonChartType === 'bar'
+                            ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
+                            : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        Histogramme
+                      </button>
+                      <button
+                        onClick={() => handleComparisonChartTypeChange('line')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          comparisonChartType === 'line'
+                            ? 'bg-purple-500 text-white shadow-md shadow-purple-500/25'
+                            : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        Courbe
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Graphique de comparaison */}
+                  {comparisonYears.length > 0 && comparisonData.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+                      {/* Header du graphique */}
+                      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Visualisation</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {comparisonItem === 'total_commissions' ? 'Total Commissions' :
+                               comparisonItem === 'commissions_vie' ? 'Commissions Vie' :
+                               comparisonItem === 'commissions_courtage' ? 'Commissions Courtage' :
+                               comparisonItem === 'commissions_iard' ? 'Commissions IARD' :
+                               comparisonItem === 'profits_exceptionnels' ? 'Profits Exceptionnels' :
+                               comparisonItem === 'charges_agence' ? 'Charges Agence' :
+                               comparisonItem === 'resultat' ? 'Résultat' :
+                               comparisonItem === 'prelevements_julien' ? 'Prélèvements Julien' :
+                               comparisonItem === 'prelevements_jean_michel' ? 'Prélèvements Jean Michel' :
+                               comparisonItem} • {comparisonYears.join(', ')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {comparisonYears.map((year, index) => {
+                              const colors = ['bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-rose-500', 'bg-violet-500'];
+                              return (
+                                <div key={year} className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{year}</span>
+                                </div>
+                                      );
+                                    })}
+                              </div>
+                        </div>
+                      </div>
+                      
+                      {/* Zone du graphique */}
+                      <div className="p-6">
+                        <div className="h-80">
+                          {comparisonData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              {comparisonChartType === 'bar' ? (
+                                <RechartsBarChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                  <XAxis 
+                                    dataKey="month" 
+                                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                                    axisLine={{ stroke: '#e5e7eb' }}
+                                  />
+                                  <YAxis 
+                                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                                    tickFormatter={(value) => formatCurrency(value)}
+                                    axisLine={{ stroke: '#e5e7eb' }}
+                                  />
+                                  <ChartTooltip 
+                                    formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                    labelFormatter={(label) => `Mois: ${label}`}
+                                    contentStyle={{
+                                      backgroundColor: 'white',
+                                      border: '1px solid #e5e7eb',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                  />
+                                  {comparisonYears.map((year, index) => {
+                                    const colors = ['#8b5cf6', '#ec4899', '#6366f1', '#f43f5e', '#8b5cf6'];
+                                    return (
+                                      <Bar 
+                                        key={year}
+                                        dataKey={`year_${year}.${comparisonItem}`} 
+                                        fill={colors[index % colors.length]}
+                                        name={`${year}`}
+                                        radius={[4, 4, 0, 0]}
+                                      />
+                        );
+                      })}
+                                </RechartsBarChart>
+                              ) : (
+                                <LineChart data={comparisonData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                  <XAxis 
+                                    dataKey="month" 
+                                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                                    axisLine={{ stroke: '#e5e7eb' }}
+                                  />
+                                  <YAxis 
+                                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                                    tickFormatter={(value) => formatCurrency(value)}
+                                    axisLine={{ stroke: '#e5e7eb' }}
+                                  />
+                                  <ChartTooltip 
+                                    formatter={(value: number, name: string) => [formatCurrency(value), name]}
+                                    labelFormatter={(label) => `Mois: ${label}`}
+                                    contentStyle={{
+                                      backgroundColor: 'white',
+                                      border: '1px solid #e5e7eb',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                  />
+                                  {comparisonYears.map((year, index) => {
+                                    const colors = ['#8b5cf6', '#ec4899', '#6366f1', '#f43f5e', '#8b5cf6'];
+                                    return (
+                                      <Line 
+                                        key={year}
+                                        type="monotone"
+                                        dataKey={`year_${year}.${comparisonItem}`} 
+                                        stroke={colors[index % colors.length]}
+                                        strokeWidth={3}
+                                        name={`${year}`}
+                                        dot={{ r: 5, fill: colors[index % colors.length] }}
+                                        activeDot={{ r: 7, stroke: colors[index % colors.length], strokeWidth: 2 }}
+                                      />
+                                    );
+                                  })}
+                                </LineChart>
+                              )}
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-gray-500">
+                              Aucune donnée à afficher
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {comparisonYears.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Sélectionnez au moins une année pour voir la comparaison</p>
+                          </div>
+                  )}
+
+                  {comparisonYears.length > 0 && comparisonData.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Chargement des données...</p>
+                      <p className="text-sm mt-2">Années sélectionnées: {comparisonYears.join(', ')}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </main>
