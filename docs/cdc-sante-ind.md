@@ -30,7 +30,7 @@ Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ay
 - **Numéro de contrat** : Identifiant du contrat
 - **Date d'effet** : Date de début de couverture
 - **Prime annuelle** : Montant de la prime en euros (saisie manuelle, entiers avec séparateurs de milliers)
-- **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte (entiers avec séparateurs de milliers, affichage temps réel)
+- **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte (entiers avec séparateurs de milliers, mise à jour instantanée)
 - **Date de saisie** : Automatique (date du jour), ne peut pas être modifiée
 
 ## Format des montants
@@ -255,7 +255,7 @@ Module simplifié de saisie d'actes santé individuelle pour les utilisateurs ay
 #### Calcul automatique
 - **Prime pondérée** : Calculée automatiquement selon le coefficient du type d'acte (entiers avec séparateurs de milliers)
 - **Formule** : Prime annuelle × Coefficient
-- **Affichage temps réel** : La prime pondérée s'affiche dès que le type d'acte et la prime annuelle sont renseignés
+- **Mise à jour instantanée** : La prime pondérée se recalcule et s'affiche immédiatement dès que le type d'acte et la prime annuelle sont renseignés
 
 #### Coefficients par type d'acte
 - **Affaire Nouvelle** : 100% (coefficient 1.0)
