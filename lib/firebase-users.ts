@@ -206,7 +206,7 @@ export const getUsers = async (options?: {
   total: number;
 }> => {
   const operation = createFirebaseOperation(async () => {
-    const { limit: limitValue = 50, startAfter, searchTerm } = options || {};
+    const { limit: limitValue = 50, startAfter: startAfterDoc, searchTerm } = options || {};
     
     let q = query(
       collection(db, 'users'),
@@ -214,11 +214,11 @@ export const getUsers = async (options?: {
       limit(limitValue)
     );
     
-    if (startAfter) {
+    if (startAfterDoc) {
       q = query(
         collection(db, 'users'),
         orderBy('createdAt', 'desc'),
-        startAfter(startAfter),
+        startAfter(startAfterDoc),
         limit(limitValue)
       );
     }

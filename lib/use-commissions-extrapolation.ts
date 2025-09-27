@@ -27,7 +27,7 @@ export function useCommissionsExtrapolation(): ExtrapolationData {
         
         const currentYear = new Date().getFullYear();
         const commissionsData = await getCommissions();
-        const yearCommissions = commissionsData.commissions.filter(c => c.year === currentYear);
+        const yearCommissions = commissionsData.data.filter(c => c.year === currentYear);
         
         if (yearCommissions.length === 0) {
           setData({

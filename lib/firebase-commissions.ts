@@ -144,7 +144,7 @@ export const getCommissions = async (options?: {
 }): Promise<PaginationPayload<CommissionData>> => {
   try {
     console.log('🔍 Récupération des commissions depuis Firebase...');
-    const { limit: limitValue = 100, startAfter, year, page = 1 } = options || {};
+    const { limit: limitValue = 100, startAfter: startAfterDoc, year, page = 1 } = options || {};
     
     // Build query with direct Firestore filtering
     let q = query(collection(db, 'commissions'));
@@ -158,8 +158,8 @@ export const getCommissions = async (options?: {
     q = query(q, orderBy('year', 'desc'), orderBy('month', 'asc'));
     
     // Add pagination
-    if (startAfter) {
-      q = query(q, startAfter(startAfter));
+    if (startAfterDoc) {
+      q = query(q, startAfter(startAfterDoc));
     }
     
     q = query(q, limit(limitValue));
@@ -313,8 +313,8 @@ export const defaultCommissionsData = {
 
 export const migrateCommissionsData = async () => {
   try {
-    const existingCommissions = await getCommissions();
-    if (existingCommissions.commissions.length > 0) {
+    const { data } = await getCommissions();
+    if (data.length > 0) {
       console.log('Les données de commissions existent déjà');
       return;
     }

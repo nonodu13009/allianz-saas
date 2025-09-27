@@ -54,6 +54,7 @@ export function UsersProvider({ children }: UsersProviderProps) {
       const newUser: UserData = {
         uid: newUserId,
         ...userData,
+        etp: typeof userData.etp === 'string' ? parseFloat(userData.etp) : userData.etp,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -83,7 +84,12 @@ export function UsersProvider({ children }: UsersProviderProps) {
       // Mise à jour optimiste : modifier l'utilisateur localement
       setUsers(prev => prev.map(user => 
         user.uid === uid 
-          ? { ...user, ...data, updatedAt: new Date() }
+          ? { 
+              ...user, 
+              ...data, 
+              etp: typeof data.etp === 'string' ? parseFloat(data.etp) : (data.etp ?? user.etp),
+              updatedAt: new Date() 
+            }
           : user
       ));
       

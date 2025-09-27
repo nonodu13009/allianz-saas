@@ -40,9 +40,15 @@ export function TeamManagementPage() {
 
   const handleCreateUser = async () => {
     try {
-      const userData = {
-        ...formData,
-        password: formData.password || 'allianz'
+      const userData: any = {
+        email: formData.email,
+        password: formData.password || 'allianz',
+        prenom: formData.prenom,
+        nom: formData.nom,
+        role: formData.role,
+        role_front: formData.role_front,
+        etp: parseFloat(formData.etp) || 1,
+        genre: formData.genre
       };
       await addUser(userData);
       setIsCreateDialogOpen(false);
@@ -53,9 +59,24 @@ export function TeamManagementPage() {
   };
 
   const handleUpdateUser = async () => {
-    if (!editingUser) return;
+    if (!editingUser?.uid) return;
     try {
-      await updateUserData(editingUser.id, formData);
+      const updateData: any = {
+        email: formData.email,
+        prenom: formData.prenom,
+        nom: formData.nom,
+        role: formData.role,
+        role_front: formData.role_front,
+        etp: parseFloat(formData.etp) || 1,
+        genre: formData.genre
+      };
+      
+      // N'inclure le mot de passe que s'il a été saisi
+      if (formData.password && formData.password.trim() !== '') {
+        updateData.password = formData.password;
+      }
+      
+      await updateUserData(editingUser.uid, updateData);
       setEditingUser(null);
       resetForm();
     } catch (error) {
@@ -119,7 +140,9 @@ export function TeamManagementPage() {
     
     try {
       for (const user of users) {
-        await updateUserData(user.id, { password: newPassword });
+        if (user.uid) {
+          await updateUserData(user.uid, { password: newPassword });
+        }
       }
       setShowChangePasswordDialog(false);
       setNewPassword('');
@@ -372,7 +395,7 @@ export function TeamManagementPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user) => (
-                          <TableRow key={user.id}>
+                          <TableRow key={user.uid}>
                             <TableCell className="font-medium">{user.email}</TableCell>
                             <TableCell>{user.prenom} {user.nom}</TableCell>
                             <TableCell>
@@ -399,7 +422,7 @@ export function TeamManagementPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteUser(user.id)}
+                                  onClick={() => handleDeleteUser(user.uid)}
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="h-4 w-4" />
