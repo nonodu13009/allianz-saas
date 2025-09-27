@@ -101,6 +101,81 @@ export function CommissionsManagementPage() {
   const [comparisonChartType, setComparisonChartType] = useState<'bar' | 'line'>('bar');
   const [comparisonLoading, setComparisonLoading] = useState(false);
 
+  // Fonctions pour la nouvelle section de comparaison indépendante
+  const initializeComparisonYears = () => {
+    const currentYear = new Date().getFullYear();
+    const previousYear = currentYear - 1;
+    const defaultYears = [previousYear, currentYear];
+    setComparisonYears(defaultYears);
+    
+    // Sauvegarder en local storage seulement côté client
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonYears', JSON.stringify(defaultYears));
+    }
+  };
+
+  const loadComparisonData = async () => {
+    setComparisonLoading(true);
+    try {
+      const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      
+      // Créer un objet pour regrouper par mois
+      const monthlyData: { [key: string]: any } = {};
+      
+      // Initialiser tous les mois
+      monthOrder.forEach(month => {
+        monthlyData[month] = { month };
+      });
+      
+      for (const year of comparisonYears) {
+        try {
+          const yearCommissions = await getCommissionsByYear(year);
+          
+          if (!yearCommissions || !Array.isArray(yearCommissions)) {
+            console.error(`Données invalides pour ${year}:`, yearCommissions);
+            continue;
+          }
+          
+          // Ajouter les données de chaque mois pour cette année
+          yearCommissions.forEach(commission => {
+            const monthKey = commission.month;
+            if (monthlyData[monthKey]) {
+              monthlyData[monthKey][`year_${year}`] = {
+                total_commissions: commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels,
+                commissions_iard: commission.commissions_iard,
+                commissions_vie: commission.commissions_vie,
+                commissions_courtage: commission.commissions_courtage,
+                profits_exceptionnels: commission.profits_exceptionnels,
+                charges_agence: commission.charges_agence,
+                resultat: (commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels) - commission.charges_agence,
+                prelevements_julien: commission.prelevements_julien,
+                prelevements_jean_michel: commission.prelevements_jean_michel
+              };
+            }
+          });
+        } catch (error) {
+          console.error(`Erreur lors du chargement des données pour ${year}:`, error);
+        }
+      }
+      
+      // Convertir en tableau et trier par mois
+      const sortedData = monthOrder.map(month => monthlyData[month]).filter(Boolean);
+      
+      setComparisonData(sortedData);
+      
+      // Sauvegarder en local storage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('comparisonData', JSON.stringify(sortedData));
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors du chargement des données de comparaison:', error);
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -140,6 +215,30 @@ export function CommissionsManagementPage() {
       console.error('Erreur lors du chargement des commissions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleComparisonYearsChange = (years: number[]) => {
+    setComparisonYears(years);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonYears', JSON.stringify(years));
+    }
+    if (years.length > 0) {
+      loadComparisonData();
+    }
+  };
+
+  const handleComparisonItemChange = (item: string) => {
+    setComparisonItem(item);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonItem', item);
+    }
+  };
+
+  const handleComparisonChartTypeChange = (type: 'bar' | 'line') => {
+    setComparisonChartType(type);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('comparisonChartType', type);
     }
   };
 
@@ -242,105 +341,6 @@ export function CommissionsManagementPage() {
       console.error('Erreur lors de la migration:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fonctions pour la nouvelle section de comparaison indépendante
-  const initializeComparisonYears = () => {
-    const currentYear = new Date().getFullYear();
-    const previousYear = currentYear - 1;
-    const defaultYears = [previousYear, currentYear];
-    setComparisonYears(defaultYears);
-    
-    // Sauvegarder en local storage seulement côté client
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('comparisonYears', JSON.stringify(defaultYears));
-    }
-  };
-
-  const loadComparisonData = async () => {
-    setComparisonLoading(true);
-    try {
-      const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-                        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-      
-      // Créer un objet pour regrouper par mois
-      const monthlyData: { [key: string]: any } = {};
-      
-      // Initialiser tous les mois
-      monthOrder.forEach(month => {
-        monthlyData[month] = { month };
-      });
-      
-      for (const year of comparisonYears) {
-        try {
-          const yearCommissions = await getCommissionsByYear(year);
-          
-          if (!yearCommissions || !Array.isArray(yearCommissions)) {
-            console.error(`Données invalides pour ${year}:`, yearCommissions);
-            continue;
-          }
-          
-          // Ajouter les données de chaque mois pour cette année
-          yearCommissions.forEach(commission => {
-            const monthKey = commission.month;
-            if (monthlyData[monthKey]) {
-              monthlyData[monthKey][`year_${year}`] = {
-                total_commissions: commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels,
-                commissions_vie: commission.commissions_vie,
-                commissions_courtage: commission.commissions_courtage,
-                commissions_iard: commission.commissions_iard,
-                profits_exceptionnels: commission.profits_exceptionnels,
-                charges_agence: commission.charges_agence,
-                resultat: (commission.commissions_iard + commission.commissions_vie + commission.commissions_courtage + commission.profits_exceptionnels) - commission.charges_agence,
-                prelevements_julien: commission.prelevements_julien,
-                prelevements_jean_michel: commission.prelevements_jean_michel
-              };
-            }
-          });
-        } catch (error) {
-          console.error(`Erreur lors du chargement des données pour ${year}:`, error);
-        }
-      }
-      
-      // Convertir en tableau et trier par mois
-      const comparisonData = monthOrder.map(month => monthlyData[month]);
-      
-      setComparisonData(comparisonData);
-      
-      // Sauvegarder en local storage seulement côté client
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('comparisonData', JSON.stringify(comparisonData));
-      }
-      
-    } catch (error) {
-      console.error('Erreur lors du chargement des données de comparaison:', error);
-    } finally {
-      setComparisonLoading(false);
-    }
-  };
-
-  const handleComparisonYearsChange = (years: number[]) => {
-    setComparisonYears(years);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('comparisonYears', JSON.stringify(years));
-    }
-    if (years.length > 0) {
-      loadComparisonData();
-    }
-  };
-
-  const handleComparisonItemChange = (item: string) => {
-    setComparisonItem(item);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('comparisonItem', item);
-    }
-  };
-
-  const handleComparisonChartTypeChange = (type: 'bar' | 'line') => {
-    setComparisonChartType(type);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('comparisonChartType', type);
     }
   };
 
@@ -686,12 +686,30 @@ export function CommissionsManagementPage() {
                         const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
                                       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+                        // Fonction pour calculer le nombre de mois renseignés pour l'année sélectionnée
+                        const getCompletedMonthsCount = () => {
+                          return yearCommissions.filter(commission => {
+                            // Vérifier que c'est bien l'année sélectionnée
+                            if (commission.year !== selectedYear) return false;
+                            
+                            const totalCommissions = commission.commissions_iard + commission.commissions_vie + 
+                                                   commission.commissions_courtage + commission.profits_exceptionnels;
+                            const resultat = totalCommissions - commission.charges_agence;
+                            return resultat !== 0; // Un mois est "renseigné" si le résultat n'est pas 0
+                          }).length;
+                        };
+
+                        const completedMonthsCount = getCompletedMonthsCount();
+
                         return (
                           <Card key={selectedYear}>
                             <CardHeader>
                               <CardTitle className="flex items-center gap-2">
                                 <Calendar className="h-5 w-5" />
                                 Commissions {selectedYear}
+                                <Badge variant="outline" className="ml-2">
+                                  {completedMonthsCount} mois renseignés
+                                </Badge>
                               </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -705,6 +723,12 @@ export function CommissionsManagementPage() {
                                           {month}
                                         </TableCell>
                                       ))}
+                                      <TableCell className="text-center font-medium min-w-[120px] bg-blue-50 dark:bg-blue-900/20">
+                                        Moyenne
+                                      </TableCell>
+                                      <TableCell className="text-center font-medium min-w-[120px] bg-green-50 dark:bg-green-900/20">
+                                        Total Extrapolé
+                                      </TableCell>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
@@ -712,6 +736,34 @@ export function CommissionsManagementPage() {
                                       const rowClasses = row.type === 'calculated' ? 
                                         'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : 
                                         'hover:bg-gray-50 dark:hover:bg-gray-800';
+
+                                      // Calculer la moyenne pour cette ligne
+                                      const calculateAverage = () => {
+                                        if (completedMonthsCount === 0) return 0;
+                                        
+                                        // Pour les lignes calculées (total_commissions, resultat), on calcule la moyenne des valeurs non nulles
+                                        if (row.type === 'calculated') {
+                                          const nonZeroValues = row.monthlyValues.filter(value => value !== 0);
+                                          return nonZeroValues.length > 0 ? nonZeroValues.reduce((sum, val) => sum + val, 0) / nonZeroValues.length : 0;
+                                        }
+                                        
+                                        // Pour les lignes de données, on calcule la moyenne des mois renseignés
+                                        const completedMonthsValues = row.monthlyValues.filter((value, index) => {
+                                          const month = months[index];
+                                          const commission = yearCommissions.find(c => c.month === month && c.year === selectedYear);
+                                          if (!commission) return false;
+                                          
+                                          const totalCommissions = commission.commissions_iard + commission.commissions_vie + 
+                                                                 commission.commissions_courtage + commission.profits_exceptionnels;
+                                          const resultat = totalCommissions - commission.charges_agence;
+                                          return resultat !== 0; // Seulement les mois avec un résultat non nul
+                                        });
+                                        
+                                        return completedMonthsValues.length > 0 ? 
+                                          completedMonthsValues.reduce((sum, val) => sum + val, 0) / completedMonthsValues.length : 0;
+                                      };
+
+                                      const average = calculateAverage();
 
                                       return (
                                         <TableRow key={row.key} className={rowClasses}>
@@ -748,6 +800,24 @@ export function CommissionsManagementPage() {
                                               )}
                                             </TableCell>
                                           ))}
+                                          {/* Colonne Moyenne */}
+                                          <TableCell className="text-center bg-blue-50 dark:bg-blue-900/20">
+                                            <div className={`font-bold ${row.color} dark:text-opacity-90`}>
+                                              {formatCurrency(average)}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              / {completedMonthsCount} mois
+                                            </div>
+                                          </TableCell>
+                                          {/* Colonne Total Extrapolé */}
+                                          <TableCell className="text-center bg-green-50 dark:bg-green-900/20">
+                                            <div className={`font-bold ${row.color} dark:text-opacity-90`}>
+                                              {formatCurrency(average * 12)}
+                                            </div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                              {completedMonthsCount < 12 ? '× 12 mois' : 'année complète'}
+                                            </div>
+                                          </TableCell>
                                         </TableRow>
                                       );
                                     })}
@@ -1000,6 +1070,35 @@ export function CommissionsManagementPage() {
                                   <ChartTooltip 
                                     formatter={(value: number, name: string) => [formatCurrency(value), name]}
                                     labelFormatter={(label) => `Mois: ${label}`}
+                                    content={({ active, payload, label }) => {
+                                      if (active && payload && payload.length) {
+                                        // Trier les payloads par année décroissante
+                                        const sortedPayload = [...payload].sort((a, b) => {
+                                          const yearA = parseInt(a.name || '0');
+                                          const yearB = parseInt(b.name || '0');
+                                          return yearB - yearA; // Ordre décroissant
+                                        });
+
+                                        return (
+                                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                            <p className="font-medium text-gray-900 mb-2">Mois: {label}</p>
+                                            {sortedPayload.map((entry, index) => (
+                                              <div key={index} className="flex items-center gap-2 text-sm">
+                                                <div 
+                                                  className="w-3 h-3 rounded-full" 
+                                                  style={{ backgroundColor: entry.color }}
+                                                />
+                                                <span className="text-gray-600">{entry.name}:</span>
+                                                <span className="font-medium text-gray-900">
+                                                  {formatCurrency(entry.value as number)}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
                                     contentStyle={{
                                       backgroundColor: 'white',
                                       border: '1px solid #e5e7eb',
@@ -1036,6 +1135,35 @@ export function CommissionsManagementPage() {
                                   <ChartTooltip 
                                     formatter={(value: number, name: string) => [formatCurrency(value), name]}
                                     labelFormatter={(label) => `Mois: ${label}`}
+                                    content={({ active, payload, label }) => {
+                                      if (active && payload && payload.length) {
+                                        // Trier les payloads par année décroissante
+                                        const sortedPayload = [...payload].sort((a, b) => {
+                                          const yearA = parseInt(a.name || '0');
+                                          const yearB = parseInt(b.name || '0');
+                                          return yearB - yearA; // Ordre décroissant
+                                        });
+
+                                        return (
+                                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                            <p className="font-medium text-gray-900 mb-2">Mois: {label}</p>
+                                            {sortedPayload.map((entry, index) => (
+                                              <div key={index} className="flex items-center gap-2 text-sm">
+                                                <div 
+                                                  className="w-3 h-3 rounded-full" 
+                                                  style={{ backgroundColor: entry.color }}
+                                                />
+                                                <span className="text-gray-600">{entry.name}:</span>
+                                                <span className="font-medium text-gray-900">
+                                                  {formatCurrency(entry.value as number)}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
                                     contentStyle={{
                                       backgroundColor: 'white',
                                       border: '1px solid #e5e7eb',

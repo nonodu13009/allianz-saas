@@ -238,6 +238,7 @@ export function DashboardContent() {
                 displayValue = loading || commissionsLoading ? '...' : 
                   (() => {
                     const etpTotal = users.reduce((sum, u) => sum + (u.etp || 0), 0);
+                    // Utiliser les commissions extrapolées (dernière année complète ou incomplète)
                     const ratio = etpTotal > 0 ? extrapolatedCommissions / etpTotal : 0;
                     return new Intl.NumberFormat('fr-FR', {
                       style: 'currency',
